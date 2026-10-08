@@ -47,16 +47,16 @@ make sim
 
 ## Що робить прошивка
 
-| Інтерфейс | Пін | Що видно |
-|---|---|---|
-| USART2 115200 8N1 | PA2/PA3 | банер, таблиця `[ OK ]` для кожного `MX_*_Init()`, `tick N …` |
-| I2C1 100 kHz | PB8/PB9 | I²C-скан → `0x68`, `MPU-6050: WHO_AM_I = 0x68 (match)` |
-| ADC1_IN0 | PA0 | `pot=0..4095`; серво pan повторює потенціометр |
-| TIM3 PWM 50 Hz | PB4/PB5 | 2 серво; tilt повторює нахил MPU-6050 (pitch) |
-| GPIO | PC13 / PA5 | B1 (або клавіша `h`) → HOLD; LED блимає в LIVE, горить у HOLD |
-| SPI1 mode 0 | PB3/PA6/PA7, CS PB0 | `W25Q64: JEDEC ID …` (у Wokwi чипа немає → `not connected`) |
+Компоненти — лише з пулу методички для форми B: MPU-6050, LCD1602 (I²C), Potentiometer, Push button, UART Logger, Logic Analyzer.
 
-Логічний аналізатор у схемі пише SCL, SDA, PWM_PAN, UART_TX у `lr1-capture.vcd`. Файл відкривається в PulseView або GTKWave.
+| Інтерфейс | Пін | Компонент | Що видно |
+|---|---|---|---|
+| USART2 115200 8N1 | PA2/PA3 | UART Logger | банер, `[ OK ]` для кожної `MX_*_Init()`, `tick N …` щосекунди |
+| I2C1 100 kHz | PB8/PB9 | MPU-6050 (0x68), LCD1602 (0x27) | I²C-скан → `0x27 0x68`, `WHO_AM_I = 0x68`, pitch/roll і потенціометр на LCD |
+| ADC1_IN0 | PA0 | Potentiometer | `pot=0..4095` |
+| GPIO | PC13 / PA5 | Push button / LED LD4 | кнопка (або клавіша `h`) → LIVE/HOLD, LED горить у HOLD |
+
+Логічний аналізатор пише SCL, SDA, UART_TX, BTN у `lr1-capture.vcd`. Файл відкривається в PulseView або GTKWave.
 
 ## Справжня плата (бонус)
 

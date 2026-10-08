@@ -19,6 +19,7 @@ Core/Src/stm32c0xx_it.c \
 Core/Src/stm32c0xx_hal_msp.c \
 Core/Src/system_stm32c0xx.c \
 Core/Src/syscalls.c \
+Core/Src/lcd1602.c \
 $(HAL_DIR)/stm32c0xx_hal.c \
 $(HAL_DIR)/stm32c0xx_hal_cortex.c \
 $(HAL_DIR)/stm32c0xx_hal_rcc.c \
@@ -37,11 +38,7 @@ $(HAL_DIR)/stm32c0xx_hal_i2c.c \
 $(HAL_DIR)/stm32c0xx_hal_i2c_ex.c \
 $(HAL_DIR)/stm32c0xx_hal_adc.c \
 $(HAL_DIR)/stm32c0xx_hal_adc_ex.c \
-$(HAL_DIR)/stm32c0xx_ll_adc.c \
-$(HAL_DIR)/stm32c0xx_hal_tim.c \
-$(HAL_DIR)/stm32c0xx_hal_tim_ex.c \
-$(HAL_DIR)/stm32c0xx_hal_spi.c \
-$(HAL_DIR)/stm32c0xx_hal_spi_ex.c
+$(HAL_DIR)/stm32c0xx_ll_adc.c
 
 ASM_SOURCES = startup_stm32c031xx.s
 

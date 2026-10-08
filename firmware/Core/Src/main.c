@@ -3,17 +3,21 @@
   * @file    main.c
   * @brief   ЛР1 — bring-up платформи NUCLEO-C031C6 (Wokwi) на STM32 HAL.
   *
+  *  Компоненти — рівно з пулу методички для форми B:
+  *  MPU-6050 (I2C) + Potentiometer (ADC) + Push button (GPIO) + LCD1602 (I2C),
+  *  UART Logger (USART2) і Logic Analyzer.
+  *
   *  1. Ініціалізує тактування (HSI48 -> SYSCLK 48 MHz) і периферію:
-  *     USART2 (VCP), I2C1, ADC1, TIM3 (PWM 50 Hz), SPI1, GPIO.
-  *  2. Друкує таблицю статусів HAL_OK для кожної ініціалізації.
-  *  3. Сканує I2C-шину, читає WHO_AM_I з MPU-6050 і JEDEC ID з SPI-флеш.
-  *  4. У циклі: потенціометр -> серво pan, нахил MPU-6050 -> серво tilt,
-  *     кнопка B1 -> режим HOLD, щосекунди рядок "tick N ..." у UART.
+  *     USART2, I2C1, ADC1, GPIO. Друкує HAL_OK/помилку для кожної ініціалізації.
+  *  2. Сканує I2C-шину, читає WHO_AM_I з MPU-6050, ініціалізує LCD1602.
+  *  3. У циклі: щосекунди "tick N ..." у UART; кожні 200 мс — нахил
+  *     (pitch/roll) з MPU-6050 і значення потенціометра на LCD.
+  *     Кнопка B1 перемикає LIVE/HOLD (заморожує показ), LED показує режим.
   ******************************************************************************
   */
 #include "main.h"
+#include "lcd1602.h"
 #include <stdio.h>
-#include <stdlib.h>
 #include <math.h>
 
 /* ---- Константи ---------------------------------------------------------- */
@@ -23,20 +27,16 @@
 #define MPU6050_REG_WHO_AM_I  0x75U
 #define MPU6050_WHO_AM_I_VAL  0x68U
 
-#define W25Q_CMD_JEDEC_ID     0x9FU
-
 #define I2C_TIMEOUT_MS        10U
-#define SERVO_MIN_US          544U   /* 0°   */
-#define SERVO_MAX_US          2400U  /* 180° */
-#define CONTROL_PERIOD_MS     20U    /* 50 Hz, як і PWM серво */
-#define REPORT_PERIOD_MS      1000U
+#define POLL_PERIOD_MS        20U    /* опитування кнопки */
+#define DISPLAY_PERIOD_MS     200U   /* оновлення LCD */
+#define REPORT_PERIOD_MS      1000U  /* рядок tick у UART */
+#define RAD_TO_DEG            57.29578f
 
 /* ---- Хендли ------------------------------------------------------------- */
 UART_HandleTypeDef huart2;
 I2C_HandleTypeDef  hi2c1;
 ADC_HandleTypeDef  hadc1;
-TIM_HandleTypeDef  htim3;
-SPI_HandleTypeDef  hspi1;
 
 /* ---- Прототипи ---------------------------------------------------------- */
 static HAL_StatusTypeDef SystemClock_Config(void);
@@ -44,16 +44,12 @@ static HAL_StatusTypeDef MX_GPIO_Init(void);
 static HAL_StatusTypeDef MX_USART2_UART_Init(void);
 static HAL_StatusTypeDef MX_I2C1_Init(void);
 static HAL_StatusTypeDef MX_ADC1_Init(void);
-static HAL_StatusTypeDef MX_TIM3_Init(void);
-static HAL_StatusTypeDef MX_SPI1_Init(void);
 
 static void     report_status(const char *name, HAL_StatusTypeDef st);
 static void     i2c_scan(void);
 static uint8_t  mpu6050_probe(void);
-static void     w25q_probe(void);
 static int      mpu6050_read_accel(int16_t acc[3]);
 static uint16_t adc_read_pot(void);
-static void     servo_write_deg(uint32_t channel, uint32_t deg);
 
 static const char *const hal_status_str[] = { "OK", "ERROR", "BUSY", "TIMEOUT" };
 
@@ -65,7 +61,7 @@ int main(void)
   /* UART піднімаємо першим — далі все логуємо через printf. */
   HAL_StatusTypeDef gpio_st = MX_GPIO_Init();
   HAL_StatusTypeDef uart_st = MX_USART2_UART_Init();
-  /* nosys _isatty() повертає 0, тож newlib буферизує stdout повністю — вимикаємо буфер. */
+  /* nosys _fstat() повертає помилку, тож newlib буферизує stdout повністю — вимикаємо буфер. */
   setvbuf(stdout, NULL, _IONBF, 0);
 
   printf("\r\n==== LR1 bring-up: NUCLEO-C031C6 (STM32C031C6, Cortex-M0+) ====\r\n");
@@ -74,69 +70,83 @@ int main(void)
          (HAL_GetHalVersion() >> 8) & 0xFFU, HAL_RCC_GetSysClockFreq());
 
   report_status("SystemClock 48MHz", clk_st);
-  report_status("GPIO (LED, B1, CS)", gpio_st);
+  report_status("GPIO (LED, B1)", gpio_st);
   report_status("USART2 115200 8N1", uart_st);
   report_status("I2C1 100 kHz", MX_I2C1_Init());
   report_status("ADC1 IN0 12-bit", MX_ADC1_Init());
-  report_status("TIM3 PWM 50 Hz", MX_TIM3_Init());
-  report_status("SPI1 master mode0", MX_SPI1_Init());
-
-  report_status("TIM3 CH1 start", HAL_TIM_PWM_Start(&htim3, SERVO_PAN_CHANNEL));
-  report_status("TIM3 CH2 start", HAL_TIM_PWM_Start(&htim3, SERVO_TILT_CHANNEL));
 
   i2c_scan();
   uint8_t mpu_ok = mpu6050_probe();
-  w25q_probe();
-  printf("Ready. Pot -> pan, MPU pitch -> tilt, B1 -> HOLD.\r\n\r\n");
+  HAL_StatusTypeDef lcd_st = lcd1602_init(&hi2c1);
+  report_status("LCD1602 @0x27 init", lcd_st);
+  if (lcd_st == HAL_OK)
+  {
+    lcd1602_set_cursor(0, 0);
+    lcd1602_print("LR1 bring-up    ");
+    lcd1602_set_cursor(0, 1);
+    lcd1602_print("NUCLEO-C031C6   ");
+  }
+  printf("Ready. B1 -> LIVE/HOLD.\r\n\r\n");
 
   uint32_t tick_n = 0;
-  uint32_t next_ctrl = HAL_GetTick();
-  uint32_t next_report = next_ctrl + REPORT_PERIOD_MS;
+  uint32_t now = HAL_GetTick();
+  uint32_t next_poll = now, next_display = now + 1000U, next_report = now + REPORT_PERIOD_MS;
   uint8_t  hold = 0, btn_prev = 0;
   uint16_t pot = 0;
-  uint32_t pan = 90, tilt = 90;
   int16_t  acc[3] = { 0, 0, 0 };
+  int      pitch = 0, roll = 0;
 
   while (1)
   {
-    uint32_t now = HAL_GetTick();
+    now = HAL_GetTick();
 
-    if ((int32_t)(now - next_ctrl) >= 0)
+    if ((int32_t)(now - next_poll) >= 0)
     {
-      next_ctrl += CONTROL_PERIOD_MS;
-
+      next_poll += POLL_PERIOD_MS;
       /* Кнопка B1 (active low): по фронту натискання перемикаємо HOLD. */
       uint8_t btn = (HAL_GPIO_ReadPin(BTN_GPIO_Port, BTN_Pin) == GPIO_PIN_RESET);
       if (btn && !btn_prev)
       {
         hold = !hold;
-        printf("[B1] HOLD %s\r\n", hold ? "ON" : "OFF");
+        printf("[B1] %s\r\n", hold ? "HOLD" : "LIVE");
       }
       btn_prev = btn;
+    }
 
-      pot = adc_read_pot();
-      if (mpu_ok && mpu6050_read_accel(acc) == 0)
+    if ((int32_t)(now - next_display) >= 0)
+    {
+      next_display += DISPLAY_PERIOD_MS;
+      if (!hold)
       {
-        /* pitch = atan2(ax, az): -90..+90° -> 0..180° на серво. */
-        float pitch = atan2f((float)acc[0], (float)acc[2]) * 57.29578f;
-        if (pitch < -90.0f) pitch = -90.0f;
-        if (pitch >  90.0f) pitch =  90.0f;
-        if (!hold) tilt = (uint32_t)(pitch + 90.0f + 0.5f);
+        pot = adc_read_pot();
+        if (mpu_ok && mpu6050_read_accel(acc) == 0)
+        {
+          float ax = acc[0], ay = acc[1], az = acc[2];
+          pitch = (int)lroundf(atan2f(-ax, sqrtf(ay * ay + az * az)) * RAD_TO_DEG);
+          roll  = (int)lroundf(atan2f(ay, az) * RAD_TO_DEG);
+        }
       }
-      if (!hold) pan = ((uint32_t)pot * 180U + 2047U) / 4095U;
-
-      servo_write_deg(SERVO_PAN_CHANNEL, pan);
-      servo_write_deg(SERVO_TILT_CHANNEL, tilt);
-      if (hold) HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET); /* HOLD: горить, LIVE: блимає */
+      if (lcd_st == HAL_OK)
+      {
+        char line[17];
+        snprintf(line, sizeof line, "P:%+4d R:%+4d%s", pitch, roll, hold ? " H " : "   ");
+        lcd1602_set_cursor(0, 0);
+        lcd1602_print(line);
+        unsigned raw = pot & 0x0FFFU; /* 12-бітний ADC: 0..4095 */
+        unsigned pct = (raw * 100U + 2047U) / 4095U;
+        snprintf(line, sizeof line, "POT:%4u  %3u%%  ", raw, pct > 100U ? 100U : pct);
+        lcd1602_set_cursor(0, 1);
+        lcd1602_print(line);
+      }
+      HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, hold ? GPIO_PIN_SET : GPIO_PIN_RESET);
     }
 
     if ((int32_t)(now - next_report) >= 0)
     {
       next_report += REPORT_PERIOD_MS;
       tick_n++;
-      printf("tick %lu | t=%lu ms | pot=%4u | acc=%6d %6d %6d | pan=%3lu tilt=%3lu | %s\r\n",
-             tick_n, now, pot, acc[0], acc[1], acc[2], pan, tilt, hold ? "HOLD" : "LIVE");
-      if (!hold) HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+      printf("tick %lu | t=%lu ms | pot=%4u | acc=%6d %6d %6d | pitch=%+4d roll=%+4d | %s\r\n",
+             tick_n, now, pot, acc[0], acc[1], acc[2], pitch, roll, hold ? "HOLD" : "LIVE");
     }
   }
 }
@@ -189,27 +199,6 @@ static uint8_t mpu6050_probe(void)
   return who == MPU6050_WHO_AM_I_VAL;
 }
 
-/** Читає JEDEC ID (0x9F). На W25Q64 очікуємо EF 40 17. */
-static void w25q_probe(void)
-{
-  uint8_t tx[4] = { W25Q_CMD_JEDEC_ID, 0, 0, 0 };
-  uint8_t rx[4] = { 0 };
-
-  HAL_GPIO_WritePin(FLASH_CS_GPIO_Port, FLASH_CS_Pin, GPIO_PIN_RESET);
-  HAL_StatusTypeDef st = HAL_SPI_TransmitReceive(&hspi1, tx, rx, sizeof tx, 10);
-  HAL_GPIO_WritePin(FLASH_CS_GPIO_Port, FLASH_CS_Pin, GPIO_PIN_SET);
-
-  if (st != HAL_OK)
-  {
-    printf("W25Q64: SPI transfer HAL_%s\r\n", hal_status_str[st & 3U]);
-    return;
-  }
-  int absent = (rx[1] == 0xFF && rx[2] == 0xFF && rx[3] == 0xFF) ||
-               (rx[1] == 0x00 && rx[2] == 0x00 && rx[3] == 0x00);
-  printf("W25Q64: JEDEC ID = %02X %02X %02X (%s)\r\n", rx[1], rx[2], rx[3],
-         absent ? "not connected" : (rx[1] == 0xEF ? "Winbond" : "unknown vendor"));
-}
-
 /** Сирі значення акселерометра (±2 g, 16384 LSB/g). 0 — успіх. */
 static int mpu6050_read_accel(int16_t acc[3])
 {
@@ -236,14 +225,6 @@ static uint16_t adc_read_pot(void)
   }
   HAL_ADC_Stop(&hadc1);
   return v;
-}
-
-/** TIM3 тикає з 1 MHz, тож CCR = ширина імпульсу в мкс. */
-static void servo_write_deg(uint32_t channel, uint32_t deg)
-{
-  if (deg > 180U) deg = 180U;
-  uint32_t us = SERVO_MIN_US + (deg * (SERVO_MAX_US - SERVO_MIN_US) + 90U) / 180U;
-  __HAL_TIM_SET_COMPARE(&htim3, channel, us);
 }
 
 /* ======================================================================== */
@@ -285,17 +266,12 @@ static HAL_StatusTypeDef MX_GPIO_Init(void)
   __HAL_RCC_GPIOC_CLK_ENABLE();
 
   HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(FLASH_CS_GPIO_Port, FLASH_CS_Pin, GPIO_PIN_SET); /* CS# неактивний */
 
   g.Pin   = LED_Pin;
   g.Mode  = GPIO_MODE_OUTPUT_PP;
   g.Pull  = GPIO_NOPULL;
   g.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(LED_GPIO_Port, &g);
-
-  g.Pin   = FLASH_CS_Pin;
-  g.Speed = GPIO_SPEED_FREQ_HIGH;
-  HAL_GPIO_Init(FLASH_CS_GPIO_Port, &g);
 
   /* На Nucleo B1 має зовнішній pull-up; внутрішній — для Wokwi/запасу. */
   g.Pin   = BTN_Pin;
@@ -390,64 +366,6 @@ static HAL_StatusTypeDef MX_ADC1_Init(void)
     printf("[WARN] ADC1 calibration failed, using uncalibrated values\r\n");
   }
   return HAL_OK;
-}
-
-/** TIM3: 48 MHz / 48 = 1 MHz, ARR = 20000 -> 50 Hz; CCR = мкс імпульсу. */
-static HAL_StatusTypeDef MX_TIM3_Init(void)
-{
-  TIM_MasterConfigTypeDef master = { 0 };
-  TIM_OC_InitTypeDef oc = { 0 };
-
-  htim3.Instance               = TIM3;
-  htim3.Init.Prescaler         = (HAL_RCC_GetPCLK1Freq() / 1000000U) - 1U;
-  htim3.Init.CounterMode       = TIM_COUNTERMODE_UP;
-  htim3.Init.Period            = 20000U - 1U;
-  htim3.Init.ClockDivision     = TIM_CLOCKDIVISION_DIV1;
-  htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
-  if (HAL_TIM_PWM_Init(&htim3) != HAL_OK)
-  {
-    return HAL_ERROR;
-  }
-
-  master.MasterOutputTrigger = TIM_TRGO_RESET;
-  master.MasterSlaveMode     = TIM_MASTERSLAVEMODE_DISABLE;
-  if (HAL_TIMEx_MasterConfigSynchronization(&htim3, &master) != HAL_OK)
-  {
-    return HAL_ERROR;
-  }
-
-  oc.OCMode     = TIM_OCMODE_PWM1;
-  oc.Pulse      = (SERVO_MIN_US + SERVO_MAX_US) / 2U; /* 90° */
-  oc.OCPolarity = TIM_OCPOLARITY_HIGH;
-  oc.OCFastMode = TIM_OCFAST_DISABLE;
-  if (HAL_TIM_PWM_ConfigChannel(&htim3, &oc, SERVO_PAN_CHANNEL) != HAL_OK ||
-      HAL_TIM_PWM_ConfigChannel(&htim3, &oc, SERVO_TILT_CHANNEL) != HAL_OK)
-  {
-    return HAL_ERROR;
-  }
-
-  HAL_TIM_MspPostInit(&htim3);
-  return HAL_OK;
-}
-
-/** SPI1 master, mode 0 (CPOL=0, CPHA=0), 48 MHz / 16 = 3 MHz — W25Q64 тягне до 104 MHz. */
-static HAL_StatusTypeDef MX_SPI1_Init(void)
-{
-  hspi1.Instance               = SPI1;
-  hspi1.Init.Mode              = SPI_MODE_MASTER;
-  hspi1.Init.Direction         = SPI_DIRECTION_2LINES;
-  hspi1.Init.DataSize          = SPI_DATASIZE_8BIT;
-  hspi1.Init.CLKPolarity       = SPI_POLARITY_LOW;
-  hspi1.Init.CLKPhase          = SPI_PHASE_1EDGE;
-  hspi1.Init.NSS               = SPI_NSS_SOFT;
-  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
-  hspi1.Init.FirstBit          = SPI_FIRSTBIT_MSB;
-  hspi1.Init.TIMode            = SPI_TIMODE_DISABLE;
-  hspi1.Init.CRCCalculation    = SPI_CRCCALCULATION_DISABLE;
-  hspi1.Init.CRCPolynomial     = 7;
-  hspi1.Init.CRCLength         = SPI_CRC_LENGTH_DATASIZE;
-  hspi1.Init.NSSPMode          = SPI_NSS_PULSE_DISABLE;
-  return HAL_SPI_Init(&hspi1);
 }
 
 void Error_Handler(void)
