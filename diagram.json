@@ -1,0 +1,80 @@
+{
+  "version": 1,
+  "author": "Yevhenii Sas",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "board-st-nucleo-c031c6", "id": "nucleo", "top": 0, "left": 0, "attrs": {} },
+    {
+      "type": "wokwi-mpu6050",
+      "id": "imu",
+      "top": -140,
+      "left": 300,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-potentiometer",
+      "id": "pot",
+      "top": 230,
+      "left": -230,
+      "attrs": { "value": "512" }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "btn1",
+      "top": 90,
+      "left": -230,
+      "attrs": { "color": "blue", "label": "B1 HOLD", "key": "h" }
+    },
+    {
+      "type": "wokwi-servo",
+      "id": "servo_pan",
+      "top": 40,
+      "left": 400,
+      "attrs": { "hornColor": "#1E88E5" }
+    },
+    {
+      "type": "wokwi-servo",
+      "id": "servo_tilt",
+      "top": 180,
+      "left": 400,
+      "attrs": { "hornColor": "#E53935" }
+    },
+    {
+      "type": "wokwi-logic-analyzer",
+      "id": "logic",
+      "top": 360,
+      "left": 300,
+      "attrs": { "filename": "lr1-capture", "channelNames": "SCL,SDA,PWM_PAN,UART_TX,D4,D5,D6,D7" }
+    }
+  ],
+  "connections": [
+    [ "$serialMonitor:TX", "nucleo:PA3", "", [] ],
+    [ "$serialMonitor:RX", "nucleo:PA2", "", [] ],
+
+    [ "imu:VCC", "nucleo:3V3.1", "red", [] ],
+    [ "imu:GND", "nucleo:GND.1", "black", [] ],
+    [ "imu:SCL", "nucleo:PB8", "yellow", [] ],
+    [ "imu:SDA", "nucleo:PB9", "green", [] ],
+
+    [ "pot:VCC", "nucleo:3V3.2", "red", [] ],
+    [ "pot:GND", "nucleo:GND.2", "black", [] ],
+    [ "pot:SIG", "nucleo:PA0", "orange", [] ],
+
+    [ "btn1:1.l", "nucleo:PC13", "blue", [] ],
+    [ "btn1:2.l", "nucleo:GND.3", "black", [] ],
+
+    [ "servo_pan:PWM", "nucleo:PB4", "orange", [] ],
+    [ "servo_pan:V+", "nucleo:5V.1", "red", [] ],
+    [ "servo_pan:GND", "nucleo:GND.4", "black", [] ],
+    [ "servo_tilt:PWM", "nucleo:PB5", "orange", [] ],
+    [ "servo_tilt:V+", "nucleo:5V.2", "red", [] ],
+    [ "servo_tilt:GND", "nucleo:GND.5", "black", [] ],
+
+    [ "logic:D0", "nucleo:PB8", "yellow", [] ],
+    [ "logic:D1", "nucleo:PB9", "green", [] ],
+    [ "logic:D2", "nucleo:PB4", "orange", [] ],
+    [ "logic:D3", "nucleo:PA2", "violet", [] ],
+    [ "logic:GND", "nucleo:GND.6", "black", [] ]
+  ],
+  "dependencies": {}
+}
