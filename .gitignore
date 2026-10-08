@@ -1,0 +1,22 @@
+# Артефакти збірки
+build/
+*.o
+*.d
+*.lst
+*.elf
+*.hex
+*.bin
+*.map
+
+# Wokwi: запис логічного аналізатора
+*.vcd
+
+# IDE / ОС
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+
+# Відео не кладемо в git (десятки МБ) — тільки посилання на Google Drive
+*.mp4
+*.mov
