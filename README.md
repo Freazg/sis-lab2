@@ -16,6 +16,12 @@
 
 ## Швидкий старт
 
+Перевірити, що Docker daemon запущений (на macOS — відкрити Docker Desktop):
+
+```bash
+docker info
+```
+
 Один раз зібрати образ тулчейну:
 
 ```bash
