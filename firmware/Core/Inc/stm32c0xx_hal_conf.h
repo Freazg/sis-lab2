@@ -34,30 +34,18 @@ extern "C" {
   * @brief This is the list of modules to be used in the HAL driver
   */
 #define HAL_MODULE_ENABLED
-#define HAL_ADC_MODULE_ENABLED
-#define HAL_CORTEX_MODULE_ENABLED
-/* #define HAL_CRC_MODULE_ENABLED */
-#define HAL_DMA_MODULE_ENABLED
-#define HAL_EXTI_MODULE_ENABLED
-/* #define HAL_FDCAN_MODULE_ENABLED */
-#define HAL_FLASH_MODULE_ENABLED
-#define HAL_GPIO_MODULE_ENABLED
-/* #define HAL_HCD_MODULE_ENABLED */
-#define HAL_I2C_MODULE_ENABLED
-/* #define HAL_I2S_MODULE_ENABLED */
-/* #define HAL_IRDA_MODULE_ENABLED */
-/* #define HAL_IWDG_MODULE_ENABLED */
-/* #define HAL_PCD_MODULE_ENABLED */
-#define HAL_PWR_MODULE_ENABLED
-#define HAL_RCC_MODULE_ENABLED
-/* #define HAL_RTC_MODULE_ENABLED */
-/* #define HAL_SMARTCARD_MODULE_ENABLED */
-/* #define HAL_SMBUS_MODULE_ENABLED */
-/* #define HAL_SPI_MODULE_ENABLED */
-/* #define HAL_TIM_MODULE_ENABLED */
-#define HAL_UART_MODULE_ENABLED
-/* #define HAL_USART_MODULE_ENABLED */
-/* #define HAL_WWDG_MODULE_ENABLED */
+/* Увімкнено лише модулі, які використовує прошивка ЛР2 (методичка, п. 4.5):        */
+#define HAL_CORTEX_MODULE_ENABLED  /* SysTick 1 кГц (HAL_GetTick), NVIC                 */
+#define HAL_DMA_MODULE_ENABLED     /* лише типи: хендли UART/SPI/I2C містять DMA_HandleTypeDef*; DMA не запускається */
+#define HAL_FLASH_MODULE_ENABLED   /* FLASH_LATENCY_1 у HAL_RCC_ClockConfig() (48 МГц)  */
+#define HAL_GPIO_MODULE_ENABLED    /* LED ×2, B1, CS# флеш, MARK, alternate functions  */
+#define HAL_I2C_MODULE_ENABLED     /* I2C1 -> MPU-6050                                  */
+#define HAL_PWR_MODULE_ENABLED     /* __HAL_RCC_PWR_CLK_ENABLE() у HAL_MspInit          */
+#define HAL_RCC_MODULE_ENABLED     /* HSI48 -> SYSCLK 48 МГц                            */
+#define HAL_SPI_MODULE_ENABLED     /* SPI1 -> W25Q64                                    */
+#define HAL_TIM_MODULE_ENABLED     /* TIM3 CH1/CH2 PWM 50 Гц -> SG92R ×2                */
+#define HAL_UART_MODULE_ENABLED    /* USART2 (ST-LINK VCP) і USART1 (FT232RL)           */
+/* Вимкнено: ADC, CRC, EXTI, FDCAN, HCD, I2S, IRDA, IWDG, PCD, RTC, SMARTCARD, SMBUS, USART(synchronous), WWDG */
 
 /* ########################## Register Callbacks selection ############################## */
 /**

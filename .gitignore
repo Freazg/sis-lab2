@@ -20,3 +20,10 @@ build/
 # Відео не кладемо в git (десятки МБ) — тільки посилання на Google Drive
 *.mp4
 *.mov
+
+# Wokwi custom chips: збираються `make chips`, заголовок API тягне wokwi-cli
+chips/dist/*.wasm
+chips/*/wokwi-api.h
+# Тимчасові файли симуляції
+wokwi.vcd
+*.tmp.json

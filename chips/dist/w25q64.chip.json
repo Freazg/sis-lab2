@@ -1,0 +1,6 @@
+{
+  "name": "W25Q64JV",
+  "author": "Sas Yevhenii (model per Winbond W25Q64JV datasheet Rev J)",
+  "pins": ["CS", "DO", "WP", "GND", "DI", "CLK", "HOLD", "VCC"],
+  "controls": []
+}

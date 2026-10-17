@@ -1,0 +1,6 @@
+{
+  "name": "FT232RL USB-UART",
+  "author": "Sas Yevhenii (model per FTDI FT232R datasheet v2.10)",
+  "pins": ["TXD", "RXD", "VCCIO", "GND"],
+  "controls": []
+}
