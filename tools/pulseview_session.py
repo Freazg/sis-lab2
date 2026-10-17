@@ -67,14 +67,33 @@ def window(src, marks, pad_ns):
     return sig, t0, t1
 
 
+HOLD_NS = 100  # tHD;DAT для файлів PulseView 0.4.2 (див. README у docs/captures/pulseview)
+
+
 def write_vcd(path, sig, t0, t1):
+    # Модель Wokwi змінює SDA в ту саму наносекунду, що й спад SCL. Стара libsigrok
+    # (PulseView 0.4.2) застосовує таку пару подій у неправильному порядку і бачить
+    # хибні START/STOP. Тут такі зміни SDA зсуваються на HOLD_NS після спаду SCL.
+    if "SDA" in sig and "SCL" in sig:
+        scl_fall = {t for t, v in sig["SCL"] if v == 0}
+        sig = dict(sig)
+        sig["SDA"] = [(t + HOLD_NS if t in scl_fall else t, v) for t, v in sig["SDA"]]
     names = list(sig)
     ids = {n: chr(33 + i) for i, n in enumerate(names)}
     lines = ["$timescale 1ns $end", "$scope module logic $end"]
     lines += [f"$var wire 1 {ids[n]} {n} $end" for n in names]
     lines += ["$upscope $end", "$enddefinitions $end", "#0"]
     lines += [f"{ac.level_at(sig[n], t0)}{ids[n]}" for n in names]
-    events = sorted((t, n, v) for n in names for t, v in sig[n] if t0 < t <= t1)
+    # Модель Wokwi інколи пише дві зміни одного сигналу в ту саму наносекунду
+    # (імпульс нульової ширини). Значення має остання з них, тому порядок у межах
+    # сигналу зберігається, а проміжні значення відкидаються.
+    last = {}
+    for n in names:
+        for t, v in sig[n]:
+            if t0 < t <= t1:
+                last[(t, n)] = v
+    events = sorted((t, names.index(n), n, v) for (t, n), v in last.items())
+    events = [(t, n, v) for t, _, n, v in events]
     cur = None
     for t, n, v in events:
         if t != cur:
@@ -106,6 +125,10 @@ def main():
     OUT.mkdir(parents=True, exist_ok=True)
     readme = ["# Записи для PulseView", "",
               "Кожен файл — вікно навколо транзакції з відповідного docs/captures/*.vcd (час від 0).",
+              "У записах I²C зміни SDA, що в моделі Wokwi збігаються зі спадом SCL з точністю 0 нс, зсунуто на",
+              f"{HOLD_NS} нс після спаду (tHD;DAT): PulseView 0.4.2 (libsigrok 0.5.1) інакше обробляє одночасні події",
+              "у неправильному порядку і показує хибні START/STOP. Оригінальні записи (і декодування sigrok-cli 0.7.2)",
+              "не змінені.",
               "Відкрити з уже налаштованими декодерами:", ""]
     for name, v in VIEWS.items():
         sig, t0, t1 = window(v["src"], v["marks"], v["pad_us"] * 1000)
@@ -115,6 +138,8 @@ def main():
         readme.append(f"- **{name}** (з `{v['src']}.vcd`, {t0} … {t1} нс, {sr} MS/s):")
         readme.append(f"  `pulseview -i {name}.vcd -I vcd:downsample={v['ds']} -s {name}.pvs`")
         print(f"{name}: {(t1 - t0) / 1e3:.1f} us window, samplerate {sr} MS/s")
+    readme += ["", "`*.sr` — ті самі вікна в рідному форматі sigrok (`sigrok-cli -I vcd:downsample=N -i <name>.vcd -o <name>.sr`),",
+               "відкриваються в PulseView без параметрів імпорту: `pulseview <name>.sr`."]
     (OUT / "README.md").write_text("\n".join(readme) + "\n")
 
 

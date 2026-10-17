@@ -1,6 +1,10 @@
 # Записи для PulseView
 
 Кожен файл — вікно навколо транзакції з відповідного docs/captures/*.vcd (час від 0).
+У записах I²C зміни SDA, що в моделі Wokwi збігаються зі спадом SCL з точністю 0 нс, зсунуто на
+100 нс після спаду (tHD;DAT): PulseView 0.4.2 (libsigrok 0.5.1) інакше обробляє одночасні події
+у неправильному порядку і показує хибні START/STOP. Оригінальні записи (і декодування sigrok-cli 0.7.2)
+не змінені.
 Відкрити з уже налаштованими декодерами:
 
 - **i2c-whoami-burst** (з `i2c-mpu6050-whoami-burst.vcd`, 322693250 … 326331600 нс, 20 MS/s):
@@ -17,3 +21,6 @@
   `pulseview -i uart-payload.vcd -I vcd:downsample=100 -s uart-payload.pvs`
 - **i2c-anomaly** (з `i2c-anomaly-nack-restart-hang.vcd`, 323460950 … 353091475 нс, 20 MS/s):
   `pulseview -i i2c-anomaly.vcd -I vcd:downsample=50 -s i2c-anomaly.pvs`
+
+`*.sr` — ті самі вікна в рідному форматі sigrok (`sigrok-cli -I vcd:downsample=N -i <name>.vcd -o <name>.sr`),
+відкриваються в PulseView без параметрів імпорту: `pulseview <name>.sr`.
