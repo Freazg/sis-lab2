@@ -27,3 +27,6 @@ chips/*/wokwi-api.h
 # Тимчасові файли симуляції
 wokwi.vcd
 *.tmp.json
+
+# Записи логічного аналізатора — артефакти ЛР2
+!docs/captures/*.vcd

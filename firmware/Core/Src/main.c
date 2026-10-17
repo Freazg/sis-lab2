@@ -80,6 +80,7 @@ int main(void)
     .board_name = BOARD_NAME,
     .fw_version = FW_VERSION,
   };
+  platform_con_start_rx();
   app_init(&app, &hw);
   /* USER CODE END 2 */
 

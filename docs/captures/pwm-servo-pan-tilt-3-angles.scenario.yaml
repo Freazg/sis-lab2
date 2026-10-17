@@ -1,0 +1,12 @@
+name: 'pwm-servo-pan-tilt-3-angles'
+version: 1
+author: 'tools/capture.py'
+steps:
+  - wait-serial: 'READY'
+  - delay: 20ms
+  - write-serial: "mode hold\n"
+  - wait-serial: 'MODE,HOLD'
+  - delay: 20ms
+  - write-serial: "cap pwm\n"
+  - wait-serial: 'CAP,pwm,END'
+  - delay: 5ms

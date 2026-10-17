@@ -1,0 +1,22 @@
+
+==== LR2 Motion-Mirroring: NUCLEO-C031C6, fw lr2-1.0 ====
+ST,dev=BEGIN,fw=lr2-1.0,board=NUCLEO-C031C6
+ST,dev=MCU,res=PASS,board=NUCLEO-C031C6,sysclk_hz=48000000
+ST,dev=MPU6050,res=PASS,bus=I2C1,addr=0x68,who=0x68,acc_mg=0/0/1000,norm_mg=1000,dev_mg=0,gyro_mdps=0/0/0,temp_cdeg=2400,chk=AGT
+ST,dev=W25Q64,res=PASS,bus=SPI1,jedec=EF4017,test_addr=0x7FF000,len=32,erase_ms=46,mismatch=0,stage=readback,err=OK
+ST,dev=SERVO_PAN,res=PASS,pwm=TIM3_CH1,period_us=20000,pulse_us_0deg=544,pulse_us_180deg=2400,pulse_us_90deg=1472
+ST,dev=SERVO_TILT,res=PASS,pwm=TIM3_CH2,period_us=20000,pulse_us_0deg=544,pulse_us_180deg=2400,pulse_us_90deg=1472
+ST,dev=LED_LIVE,res=PASS,readback_on=1,readback_off=1
+ST,dev=LED_REC,res=PASS,readback_on=1,readback_off=1
+ST,dev=BTN_B1,res=PASS,pin=PC13,idle=released
+ST,dev=FT232RL,res=PASS,uart=USART1,baud=115200,tx=OK
+ST,dev=SUMMARY,res=PASS,pass=9,fail=0
+MODE,LIVE
+cmds: help | selftest | status | mode live|hold | servo pan|tilt <0..180>
+      cap i2c|spi|pwm|uart|anomaly
+READYMODE,HOLDCAP,anomaly,BEGIN
+CAP,anomaly,step=wrong_addr,addr=0x69,st=NACK
+CAP,anomaly,step=mem_read_restart,val=0x00,st=TIMEOUT
+CAP,anomaly,step=read_before_recover,val=0x00,st=BUS
+CAP,anomaly,step=read_after_recover,val=0x68,st=OK
+CAP,anomaly,END

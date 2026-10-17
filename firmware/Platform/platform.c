@@ -240,15 +240,44 @@ void platform_con_write(const char *s, size_t len)
   HAL_UART_Transmit(&huart2, (const uint8_t *)s, (uint16_t)len, 100);
 }
 
+/* Прийом консолі: переривання RXNE -> кільцевий буфер. Опитування RXNE з головного циклу
+ * втрачало байти (ORE) під час 14-байтового читання MPU-6050 у режимі LIVE. */
+#define CON_RX_BUF 64u /* степінь двійки */
+static volatile uint8_t con_rx_buf[CON_RX_BUF];
+static volatile uint8_t con_rx_head;
+static volatile uint8_t con_rx_tail;
+
+void platform_con_start_rx(void)
+{
+  __HAL_UART_ENABLE_IT(&huart2, UART_IT_RXNE);
+  HAL_NVIC_SetPriority(USART2_IRQn, 1, 0);
+  HAL_NVIC_EnableIRQ(USART2_IRQn);
+}
+
+void platform_con_rx_isr(void)
+{
+  USART_TypeDef *u = huart2.Instance;
+  if (u->ISR & USART_ISR_ORE) {
+    u->ICR = USART_ICR_ORECF;
+  }
+  if (u->ISR & USART_ISR_RXNE_RXFNE) {
+    uint8_t b = (uint8_t)(u->RDR & 0xFFu);
+    uint8_t next = (uint8_t)((con_rx_head + 1u) & (CON_RX_BUF - 1u));
+    if (next != con_rx_tail) { /* при переповненні байт відкидається */
+      con_rx_buf[con_rx_head] = b;
+      con_rx_head = next;
+    }
+  }
+}
+
 int platform_con_getc(void)
 {
-  if (__HAL_UART_GET_FLAG(&huart2, UART_FLAG_ORE)) {
-    __HAL_UART_CLEAR_FLAG(&huart2, UART_CLEAR_OREF);
+  if (con_rx_tail == con_rx_head) {
+    return -1;
   }
-  if (__HAL_UART_GET_FLAG(&huart2, UART_FLAG_RXNE)) {
-    return (int)(huart2.Instance->RDR & 0xFFu);
-  }
-  return -1;
+  int c = con_rx_buf[con_rx_tail];
+  con_rx_tail = (uint8_t)((con_rx_tail + 1u) & (CON_RX_BUF - 1u));
+  return c;
 }
 
 dev_status_t platform_aux_write(const char *s, size_t len)

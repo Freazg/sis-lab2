@@ -27,6 +27,8 @@ void platform_mark(bool level);
 
 void platform_con_write(const char *s, size_t len);
 int  platform_con_getc(void);
+void platform_con_start_rx(void); /**< увімкнути переривання прийому USART2 */
+void platform_con_rx_isr(void);   /**< викликається з USART2_IRQHandler */
 dev_status_t platform_aux_write(const char *s, size_t len);
 
 dev_status_t platform_i2c_mem_read_restart(uint8_t addr7, uint8_t reg, uint8_t *val);
