@@ -1,4 +1,23 @@
-# Апаратні компоненти
+# Апаратні компоненти (актуалізовано для ЛР2)
+
+> **ЛР2:** до стенда підключено всі пристрої PRD теми 6 одночасно. Повна розводка, адреси, бюджет живлення
+> і параметри шин — у [`pinout.md`](pinout.md); тут — склад стенда і характеристики компонентів.
+
+| Компонент (PRD / Додаток A) | Інтерфейс | У Wokwi | Ключові параметри | Джерело |
+|---|---|---|---|---|
+| NUCLEO-C031C6 (замість F446RE/F411RE — немає в Wokwi) | — | `board-st-nucleo-c031c6` | Cortex-M0+ 48 МГц, 32 КБ Flash, 12 КБ RAM, LQFP48 | DS13867 Rev 4, UM2953 Rev 2 |
+| MPU-6050 (GY-521) | I2C1 0x68, Fm | `wokwi-mpu6050` | WHO_AM_I 0x68; ±2 g = 16384 LSB/g; 3.8 мА; VDD 2.375–3.46 В | PS-MPU-6000A-00 Rev 3.1 §6.2–6.3, RM-MPU-6000A-00 Rev 4.0 |
+| W25Q64JV | SPI1 mode 0, 3 МГц, CS# PB0 | custom chip `chips/w25q64` | JEDEC EF 40 17; VCC 2.7–3.6 В (не 5 В tolerant); tPP 0.4/3 мс, tSE 45/400 мс; 25 мА при записі | W25Q64JV Rev J §8–9 |
+| SG92R ×2 | TIM3 CH1/CH2 PWM 50 Гц | `wokwi-servo` ×2 | 4.8 В, 0.1 с/60°, dead band 1 мкс; імпульс 544…2400 мкс (калібрування) | towerpro.com.tw |
+| FT232RL | USART1 115200 8N1 | custom chip `chips/ft232rl` | VCCIO 1.8–5.25 В; 15 мА від USB ПК | FT232R DS v2.10 Table 5.2 |
+| LED ×2 (Live / Rec) | GPIO PA15, PB10 | `wokwi-led` + 330 Ω | ≈ 4 мА кожен | DS13867 Table 22 |
+| B1 USER | GPIO PC13 | `wokwi-pushbutton` | pull-up, active low | UM2953 §6.11 |
+| Логічний аналізатор | — | `wokwi-logic-analyzer` | 8 каналів, VCD 1 нс | docs.wokwi.com |
+
+Нижче — розділи ЛР1 (компоненти пулу форми B), збережені для історії.
+
+---
+
 
 Форма виконання: **B — симулятор Wokwi**.
 Компоненти ЛР1 взято **лише з рекомендованого пулу методички для форми B** (п. 2.2). Набір збігається з прикладом мінімуму з методички: «MPU-6050 (I²C) + potentiometer (ADC) + button (GPIO) + LCD (I²C)».
