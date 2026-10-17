@@ -1,0 +1,36 @@
+[General]
+decode_signals=2
+views=1
+meta_objs=0
+
+[decode_signal0]
+name=PWM PWM_PAN
+enabled=true
+decoders=1
+channels=1
+
+[decode_signal0/decoder0]
+id=pwm
+visible=true
+options=0
+
+[decode_signal0/channel0]
+name=data
+initial_pin_state=2
+assigned_signal_name=PWM_PAN
+
+[decode_signal1]
+name=PWM PWM_TILT
+enabled=true
+decoders=1
+channels=1
+
+[decode_signal1/decoder0]
+id=pwm
+visible=true
+options=0
+
+[decode_signal1/channel0]
+name=data
+initial_pin_state=2
+assigned_signal_name=PWM_TILT
