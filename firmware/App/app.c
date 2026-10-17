@@ -222,8 +222,7 @@ void app_init(app_t *app, const app_hw_t *hw)
   app->tilt_deg = 90;
   app->orient.pitch_cdeg = 0;
   app->orient.roll_cdeg = 0;
-  app->cli.len = 0;
-  app->cli.overflow = 0;
+  app->cli = (cli_reader_t){ { 0 }, 0, 0, 0 };
 
   app_print(hw, "\r\n==== LR2 Motion-Mirroring: %s, fw %s ====\r\n", hw->board_name, hw->fw_version);
   selftest_result_t r = selftest_run(hw);
@@ -245,8 +244,6 @@ void app_poll(app_t *app)
   while ((c = hw->con_getc()) >= 0) {
     if (cli_feed(&app->cli, (char)c)) {
       cli_cmd_t cmd = app->cli.overflow ? (cli_cmd_t){ CLI_ERROR, 0, 0 } : cli_parse(app->cli.buf);
-      app->cli.len = 0;
-      app->cli.overflow = 0;
       app_execute(app, &cmd);
     }
   }

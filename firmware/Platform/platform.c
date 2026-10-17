@@ -156,7 +156,16 @@ static dev_status_t spi_transfer(void *ctx, const uint8_t *tx, uint8_t *rx, size
   } else if (tx != NULL) {
     st = HAL_SPI_Transmit(h, (uint8_t *)tx, (uint16_t)len, SPI_TIMEOUT_MS);
   } else {
-    st = HAL_SPI_Receive(h, rx, (uint16_t)len, SPI_TIMEOUT_MS); /* MOSI = 0xFF/0x00 dummy */
+    /* Фаза читання: на MOSI — визначені dummy-байти 0xFF. HAL_SPI_Receive у режимі
+     * full-duplex master передає вміст буфера rx як TX (0x00 або сміття) — знайдено
+     * тестом test_probe_matches_capture при порівнянні з записом шини. */
+    static const uint8_t ff[16] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+                                    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+    st = HAL_OK;
+    for (size_t off = 0; off < len && st == HAL_OK; off += sizeof ff) {
+      size_t n = (len - off) < sizeof ff ? (len - off) : sizeof ff;
+      st = HAL_SPI_TransmitReceive(h, (uint8_t *)ff, rx + off, (uint16_t)n, SPI_TIMEOUT_MS);
+    }
   }
   return st == HAL_OK ? DEV_OK : (st == HAL_TIMEOUT ? DEV_ERR_TIMEOUT : DEV_ERR_BUS);
 }

@@ -108,11 +108,17 @@ cli_cmd_t cli_parse(const char *line)
 
 int cli_feed(cli_reader_t *r, char ch)
 {
+  if (r->complete) { /* попередній рядок уже віддано — починаємо новий */
+    r->len = 0;
+    r->overflow = 0;
+    r->complete = 0;
+  }
   if (ch == '\r' || ch == '\n') {
     if (r->len == 0 && !r->overflow) {
       return 0; /* порожній рядок або друга половина "\r\n" */
     }
     r->buf[r->len] = '\0';
+    r->complete = 1;
     return 1;
   }
   if (r->len + 1 < sizeof r->buf) {

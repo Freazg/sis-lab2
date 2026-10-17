@@ -1,0 +1,62 @@
+# CI ЛР2: на кожен pull request і push у main/lab* — збірка прошивки в Docker,
+# перевірка залежностей шарів, хостові тести з покриттям; за наявності секрету
+# WOKWI_CLI_TOKEN — headless-симуляція з перевіркою самотесту.
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main, "lab*"]
+
+jobs:
+  build-test:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Docker image (toolchain)
+        run: make image
+
+      - name: Build firmware (Wokwi target, -Wall -Wextra -Werror)
+        run: make build
+
+      - name: Build firmware (NUCLEO-C031C6 target)
+        run: make build-nucleo
+
+      - name: Host tests + coverage (gcovr, fail-under-line)
+        run: make coverage
+
+      - name: Reproducible build check (SHA-256 of two clean builds)
+        run: |
+          sha256sum firmware/build/firmware.bin > first.sha
+          make clean && make build
+          sha256sum -c first.sha
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: firmware-and-coverage
+          path: |
+            firmware/build/firmware.elf
+            firmware/build/firmware.hex
+            firmware/build-nucleo/firmware.bin
+            tests/build/coverage.txt
+
+  simulate:
+    needs: build-test
+    runs-on: ubuntu-22.04
+    env:
+      WOKWI_CLI_TOKEN: ${{ secrets.WOKWI_CLI_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Skip without Wokwi token
+        if: env.WOKWI_CLI_TOKEN == ''
+        run: echo "Секрет WOKWI_CLI_TOKEN не задано — симуляцію пропущено"
+      - name: Install Wokwi CLI
+        if: env.WOKWI_CLI_TOKEN != ''
+        run: curl -L https://wokwi.com/ci/install.sh | sh && echo "$HOME/bin" >> "$GITHUB_PATH"
+      - name: Build firmware and custom chips
+        if: env.WOKWI_CLI_TOKEN != ''
+        run: make image build chips
+      - name: Self-test in simulator (ST,dev=SUMMARY,res=PASS)
+        if: env.WOKWI_CLI_TOKEN != ''
+        run: make sim

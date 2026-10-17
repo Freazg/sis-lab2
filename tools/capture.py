@@ -123,17 +123,29 @@ def make_scenario(name, commands, until):
     return path
 
 
+# Які класи анотацій експортувати для кожного декодера (без побітових рядків)
+ANN = {
+    "i2c": [("i2c", "start:repeat-start:stop:ack:nack:address-read:address-write:data-read:data-write:warnings")],
+    "spi": [("spi-mosi", "mosi-data"), ("spi-miso", "miso-data"), ("spi-transfer", "mosi-transfer:miso-transfer")],
+    "uart": [("uart", "rx-data")],
+    "pwm": [("pwm-duty", "duty-cycle"), ("pwm-period", "period")],
+}
+
+
 def decode(name, cfg):
     vcd = OUT / f"{name}.vcd"
+    for old in OUT.glob(f"{name}.*.txt"):
+        old.unlink()
     for dec in cfg["decoders"]:
         proto = dec.split(":")[0]
-        tag = proto + ("-" + dec.split("=")[1].split(":")[0] if proto in ("pwm", "uart") else "")
-        out = OUT / f"{name}.{tag}.txt"
-        res = subprocess.run([SIGROK, "-I", f"vcd:downsample={cfg['downsample']}", "-i", str(vcd),
-                              "-P", dec, "--protocol-decoder-samplenum", "-A", proto],
-                             capture_output=True, text=True)
-        out.write_text(res.stdout)
-        print(f"   decoded {out.name}: {len(res.stdout.splitlines())} annotations")
+        chan = "-" + dec.split("=")[1].split(":")[0] if proto in ("pwm", "uart") else ""
+        for tag, classes in ANN[proto]:
+            out = OUT / f"{name}.{tag}{chan}.txt"
+            res = subprocess.run([SIGROK, "-I", f"vcd:downsample={cfg['downsample']}", "-i", str(vcd),
+                                  "-P", dec, "--protocol-decoder-samplenum", "-A", f"{proto}={classes}"],
+                                 capture_output=True, text=True)
+            out.write_text(res.stdout)
+            print(f"   decoded {out.name}: {len(res.stdout.splitlines())} annotations")
 
 
 def run(name, cfg, elf=None):
@@ -156,9 +168,14 @@ def run(name, cfg, elf=None):
 
 def main(argv):
     OUT.mkdir(parents=True, exist_ok=True)
-    names = argv or list(CAPTURES)
+    decode_only = "--decode-only" in argv
+    names = [a for a in argv if not a.startswith("--")] or list(CAPTURES)
     for n in names:
-        run(n, CAPTURES[n], CAPTURES[n].get("elf"))
+        if decode_only:
+            print(f"== {n} (decode only)")
+            decode(n, CAPTURES[n])
+        else:
+            run(n, CAPTURES[n], CAPTURES[n].get("elf"))
 
 
 if __name__ == "__main__":

@@ -41,11 +41,15 @@ typedef struct {
 /** Розібрати один рядок (без '\n'). Порожній рядок -> CLI_NONE. */
 cli_cmd_t cli_parse(const char *line);
 
-/** Накопичувач рядка: повертає 1, коли рядок завершено ('\r' або '\n'). */
+/**
+ * Накопичувач рядка: повертає 1, коли рядок завершено ('\r' або '\n'); рядок у buf
+ * дійсний до наступного виклику — тоді читач сам починає новий рядок.
+ */
 typedef struct {
   char buf[CLI_LINE_MAX];
   size_t len;
   uint8_t overflow;
+  uint8_t complete;
 } cli_reader_t;
 
 int cli_feed(cli_reader_t *r, char c);
