@@ -7,7 +7,7 @@
 
 | Документ | Що всередині |
 |---|---|
-| [docs/lab2-report.md](docs/lab2-report.md) | звіт ЛР2 |
+| [docs/lab2-report.md](docs/lab2-report.md) | звіт ЛР2 ([PDF](docs/lab2-report.pdf), [відеозвіт](https://drive.google.com/file/d/1oGNvfJEP8LUogLoFS4Q4c2V6_uePuqIl/view?usp=sharing)) |
 | [docs/pinout.md](docs/pinout.md) | піни, адреси, живлення, шини, схема, конфлікти, інструкція зі складання |
 | [docs/architecture.md](docs/architecture.md) | шари, правила залежностей, component diagram |
 | [docs/captures/analysis.md](docs/captures/analysis.md) | аналіз записів I²C/SPI/PWM/UART, аномалії A1–A6 |
