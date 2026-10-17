@@ -1,0 +1,12 @@
+name: 'i2c-anomaly-nack-restart-hang'
+version: 1
+author: 'tools/capture.py'
+steps:
+  - wait-serial: 'READY'
+  - delay: 20ms
+  - write-serial: "mode hold\n"
+  - wait-serial: 'MODE,HOLD'
+  - delay: 20ms
+  - write-serial: "cap anomaly\n"
+  - wait-serial: 'CAP,anomaly,END'
+  - delay: 5ms

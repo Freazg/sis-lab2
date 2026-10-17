@@ -1,60 +1,45 @@
-# ЛР1 — Bring-up STM32 (Wokwi) · Motion-Mirroring Teleoperator
+# Motion-Mirroring Teleoperator — STM32 (NUCLEO-C031C6, Wokwi)
 
-Прошивка на **STM32 HAL (C)** для **NUCLEO-C031C6** у симуляторі **Wokwi** (форма B).
-Збирається в Docker. На хості не треба нічого ставити, крім Docker і VS Code.
+Курс «Системне програмування вбудованих систем», КПІ ім. Ігоря Сікорського, ІО-31, Сас Євгеній.
+
+**ЛР2:** усі пристрої PRD в одній прошивці (MPU-6050, W25Q64, 2×SG92R, FT232RL, 2 LED, B1), самоперевірка,
+відтворювані записи логічного аналізатора з декодуванням і аналізом, шарова архітектура, хостові тести, CI.
+
+| Документ | Що всередині |
+|---|---|
+| [docs/lab2-report.md](docs/lab2-report.md) | звіт ЛР2 ([PDF](docs/lab2-report.pdf), [відеозвіт](https://drive.google.com/file/d/1oGNvfJEP8LUogLoFS4Q4c2V6_uePuqIl/view?usp=sharing)) |
+| [docs/pinout.md](docs/pinout.md) | піни, адреси, живлення, шини, схема, конфлікти, інструкція зі складання |
+| [docs/architecture.md](docs/architecture.md) | шари, правила залежностей, component diagram |
+| [docs/captures/analysis.md](docs/captures/analysis.md) | аналіз записів I²C/SPI/PWM/UART, аномалії A1–A6 |
+| [docs/PRD.md](docs/PRD.md), [docs/hardware-components.md](docs/hardware-components.md) | вимоги і компоненти |
 
 ```
-/docker/Dockerfile              тулчейн-образ (ubuntu:22.04 + gcc-arm-none-eabi + newlib + srecord)
-/firmware/                      HAL-проєкт у структурі CubeMX (Core/, Drivers/, startup, .ld, Makefile)
-/docs/PRD.md                    вимоги до продукту
-/docs/hardware-components.md    компоненти, піни, посилання на datasheet
-/docs/report.md                 звіт ЛР1
-/docs/screenshots/              скріншоти CubeMX / Wokwi / логічного аналізатора
-/diagram.json, /wokwi.toml      схема і конфіг симулятора
-/Makefile                       обгортка над Docker
+docker/            тулчейн-образ (arm-none-eabi-gcc, gcc, gcovr)
+firmware/          Core/ Drivers/ Platform/ Devices/ App/ (docs/architecture.md)
+chips/             моделі W25Q64JV і FT232RL для Wokwi (Chips API, за datasheet)
+tests/             хостові тести Unity + test doubles + вектори з записів
+tools/             capture.py, analyze_captures.py, make_test_vectors.py, check_deps.py, plot_waveforms.py
+docs/captures/     *.vcd, сценарії, схеми щупів, декодування sigrok-cli, measurements.md
 ```
 
-## Швидкий старт
-
-Один раз зібрати образ тулчейну:
+## Команди
 
 ```bash
-make image
+make image        # один раз: Docker-образ
+make build        # check-deps + прошивка (Wokwi)
+make test         # хостові тести
+make coverage     # тести + покриття (поріг 90 % рядків)
+make sim          # Wokwi CLI: самоперевірка має дати ST,dev=SUMMARY,res=PASS
+make captures     # перезаписати всі записи логічного аналізатора
+make build-nucleo # для реальної плати; make flash-hw / make monitor
 ```
 
-Зібрати прошивку (`firmware/build/firmware.{elf,hex,bin}` + SHA-256):
-
-```bash
-make build
-```
-
-Запустити в симуляторі:
-1. Встановити розширення **Wokwi for VS Code** і активувати ліцензію (`F1 → Wokwi: Request a new License`).
-2. Відкрити теку проєкту у VS Code → `F1 → Wokwi: Start Simulator`.
-3. У Serial Monitor з'явиться звіт bring-up і рядки `tick N` щосекунди.
-
-Без GUI, через [Wokwi CLI](https://docs.wokwi.com/wokwi-ci/cli-installation) (потрібен `WOKWI_CLI_TOKEN`):
-
-```bash
-make sim
-```
-
-## Що робить прошивка
-
-| Інтерфейс | Пін | Що видно |
-|---|---|---|
-| USART2 115200 8N1 | PA2/PA3 | банер, таблиця `[ OK ]` для кожного `MX_*_Init()`, `tick N …` |
-| I2C1 100 kHz | PB8/PB9 | I²C-скан → `0x68`, `MPU-6050: WHO_AM_I = 0x68 (match)` |
-| ADC1_IN0 | PA0 | `pot=0..4095`; серво pan повторює потенціометр |
-| TIM3 PWM 50 Hz | PB4/PB5 | 2 серво; tilt повторює нахил MPU-6050 (pitch) |
-| GPIO | PC13 / PA5 | B1 (або клавіша `h`) → HOLD; LED блимає в LIVE, горить у HOLD |
-| SPI1 mode 0 | PB3/PA6/PA7, CS PB0 | `W25Q64: JEDEC ID …` (у Wokwi чипа немає → `not connected`) |
-
-Логічний аналізатор у схемі пише SCL, SDA, PWM_PAN, UART_TX у `lr1-capture.vcd`. Файл відкривається в PulseView або GTKWave.
+Для `make sim` / `make captures` потрібні [wokwi-cli](https://docs.wokwi.com/wokwi-ci/cli-installation), `sigrok-cli`
+і токен `WOKWI_CLI_TOKEN` (або файл `~/.wokwi_token`).
 
 ## Справжня плата (бонус)
 
-Той самий ELF працює на фізичній NUCLEO-C031C6:
+Для фізичної NUCLEO-C031C6 збірка `BOARD_TARGET=nucleo` (HAL з repeated START):
 
 ```bash
 make flash-hw

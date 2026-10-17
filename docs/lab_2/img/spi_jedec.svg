@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="340" font-family="Helvetica,Arial" font-size="12">
+<rect width="1400" height="340" fill="white"/>
+<text x="10" y="20" font-size="15" font-weight="bold">SPI mode 0, 3 МГц: Read JEDEC ID (9Fh) -&gt; EF 40 17 при утриманому CS#</text>
+<text x="10" y="62" fill="#424242" font-weight="bold">CS</text>
+<polyline fill="none" stroke="#424242" stroke-width="1.4" points="110.0,46 174.4,46 174.4,68 1335.9,68 1335.9,46 1380.0,46"/>
+<text x="10" y="108" fill="#1565C0" font-weight="bold">SCK</text>
+<polyline fill="none" stroke="#1565C0" stroke-width="1.4" points="110.0,114 295.4,114 295.4,92 296.4,92 296.4,114 297.3,114 297.3,92 298.3,92 298.3,114 299.1,114 299.1,92 300.1,92 300.1,114 301.1,114 301.1,92 301.9,92 301.9,114 302.9,114 302.9,92 303.8,92 303.8,114 304.6,114 304.6,92 305.6,92 305.6,114 306.6,114 306.6,92 307.4,92 307.4,114 308.4,114 308.4,92 309.3,92 309.3,114 760.9,114 760.9,92 761.9,92 761.9,114 762.9,114 762.9,92 763.8,92 763.8,114 764.6,114 764.6,92 765.6,92 765.6,114 766.6,114 766.6,92 767.4,92 767.4,114 768.4,114 768.4,92 769.3,92 769.3,114 770.2,114 770.2,92 771.1,92 771.1,114 772.1,114 772.1,92 772.9,92 772.9,114 773.9,114 773.9,92 774.8,92 774.8,114 873.5,114 873.5,92 874.5,92 874.5,114 875.5,114 875.5,92 876.4,92 876.4,114 877.3,114 877.3,92 878.2,92 878.2,114 879.2,114 879.2,92 880.0,92 880.0,114 881.0,114 881.0,92 882.0,92 882.0,114 882.8,114 882.8,92 883.7,92 883.7,114 884.7,114 884.7,92 885.5,92 885.5,114 886.5,114 886.5,92 887.5,92 887.5,114 986.2,114 986.2,92 987.1,92 987.1,114 988.1,114 988.1,92 989.1,92 989.1,114 989.9,114 989.9,92 990.9,92 990.9,114 991.8,114 991.8,92 992.6,92 992.6,114 993.6,114 993.6,92 994.6,92 994.6,114 995.4,114 995.4,92 996.4,92 996.4,114 997.3,114 997.3,92 998.2,92 998.2,114 999.1,114 999.1,92 1000.1,92 1000.1,114 1380.0,114"/>
+<text x="10" y="154" fill="#6A1B9A" font-weight="bold">MOSI</text>
+<polyline fill="none" stroke="#6A1B9A" stroke-width="1.4" points="110.0,138 297.3,138 297.3,160 301.1,160 301.1,138 1380.0,138"/>
+<text x="10" y="200" fill="#EF6C00" font-weight="bold">MISO</text>
+<polyline fill="none" stroke="#EF6C00" stroke-width="1.4" points="110.0,184 765.6,184 765.6,206 767.4,206 767.4,184 774.8,184 774.8,206 874.5,206 874.5,184 876.4,184 876.4,206 990.9,206 990.9,184 992.6,184 992.6,206 994.6,206 994.6,184 1335.9,184 1335.9,206 1380.0,206"/>
+<text x="10" y="246" fill="#C62828" font-weight="bold">MARK</text>
+<polyline fill="none" stroke="#C62828" stroke-width="1.4" points="110.0,252 126.5,252 126.5,230 1363.5,230 1363.5,252 1380.0,252"/>
+<rect x="295.4" y="162" width="14.7" height="14" fill="#6A1B9A" opacity="0.85" rx="2"/>
+<text x="302.8" y="173" fill="white" font-size="10" text-anchor="middle">9F</text>
+<rect x="760.9" y="162" width="14.7" height="14" fill="#6A1B9A" opacity="0.85" rx="2"/>
+<text x="768.3" y="173" fill="white" font-size="10" text-anchor="middle">FF</text>
+<rect x="873.5" y="162" width="14.7" height="14" fill="#6A1B9A" opacity="0.85" rx="2"/>
+<text x="880.9" y="173" fill="white" font-size="10" text-anchor="middle">FF</text>
+<rect x="986.2" y="162" width="14.7" height="14" fill="#6A1B9A" opacity="0.85" rx="2"/>
+<text x="993.5" y="173" fill="white" font-size="10" text-anchor="middle">FF</text>
+<rect x="295.4" y="208" width="14.7" height="14" fill="#EF6C00" opacity="0.85" rx="2"/>
+<text x="302.8" y="219" fill="white" font-size="10" text-anchor="middle">FF</text>
+<rect x="760.9" y="208" width="14.7" height="14" fill="#EF6C00" opacity="0.85" rx="2"/>
+<text x="768.3" y="219" fill="white" font-size="10" text-anchor="middle">EF</text>
+<rect x="873.5" y="208" width="14.7" height="14" fill="#EF6C00" opacity="0.85" rx="2"/>
+<text x="880.9" y="219" fill="white" font-size="10" text-anchor="middle">40</text>
+<rect x="986.2" y="208" width="14.7" height="14" fill="#EF6C00" opacity="0.85" rx="2"/>
+<text x="993.5" y="219" fill="white" font-size="10" text-anchor="middle">17</text>
+<line x1="110" y1="290" x2="1380" y2="290" stroke="#333"/>
+<line x1="110.0" y1="290" x2="110.0" y2="295" stroke="#333"/>
+<text x="110.0" y="308" text-anchor="middle" font-size="10">0.0 мкс</text>
+<line x1="237.0" y1="290" x2="237.0" y2="295" stroke="#333"/>
+<text x="237.0" y="308" text-anchor="middle" font-size="10">23.0 мкс</text>
+<line x1="364.0" y1="290" x2="364.0" y2="295" stroke="#333"/>
+<text x="364.0" y="308" text-anchor="middle" font-size="10">46.1 мкс</text>
+<line x1="491.0" y1="290" x2="491.0" y2="295" stroke="#333"/>
+<text x="491.0" y="308" text-anchor="middle" font-size="10">69.1 мкс</text>
+<line x1="618.0" y1="290" x2="618.0" y2="295" stroke="#333"/>
+<text x="618.0" y="308" text-anchor="middle" font-size="10">92.1 мкс</text>
+<line x1="745.0" y1="290" x2="745.0" y2="295" stroke="#333"/>
+<text x="745.0" y="308" text-anchor="middle" font-size="10">115.2 мкс</text>
+<line x1="872.0" y1="290" x2="872.0" y2="295" stroke="#333"/>
+<text x="872.0" y="308" text-anchor="middle" font-size="10">138.2 мкс</text>
+<line x1="999.0" y1="290" x2="999.0" y2="295" stroke="#333"/>
+<text x="999.0" y="308" text-anchor="middle" font-size="10">161.2 мкс</text>
+<line x1="1126.0" y1="290" x2="1126.0" y2="295" stroke="#333"/>
+<text x="1126.0" y="308" text-anchor="middle" font-size="10">184.3 мкс</text>
+<line x1="1253.0" y1="290" x2="1253.0" y2="295" stroke="#333"/>
+<text x="1253.0" y="308" text-anchor="middle" font-size="10">207.3 мкс</text>
+<line x1="1380.0" y1="290" x2="1380.0" y2="295" stroke="#333"/>
+<text x="1380.0" y="308" text-anchor="middle" font-size="10">230.3 мкс</text>
+</svg>

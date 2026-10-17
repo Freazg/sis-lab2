@@ -1,0 +1,7 @@
+name: 'i2c-anomaly-hal-build-on-wokwi'
+version: 1
+author: 'tools/capture.py'
+steps:
+  - wait-serial: 'READY'
+  - delay: 20ms
+  - delay: 5ms
