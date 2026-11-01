@@ -328,6 +328,17 @@ def breakpoint_sweep():
     return rows
 
 
+def long_summary():
+    t = read_log("long")
+    n = sum(int(x) for x in re.findall(r"JITTER name=imu.*? n=(\d+)", t.split("нове з'єднання")[0]))
+    j = [int(x) for x in re.findall(r"JITTER name=imu.*?max_us=(\d+)", t.split("нове з'єднання")[0])]
+    end = re.findall(r"DUMP,END,session=(\d+),samples=(\d+),pages=(\d+),crc=(\w+)", t)
+    stack = sorted(set(re.findall(r"STACK used=(\d+)", t)))
+    errors = len(re.findall(r"ERR,", t))
+    return (f"{len(j)} вікон, {n} запусків IMU, джитер max {min(j)}…{max(j)} мкс, стек {stack} Б, "
+            f"помилок: {errors}. Після скидання: {end[-1] if end else '—'}.")
+
+
 def ms(us):
     return f"{us / 1000:.1f} мс" if abs(us) >= 1000 else f"{us} мкс"
 
@@ -408,6 +419,8 @@ def write_md(r):
           f"Сенсор під'єднано через 300 мс після READY: {bt['first_imu_us'][1] / 1000:.1f} мс. Через 1000 мс: {bt['first_imu_us'][2] / 1000:.1f} мс.", "",
           f"Обрив запису сторінки: після старту `TRAJ,session={pl['traj'][-1][0]},pages={pl['traj'][-1][1]},samples={pl['traj'][-1][2]},torn={pl['traj'][-1][3]}`. "
           f"`dump` дав {pl['dump'][-1][0]} семплів, відтворення {pl['play'][-1]}.", "",
+          "## Тривала робота (6.2.6, `long`)", "",
+          long_summary(), "",
           "## Одна метрика різними способами", "", "| Метрика | Лічильник МК | Журнал EVT | Аналізатор, Python | Аналізатор, декодер timing |",
           "|---|---:|---:|---:|---:|"]
     e = r["methods"]["erase"]
