@@ -38,6 +38,14 @@ void SysTick_Handler(void)
   HAL_IncTick();
 }
 
+/** EXTI13 (B1): мітка часу події; вся реакція — у головному циклі. */
+void EXTI4_15_IRQHandler(void)
+{
+  /* USER CODE BEGIN EXTI4_15_IRQn 0 */
+  platform_btn_isr();
+  /* USER CODE END EXTI4_15_IRQn 0 */
+}
+
 /** USART2 (ST-LINK VCP): прийом команд консолі. */
 void USART2_IRQHandler(void)
 {

@@ -149,7 +149,7 @@ in voltage and temperature.*/
   * @brief This is the HAL system configuration section
   */
 #define  VDD_VALUE                    (3300UL) /*!< Value of VDD in mv */
-#define  TICK_INT_PRIORITY            ((1UL<<__NVIC_PRIO_BITS) - 1UL) /*!< tick interrupt priority */
+#define  TICK_INT_PRIORITY            0UL /*!< найвищий: лічильник часу платформи, див. tick_read() у platform.c */
 #define  USE_RTOS                     0U
 #define  PREFETCH_ENABLE              1U
 #define  INSTRUCTION_CACHE_ENABLE     1U

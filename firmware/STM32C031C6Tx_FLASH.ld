@@ -110,6 +110,14 @@ SECTIONS
   } >RAM
 
   /* Перевірка, що heap + stack влазять у RAM */
+  /* Дані, що переживають програмне скидання: не копіюються і не обнуляються */
+  .noinit (NOLOAD) :
+  {
+    . = ALIGN(4);
+    *(.noinit*)
+    . = ALIGN(4);
+  } >RAM
+
   ._user_heap_stack :
   {
     . = ALIGN(8);

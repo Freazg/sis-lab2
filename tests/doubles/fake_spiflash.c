@@ -11,6 +11,7 @@ void fake_spiflash_init(fake_spiflash_t *f, uint32_t sector_base)
   f->sector_base = sector_base;
   f->corrupt_bit = -1;
   memset(f->sector, 0xA0, sizeof f->sector); /* «старі» дані, поки сектор не стерто */
+  memset(f->low, 0xFF, sizeof f->low);
 }
 
 static uint32_t addr(const fake_spiflash_t *f)
@@ -20,6 +21,9 @@ static uint32_t addr(const fake_spiflash_t *f)
 
 static uint8_t mem_rd(const fake_spiflash_t *f, uint32_t a)
 {
+  if (a < sizeof f->low) {
+    return f->low[a];
+  }
   if (a >= f->sector_base && a < f->sector_base + sizeof f->sector) {
     return f->sector[a - f->sector_base];
   }
@@ -49,6 +53,8 @@ static void select_cs(void *ctx, bool active)
           uint32_t p = (a & ~0xFFu) | ((a + i - 4u) & 0xFFu);
           if (p >= f->sector_base && p < f->sector_base + sizeof f->sector) {
             f->sector[p - f->sector_base] &= f->buf[i];
+          } else if (p < sizeof f->low) {
+            f->low[p] &= f->buf[i];
           }
         }
       }
@@ -57,6 +63,8 @@ static void select_cs(void *ctx, bool active)
     case 0x20:
       if (f->wel && (addr(f) & ~0xFFFu) == f->sector_base) {
         memset(f->sector, 0xFF, sizeof f->sector);
+      } else if (f->wel && addr(f) < sizeof f->low) {
+        memset(&f->low[addr(f) & ~0xFFFu], 0xFF, 4096);
       }
       f->wel = 0;
       break;

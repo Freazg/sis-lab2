@@ -20,6 +20,12 @@ BOARD_TARGET ?= wokwi
 
 DEBUG ?= 1
 OPT   ?= -Os
+# LTO і без цього потрібне: прошивка ЛР3 на -Os займає 39.5 КБ при 32 КБ флеш (docs/metrics/memory.md)
+LTO   ?= -flto
+# Транзакції ЛР2 (`cap ...`, tools/capture.py) вилучено зі збірки ЛР3 через ту саму межу флеш;
+# вони лишаються в коді, а записи ЛР2 відтворюються з тегу lab2.
+APP_CAPTURES ?= 0
+GIT_HASH ?= unknown # git-хеш для банера і логів (методичка ЛР3 §5.2), задає кореневий Makefile
 
 # ---- Джерела -----------------------------------------------------------------
 HAL_DIR = Drivers/STM32C0xx_HAL_Driver/Src
@@ -69,7 +75,7 @@ BIN  = $(CP) -O binary -S
 # ---- Прапорці ----------------------------------------------------------------
 MCU = -mcpu=cortex-m0plus -mthumb
 
-C_DEFS = -DUSE_HAL_DRIVER -DSTM32C031xx
+C_DEFS = -DUSE_HAL_DRIVER -DSTM32C031xx -DAPP_CAPTURES=$(APP_CAPTURES) -DFW_GIT_HASH=\"$(strip $(GIT_HASH))\"
 ifeq ($(BOARD_TARGET),nucleo)
 C_DEFS += -DBOARD_I2C_REPEATED_START=1 -DBOARD_I2C_HAL_TRANSMIT=1
 else ifeq ($(BOARD_TARGET),wokwi)
@@ -89,21 +95,24 @@ C_INCLUDES = \
 -IDrivers/CMSIS/Include
 
 ASFLAGS = $(MCU) $(OPT) -Wall -fdata-sections -ffunction-sections
-CFLAGS  = $(MCU) $(C_DEFS) $(C_INCLUDES) $(OPT) -std=gnu11 -fdata-sections -ffunction-sections
+CFLAGS  = $(MCU) $(C_DEFS) $(C_INCLUDES) $(OPT) $(LTO) -std=gnu11 -fdata-sections -ffunction-sections
 CFLAGS += -ffile-prefix-map=$(CURDIR)=.
+# Статична оцінка стека (методичка ЛР3 §5.4): .su — кадр кожної функції, .ci — граф викликів.
+# З LTO обидва файли створює лінкер (ltrans), тому там видно реальне вбудовування функцій.
+CFLAGS += -fstack-usage -fcallgraph-info=su
 ifeq ($(DEBUG), 1)
 CFLAGS += -g3 -gdwarf-4
 endif
 CFLAGS += -MMD -MP -MF"$(@:%.o=%.d)"
 
 # Власний код: усі попередження — помилки.
-OWN_WARN    = -Wall -Wextra -Werror -Wshadow -Wformat=2
+OWN_WARN    = -Wall -Wextra -Werror -Wshadow -Wformat=2 -Wstack-usage=512
 # Вендорський код ST: -Wall -Wextra лишаються, придушено лише те, що ST
 # свідомо допускає (невикористані параметри у weak-колбеках HAL).
 VENDOR_WARN = -Wall -Wextra -Wno-unused-parameter
 
 LIBS    = -lc -lm -lnosys
-LDFLAGS = $(MCU) -specs=nano.specs -specs=nosys.specs -T$(LDSCRIPT) $(LIBS) \
+LDFLAGS = $(MCU) $(OPT) $(LTO) -specs=nano.specs -specs=nosys.specs -T$(LDSCRIPT) $(LIBS) \
           -Wl,-Map=$(BUILD_DIR)/$(TARGET).map,--cref -Wl,--gc-sections -Wl,--print-memory-usage
 
 # ---- Правила -----------------------------------------------------------------

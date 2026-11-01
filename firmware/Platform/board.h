@@ -14,7 +14,7 @@
 #include "stm32c0xx_hal.h"
 
 #define BOARD_NAME "NUCLEO-C031C6"
-#define FW_VERSION "lr2-1.0"
+#define FW_VERSION "lr3-1.0"
 
 /* ---- Тактування --------------------------------------------------------- */
 #define BOARD_SYSCLK_HZ  48000000u /* HSI48 / HSIDIV=1; FLASH latency 1 WS (RM0490 Table 14 p.59) */
@@ -95,8 +95,22 @@
 #define BTN_PORT      GPIOC /* B1 USER (UM2953 §6.11); у Wokwi — кнопка на GND */
 #define BTN_PIN       GPIO_PIN_13
 #define BTN_ACTIVE_LOW 1
+#define BTN_EXTI_IRQn EXTI4_15_IRQn /* PC13 -> EXTI13 (RM0490 §14.3, лінії 4..15 мають спільний вектор) */
+#define BTN_EXTI_PRIO 1u            /* нижче за SysTick (0), вище за USART2 (2): мітка часу без черги */
 #define MARK_PORT     GPIOA /* D8, PA9 — службовий маркер подій для логічного аналізатора */
 #define MARK_PIN      GPIO_PIN_9
+
+/* ---- Службові GPIO для логічного аналізатора (ЛР3, методичка §5.3) ------- */
+/* Вільні Arduino A0..A3 (UM2953 Table 11): на стенді ЛР2 не зайняті, альтернативні функції не потрібні */
+#define PROBE_COUNT 4u
+#define PROBE0_PORT GPIOA /* A0, PA0 — задача IMU: фронт = старт, спад = «IMU прочитано» (FR-11) */
+#define PROBE0_PIN  GPIO_PIN_0
+#define PROBE1_PORT GPIOA /* A1, PA1 — задача серво: імпульс навколо запису CCR, «PWM оновлено» (FR-11) */
+#define PROBE1_PIN  GPIO_PIN_1
+#define PROBE2_PORT GPIOA /* A2, PA4 — довга операція: flash, dump */
+#define PROBE2_PIN  GPIO_PIN_4
+#define PROBE3_PORT GPIOB /* A3, PB1 — реакція на подію кнопки */
+#define PROBE3_PIN  GPIO_PIN_1
 
 /* ---- Хендли периферії (визначені в board.c) ----------------------------- */
 extern UART_HandleTypeDef huart1;

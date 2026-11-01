@@ -42,6 +42,9 @@ static bool led_get(app_led_t led) { return platform_led_get((int)led); }
 
 int main(void)
 {
+  /* USER CODE BEGIN 1 */
+  platform_stack_paint();
+  /* USER CODE END 1 */
   HAL_Init();
   SystemClock_Config();
 
@@ -76,9 +79,22 @@ int main(void)
     .aux_write = platform_aux_write,
     .i2c_mem_read_restart = platform_i2c_mem_read_restart,
     .i2c_recover = platform_i2c_recover,
+    .cycles = platform_cycles,
+    .micros = platform_micros,
+    .cal_loop = platform_cal_loop,
+    .probe = platform_probe,
+    .btn_take = platform_btn_take,
+    .rx_eol_take = platform_rx_eol_take,
+    .rx_dropped = platform_rx_dropped,
+    .stack_used = platform_stack_used,
+    .stack_size = platform_stack_size,
+    .reset = platform_reset,
+    .boot_fault_set = platform_boot_fault_set,
+    .i2c_fault = platform_i2c_fault,
     .sysclk_hz = platform_sysclk_hz(),
     .board_name = BOARD_NAME,
     .fw_version = FW_VERSION,
+    .fw_git = FW_GIT_HASH,
   };
   platform_con_start_rx();
   app_init(&app, &hw);
@@ -261,10 +277,17 @@ static void MX_GPIO_Init(void)
   g.Pin = MARK_PIN;
   HAL_GPIO_Init(MARK_PORT, &g);
 
-  g.Mode = GPIO_MODE_INPUT;
-  g.Pull = GPIO_PULLUP; /* як у BSP ST для B1 (stm32c0xx_nucleo.c) */
+  g.Pin = PROBE0_PIN | PROBE1_PIN | PROBE2_PIN;
+  HAL_GPIO_Init(PROBE0_PORT, &g); /* PA0, PA1, PA4 — службові GPIO, спочатку низький рівень */
+  g.Pin = PROBE3_PIN;
+  HAL_GPIO_Init(PROBE3_PORT, &g);
+
+  g.Mode = GPIO_MODE_IT_FALLING; /* B1 натиснута = низький рівень */
+  g.Pull = GPIO_PULLUP;          /* як у BSP ST для B1 (stm32c0xx_nucleo.c) */
   g.Pin = BTN_PIN;
   HAL_GPIO_Init(BTN_PORT, &g);
+  HAL_NVIC_SetPriority(BTN_EXTI_IRQn, BTN_EXTI_PRIO, 0);
+  HAL_NVIC_EnableIRQ(BTN_EXTI_IRQn);
 }
 
 void Error_Handler(void)

@@ -24,6 +24,7 @@ typedef struct {
   uint32_t lim_lo_deg; /**< програмні межі ходу */
   uint32_t lim_hi_deg;
   uint32_t angle_deg;  /**< останній заданий (після обмеження) кут */
+  int32_t angle_cdeg;  /**< той самий кут у сотих частках градуса */
 } servo_t;
 
 void servo_init(servo_t *s, const pwm_out_t *pwm, uint32_t min_us, uint32_t max_us);
@@ -34,5 +35,8 @@ uint32_t servo_pulse_for_deg(uint32_t deg, uint32_t min_us, uint32_t max_us);
 
 /** Обмежити кут межами і записати імпульс у ШІМ. Повертає записаний імпульс, мкс. */
 uint32_t servo_set_deg(servo_t *s, int32_t deg);
+
+/** Те саме в сотих частках градуса: 1 мкс імпульсу ≈ 0.1°, тому FR-04 (≤ 1°) виконується із запасом. */
+uint32_t servo_set_cdeg(servo_t *s, int32_t cdeg);
 
 #endif /* SERVO_H */

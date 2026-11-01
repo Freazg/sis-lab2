@@ -8,6 +8,7 @@ void servo_init(servo_t *s, const pwm_out_t *pwm, uint32_t min_us, uint32_t max_
   s->lim_lo_deg = 0;
   s->lim_hi_deg = 180;
   s->angle_deg = 90;
+  s->angle_cdeg = 9000;
 }
 
 void servo_set_limits(servo_t *s, uint32_t lo_deg, uint32_t hi_deg)
@@ -30,19 +31,26 @@ uint32_t servo_pulse_for_deg(uint32_t deg, uint32_t min_us, uint32_t max_us)
   return min_us + (deg * (max_us - min_us) + 90u) / 180u;
 }
 
-uint32_t servo_set_deg(servo_t *s, int32_t deg)
+uint32_t servo_set_cdeg(servo_t *s, int32_t cdeg)
 {
-  uint32_t d = deg < 0 ? 0u : (uint32_t)deg;
-  if (d < s->lim_lo_deg) {
-    d = s->lim_lo_deg;
+  int32_t lo = (int32_t)s->lim_lo_deg * 100;
+  int32_t hi = (int32_t)s->lim_hi_deg * 100;
+  if (cdeg < lo) {
+    cdeg = lo;
   }
-  if (d > s->lim_hi_deg) {
-    d = s->lim_hi_deg;
+  if (cdeg > hi) {
+    cdeg = hi;
   }
-  s->angle_deg = d;
-  uint32_t us = servo_pulse_for_deg(d, s->min_us, s->max_us);
+  s->angle_cdeg = cdeg;
+  s->angle_deg = (uint32_t)((cdeg + 50) / 100);
+  uint32_t us = s->min_us + ((uint32_t)cdeg * (s->max_us - s->min_us) + 9000u) / 18000u;
   if (s->pwm != 0) {
     s->pwm->set_pulse_us(s->pwm->ctx, us);
   }
   return us;
+}
+
+uint32_t servo_set_deg(servo_t *s, int32_t deg)
+{
+  return servo_set_cdeg(s, (deg < 0 ? 0 : deg) * 100);
 }

@@ -34,6 +34,18 @@ static void test_resolution_better_than_one_degree(void)
   }
 }
 
+static void test_set_cdeg_keeps_subdegree_resolution(void)
+{
+  servo_t s;
+  servo_init(&s, NULL, 544, 2400);
+  uint32_t a = servo_set_cdeg(&s, 9000);
+  uint32_t b = servo_set_cdeg(&s, 9050); /* FR-04: роздільність ≤ 1°, тут 0.5° -> 5 мкс */
+  TEST_ASSERT_EQUAL_UINT32(1472, a);
+  TEST_ASSERT_EQUAL_UINT32(1477, b);
+  TEST_ASSERT_EQUAL_INT32(9050, s.angle_cdeg);
+  TEST_ASSERT_EQUAL_UINT32(91, s.angle_deg);
+}
+
 static void test_set_deg_applies_limits(void)
 {
   servo_t s;
@@ -103,6 +115,7 @@ int main(void)
   UNITY_BEGIN();
   RUN_TEST(test_pulse_endpoints_and_middle);
   RUN_TEST(test_resolution_better_than_one_degree);
+  RUN_TEST(test_set_cdeg_keeps_subdegree_resolution);
   RUN_TEST(test_set_deg_applies_limits);
   RUN_TEST(test_isqrt);
   RUN_TEST(test_atan2_against_libm);

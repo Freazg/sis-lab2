@@ -19,6 +19,13 @@
 
 typedef enum { APP_LED_LIVE = 0, APP_LED_REC = 1, APP_LED_COUNT } app_led_t;
 
+typedef enum {
+  APP_PROBE_IMU = 0,  /**< PA0: задача IMU, спад = «IMU прочитано» (FR-11) */
+  APP_PROBE_PWM = 1,  /**< PA1: імпульс навколо запису CCR, «PWM оновлено» (FR-11) */
+  APP_PROBE_LONG = 2, /**< PA4: довга операція (flash, dump) */
+  APP_PROBE_REACT = 3 /**< PB1: реакція на подію кнопки */
+} app_probe_t;
+
 typedef struct {
   /* шини (потрібні для демонстраційних транзакцій cap/anomaly) */
   const i2c_bus_t *i2c;
@@ -47,9 +54,26 @@ typedef struct {
   /** Відновлення I2C після зависання шини (переініціалізація периферії). */
   void (*i2c_recover)(void);
 
+  /* вимірювання (ЛР3) */
+  uint32_t (*cycles)(void);           /**< лічильник тактів 32 біт, різниця коректна до 2^32 тактів */
+  uint32_t (*micros)(void);           /**< мітка часу МК для логів EVT */
+  uint32_t (*cal_loop)(void);         /**< такти на еталонний цикл: калібрування швидкості ядра */
+  void (*probe)(unsigned n, bool level);
+  bool (*btn_take)(uint32_t *t_cycles);
+  bool (*rx_eol_take)(uint32_t *t_cycles);
+  uint32_t (*rx_dropped)(void);
+  uint32_t (*stack_used)(void);
+  uint32_t (*stack_size)(void);
+
+  /* сценарії відмов (методичка §6.2) */
+  void (*reset)(void);
+  void (*boot_fault_set)(uint32_t ms);
+  void (*i2c_fault)(unsigned mode);
+
   uint32_t sysclk_hz;
   const char *board_name;
   const char *fw_version;
+  const char *fw_git;
 } app_hw_t;
 
 #endif /* APP_HW_H */

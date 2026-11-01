@@ -27,6 +27,9 @@ SIM_TIMEOUT ?= 5000
 WOKWI_CLI  ?= $(shell command -v wokwi-cli 2>/dev/null || echo $(HOME)/.wokwi/bin/wokwi-cli)
 WOKWI_TOKEN = $(or $(WOKWI_CLI_TOKEN),$(shell cat $(HOME)/.wokwi_token 2>/dev/null))
 
+# Git-хеш збірки (банер і логи, методичка ЛР3 §5.2); «+» — у firmware/ є незакомічені зміни
+GIT_HASH   := $(shell git rev-parse --short=8 HEAD 2>/dev/null || echo unknown)$(shell git diff --quiet HEAD -- firmware 2>/dev/null || echo +)
+
 # --user: артефакти належать поточному користувачу, а не root.
 DOCKER_RUN = docker run --rm -v "$(CURDIR)":/workspace -w /workspace \
              --user $(shell id -u):$(shell id -g) $(IMAGE)
@@ -43,10 +46,10 @@ check-deps:
 	$(DOCKER_RUN) python3 tools/check_deps.py
 
 build: check-deps
-	$(DOCKER_RUN) make -C $(FW_DIR) all BOARD_TARGET=wokwi
+	$(DOCKER_RUN) make -C $(FW_DIR) all BOARD_TARGET=wokwi GIT_HASH=$(GIT_HASH)
 
 build-nucleo: check-deps
-	$(DOCKER_RUN) make -C $(FW_DIR) all BOARD_TARGET=nucleo BUILD_DIR=build-nucleo
+	$(DOCKER_RUN) make -C $(FW_DIR) all BOARD_TARGET=nucleo BUILD_DIR=build-nucleo GIT_HASH=$(GIT_HASH)
 
 test:
 	$(DOCKER_RUN) make -C tests run

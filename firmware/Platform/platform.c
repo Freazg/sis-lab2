@@ -84,11 +84,22 @@ static dev_status_t i2c_write(void *ctx, uint8_t addr7, const uint8_t *data, siz
 }
 #endif
 
+/* Відмови для сценарію 6.2.4. У формі B сенсор не можна від'єднати, тому «сенсор зник» —
+ * транзакція на сусідню адресу: на шині справжній NACK. Затиснутий SDA — фізичний: кнопка
+ * btn_sda на схемі з'єднує лінію із землею. */
+static volatile unsigned i2c_fault_mode;
+
+void platform_i2c_fault(unsigned mode) { i2c_fault_mode = mode; }
+
 static dev_status_t i2c_write_read(void *ctx, uint8_t addr7, const uint8_t *wdata, size_t wlen,
                                    uint8_t *rdata, size_t rlen)
 {
   I2C_HandleTypeDef *h = ctx;
   HAL_StatusTypeDef st;
+  uint32_t boot_fault = platform_boot_fault_ms();
+  if (i2c_fault_mode == 1u || (boot_fault != 0u && HAL_GetTick() < boot_fault)) {
+    addr7 ^= 1u;
+  }
 #if BOARD_I2C_REPEATED_START
   if (wlen == 1) {
     st = HAL_I2C_Mem_Read(h, (uint16_t)(addr7 << 1), wdata[0], I2C_MEMADD_SIZE_8BIT, rdata, (uint16_t)rlen,
@@ -255,11 +266,18 @@ void platform_con_write(const char *s, size_t len)
 static volatile uint8_t con_rx_buf[CON_RX_BUF];
 static volatile uint8_t con_rx_head;
 static volatile uint8_t con_rx_tail;
+static volatile uint32_t con_rx_dropped;
+
+/* Мітки часу кінця рядка для вимірювання «команда -> відповідь» */
+#define EOL_FIFO 8u /* степінь двійки */
+static volatile uint32_t eol_t[EOL_FIFO];
+static volatile uint8_t eol_head;
+static volatile uint8_t eol_tail;
 
 void platform_con_start_rx(void)
 {
   __HAL_UART_ENABLE_IT(&huart2, UART_IT_RXNE);
-  HAL_NVIC_SetPriority(USART2_IRQn, 1, 0);
+  HAL_NVIC_SetPriority(USART2_IRQn, 2, 0);
   HAL_NVIC_EnableIRQ(USART2_IRQn);
 }
 
@@ -268,6 +286,7 @@ void platform_con_rx_isr(void)
   USART_TypeDef *u = huart2.Instance;
   if (u->ISR & USART_ISR_ORE) {
     u->ICR = USART_ICR_ORECF;
+    con_rx_dropped++;
   }
   if (u->ISR & USART_ISR_RXNE_RXFNE) {
     uint8_t b = (uint8_t)(u->RDR & 0xFFu);
@@ -275,9 +294,27 @@ void platform_con_rx_isr(void)
     if (next != con_rx_tail) { /* при переповненні байт відкидається */
       con_rx_buf[con_rx_head] = b;
       con_rx_head = next;
+    } else {
+      con_rx_dropped++;
+    }
+    if (b == '\n' && ((eol_head + 1u) & (EOL_FIFO - 1u)) != eol_tail) {
+      eol_t[eol_head] = platform_cycles();
+      eol_head = (uint8_t)((eol_head + 1u) & (EOL_FIFO - 1u));
     }
   }
 }
+
+bool platform_rx_eol_take(uint32_t *t_cycles)
+{
+  if (eol_tail == eol_head) {
+    return false;
+  }
+  *t_cycles = eol_t[eol_tail];
+  eol_tail = (uint8_t)((eol_tail + 1u) & (EOL_FIFO - 1u));
+  return true;
+}
+
+uint32_t platform_rx_dropped(void) { return con_rx_dropped; }
 
 int platform_con_getc(void)
 {
@@ -298,4 +335,135 @@ dev_status_t platform_aux_write(const char *s, size_t len)
 uint32_t platform_sysclk_hz(void)
 {
   return HAL_RCC_GetSysClockFreq();
+}
+
+/* ---- Вимірювання (ЛР3) --------------------------------------------------- */
+#define TICK_CYCLES (BOARD_SYSCLK_HZ / 1000u)
+
+/*
+ * SysTick рахує вниз від TICK_CYCLES-1 і раз на 1 мс оновлює uwTick у перериванні. Читання
+ * пари (tick, VAL) узгоджене, якщо tick не змінився між двома читаннями. SysTick має найвищий
+ * пріоритет (TICK_INT_PRIORITY = 0), тому це вірно і всередині EXTI та USART2: переніс не може
+ * чекати завершення іншого ISR. Варіант із забороною переривань і перевіркою ICSR.PENDSTSET
+ * у Wokwi не працює: модель не показує цей прапорець (журнал проблем, docs/lab3-report.md).
+ */
+static void tick_read(uint32_t *ms, uint32_t *elapsed)
+{
+  uint32_t t;
+  uint32_t v;
+  do {
+    t = HAL_GetTick();
+    v = SysTick->VAL;
+  } while (t != HAL_GetTick());
+  *ms = t;
+  *elapsed = TICK_CYCLES - 1u - v;
+}
+
+uint32_t platform_cycles(void)
+{
+  uint32_t ms;
+  uint32_t el;
+  tick_read(&ms, &el);
+  return ms * TICK_CYCLES + el;
+}
+
+uint32_t platform_micros(void)
+{
+  uint32_t ms;
+  uint32_t el;
+  tick_read(&ms, &el);
+  return ms * 1000u + el / (TICK_CYCLES / 1000u);
+}
+
+static GPIO_TypeDef *const probe_port[PROBE_COUNT] = { PROBE0_PORT, PROBE1_PORT, PROBE2_PORT, PROBE3_PORT };
+static const uint16_t probe_pin[PROBE_COUNT] = { PROBE0_PIN, PROBE1_PIN, PROBE2_PIN, PROBE3_PIN };
+
+void platform_probe(unsigned n, bool level)
+{
+  /* BSRR — атомарний запис одним тактом шини, як PROBE_ON/PROBE_OFF у методичці §5.3 */
+  probe_port[n]->BSRR = level ? (uint32_t)probe_pin[n] : ((uint32_t)probe_pin[n] << 16);
+}
+
+static volatile uint32_t btn_stamp;
+static volatile uint8_t btn_pending;
+
+void platform_btn_isr(void)
+{
+  if (__HAL_GPIO_EXTI_GET_FALLING_IT(BTN_PIN)) {
+    __HAL_GPIO_EXTI_CLEAR_FALLING_IT(BTN_PIN);
+    if (!btn_pending) { /* наступні спади до обробки — брязкіт або нове натискання: втрачаються */
+      btn_stamp = platform_cycles();
+      btn_pending = 1;
+    }
+  }
+}
+
+bool platform_btn_take(uint32_t *t_cycles)
+{
+  if (!btn_pending) {
+    return false;
+  }
+  /* Порядок важливий: мітка читається до скидання прапорця, а ISR пише її лише при pending=0.
+   * volatile тут лише забороняє компілятору кешувати значення; саму пару (мітка, прапорець)
+   * робить узгодженою ця послідовність. */
+  *t_cycles = btn_stamp;
+  btn_pending = 0;
+  return true;
+}
+
+/* ---- Стек (методичка §5.4) ---------------------------------------- */
+extern uint32_t _estack;
+extern uint32_t _Min_Stack_Size; /* абсолютний символ: його адреса = розмір */
+#define STACK_PATTERN 0xDEADBEEFu
+
+static uint32_t *stack_bottom(void)
+{
+  return (uint32_t *)((uint32_t)&_estack - (uint32_t)&_Min_Stack_Size);
+}
+
+void platform_stack_paint(void)
+{
+  uint32_t *p = stack_bottom();
+  uint32_t *sp = (uint32_t *)__get_MSP();
+  while (p < sp - 16) { /* поточний кадр не чіпаємо */
+    *p++ = STACK_PATTERN;
+  }
+}
+
+uint32_t platform_stack_used(void)
+{
+  uint32_t *p = stack_bottom();
+  while (p < &_estack && *p == STACK_PATTERN) {
+    p++;
+  }
+  return (uint32_t)&_estack - (uint32_t)p;
+}
+
+uint32_t platform_stack_size(void) { return (uint32_t)&_Min_Stack_Size; }
+
+void platform_reset(void) { NVIC_SystemReset(); }
+
+/* Секція .noinit не обнуляється стартовим кодом; магічне слово відрізняє програмне скидання
+ * від увімкнення живлення (після нього в RAM довільні значення). */
+#define BOOT_FAULT_MAGIC 0x5AFEB007u
+static uint32_t boot_fault_word[2] __attribute__((section(".noinit")));
+
+void platform_boot_fault_set(uint32_t ms)
+{
+  boot_fault_word[0] = BOOT_FAULT_MAGIC;
+  boot_fault_word[1] = ms;
+}
+
+uint32_t platform_boot_fault_ms(void)
+{
+  return boot_fault_word[0] == BOOT_FAULT_MAGIC ? boot_fault_word[1] : 0u;
+}
+
+/** Калібрування швидкості ядра: 500 ітерацій subs+bne, номінально 3-4 такти на ітерацію. */
+uint32_t platform_cal_loop(void)
+{
+  uint32_t t0 = platform_cycles();
+  __asm volatile(".syntax unified\n movs r0, #250\n lsls r0, r0, #1\n 1: subs r0, r0, #1\n bne 1b\n"
+                 : : : "r0", "cc");
+  return platform_cycles() - t0;
 }

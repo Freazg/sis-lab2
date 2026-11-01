@@ -22,7 +22,7 @@ typedef struct {
   servo_t tilt;
 } fake_hw_t;
 
-extern char fake_con[8192];
+extern char fake_con[65536];
 extern size_t fake_con_len;
 extern char fake_aux[512];
 extern int fake_leds[APP_LED_COUNT];
@@ -32,6 +32,15 @@ extern int fake_mark_edges;
 extern const char *fake_con_input;
 extern int fake_aux_fail;
 extern int fake_recovered;
+extern uint32_t fake_cycles_extra;   /**< такти поверх fake_time_now_ms */
+extern int fake_btn_pending;         /**< подія EXTI, яку забере btn_take */
+extern uint32_t fake_btn_t;
+extern int fake_probe_edges[4];
+extern int fake_resets;
+extern uint32_t fake_boot_fault_ms;
+extern unsigned fake_i2c_fault_mode;
+extern uint32_t fake_rx_dropped;
+extern int fake_eol_pending;
 
 /** Налаштувати стенд «усе справне»: MPU у спокої (1 g по Z, 24 °C), флеш відповідає EF4017. */
 void fake_hw_init(fake_hw_t *f);

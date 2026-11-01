@@ -1,9 +1,11 @@
 /**
  * @file    app_io.h
- * @brief   Форматований вивід у консоль через app_hw_t (без stdio-хуків HAL).
+ * @brief   Форматований вивід у консоль через app_hw_t (без stdio і heap).
  */
 #ifndef APP_IO_H
 #define APP_IO_H
+
+#include <stdarg.h>
 
 #include "app_hw.h"
 
@@ -12,6 +14,10 @@
 #else
 #define APP_PRINTF_FMT(a, b)
 #endif
+
+/** Підмножина snprintf: %c %s %d %i %u %x %X, модифікатор l, ширина. Повертає потрібну довжину. */
+int app_vformat(char *buf, size_t size, const char *fmt, va_list ap);
+int app_format(char *buf, size_t size, const char *fmt, ...) APP_PRINTF_FMT(3, 4);
 
 /** printf у консоль; рядок обрізається до 160 символів. */
 void app_print(const app_hw_t *hw, const char *fmt, ...) APP_PRINTF_FMT(2, 3);

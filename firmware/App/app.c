@@ -1,273 +1,385 @@
 #include "app.h"
 
+#include "app_internal.h"
 #include "app_io.h"
+#include "imath.h"
 #include "selftest.h"
 
-#define CAP_FLASH_ADDR 0x7FF100u /* сторінка в тестовому секторі ST_FLASH_TEST_ADDR */
-#define CAP_FLASH_LEN  16u
-#define CAP_PWM_HOLD_MS 100u     /* 5 періодів ШІМ на кожне значення */
+#define IMU_RECOVER_MS 100u /* як часто скидати контролер I2C, поки сенсор втрачений */
+#define MOTION_STEP_MG 100 /* стрибок прискорення між семплами = «рух IMU виявлено» (FR-03, FR-11) */
 
-static void set_mode(app_t *app, app_mode_t m)
+/* ---- Режими -------------------------------------------------------------- */
+const char *app_mode_name(app_mode_t m)
 {
-  app->mode = m;
-  app->hw->led_set(APP_LED_LIVE, m == APP_MODE_LIVE);
-  app->hw->led_set(APP_LED_REC, m == APP_MODE_HOLD);
-  app_print(app->hw, "MODE,%s\r\n", m == APP_MODE_LIVE ? "LIVE" : "HOLD");
+  static const char *const names[] = { "LIVE", "HOLD", "REC", "PLAY" };
+  return names[m];
 }
 
-static void print_help(const app_hw_t *hw)
+void app_set_mode(app_t *a, app_mode_t m)
 {
-  app_print(hw, "cmds: help | selftest | status | mode live|hold | servo pan|tilt <0..180>\r\n");
-  app_print(hw, "      cap i2c|spi|pwm|uart|anomaly\r\n");
+  const app_hw_t *hw = a->hw;
+  if (a->mode == APP_MODE_REC) {
+    app_rec_end(a);
+  } else if (a->mode == APP_MODE_PLAY) {
+    app_play_end(a);
+  }
+  if (m == APP_MODE_REC && !app_rec_begin(a)) {
+    m = APP_MODE_HOLD;
+  } else if (m == APP_MODE_PLAY && !app_play_begin(a)) {
+    app_print(hw, "ERR,no_trajectory\r\n");
+    m = APP_MODE_LIVE;
+  }
+  a->mode = m;
+  /* FR-06: LIVE — зелений, REC — червоний, PLAY — обидва, HOLD — жоден */
+  hw->led_set(APP_LED_LIVE, m == APP_MODE_LIVE || m == APP_MODE_PLAY);
+  hw->led_set(APP_LED_REC, m == APP_MODE_REC || m == APP_MODE_PLAY);
+  app_evt(a, APP_EV_MODE);
+  app_print(hw, "MODE,%s\r\n", app_mode_name(m));
 }
 
-static void print_status(app_t *app)
+void app_next_mode(app_t *a)
 {
-  const app_hw_t *hw = app->hw;
-  app_print(hw, "STATUS,mode=%s,t_ms=%lu,pitch_cdeg=%ld,roll_cdeg=%ld,pan_deg=%ld,tilt_deg=%ld\r\n",
-            app->mode == APP_MODE_LIVE ? "LIVE" : "HOLD", (unsigned long)hw->time->millis(),
-            (long)app->orient.pitch_cdeg, (long)app->orient.roll_cdeg, (long)app->pan_deg,
-            (long)app->tilt_deg);
+  static const app_mode_t next[] = { APP_MODE_HOLD, APP_MODE_REC, APP_MODE_PLAY, APP_MODE_LIVE };
+  app_set_mode(a, next[a->mode]);
 }
 
-/* ---- Відтворювані транзакції для логічного аналізатора (docs/captures) ---- */
+/* ---- Задачі -------------------------------------------------------------- */
+static bool due(uint32_t now, uint32_t next) { return (int32_t)(now - next) >= 0; }
 
-static void cap_i2c(const app_hw_t *hw)
+/** Абсолютний розклад: наступний запуск = попередній + період, після пропуску — від поточного часу. */
+static void reschedule(uint32_t *next, uint32_t period, uint32_t now)
 {
-  uint8_t who = 0;
-  uint8_t raw_bytes[MPU6050_BURST_LEN] = { 0 };
-  const uint8_t reg_who = MPU6050_REG_WHO_AM_I;
-  const uint8_t reg_acc = MPU6050_REG_ACCEL_XOUT_H;
+  *next += period;
+  if (due(now, *next)) {
+    *next = now + period;
+  }
+}
 
-  hw->mark(true); /* фронт MARK: подія в прошивці перед зверненням до шини */
-  dev_status_t st1 = hw->i2c->write_read(hw->i2c->ctx, MPU6050_ADDR_AD0_LOW, &reg_who, 1, &who, 1);
-  hw->mark(false);
-  hw->time->delay_ms(1);
-  hw->mark(true);
-  dev_status_t st2 = hw->i2c->write_read(hw->i2c->ctx, MPU6050_ADDR_AD0_LOW, &reg_acc, 1, raw_bytes,
-                                         sizeof raw_bytes);
-  hw->mark(false);
+static bool cli_task(app_t *a)
+{
+  const app_hw_t *hw = a->hw;
+  bool worked = false;
+  int c;
+  while ((c = hw->con_getc()) >= 0) {
+    uint32_t t_eol = 0;
+    bool stamped = c == '\n' && hw->rx_eol_take(&t_eol);
+    worked = true;
+    if (cli_feed(&a->cli, (char)c)) {
+      cli_cmd_t cmd = a->cli.overflow ? (cli_cmd_t){ CLI_ERROR, 0, 0, 0 } : cli_parse(a->cli.buf);
+      app_execute(a, &cmd);
+      if (stamped && cmd.id == CLI_STATUS) {
+        perf_add(&a->st[APP_ST_CMD_LAT], hw->cycles() - t_eol);
+      }
+    }
+  }
+  return worked;
+}
+
+static bool button_task(app_t *a)
+{
+  const app_hw_t *hw = a->hw;
+  uint32_t t_event;
+  if (a->btn_state == APP_BTN_WAIT_RELEASE) {
+    uint32_t now = hw->time->millis();
+    if (hw->button_pressed()) {
+      a->btn_release_ms = now;
+    } else if (now - a->btn_release_ms >= APP_BTN_RELEASE_MS) {
+      (void)hw->btn_take(&t_event); /* спади брязкоту під час відпускання */
+      a->btn_state = APP_BTN_IDLE;
+    }
+    return false;
+  }
+  if (!hw->btn_take(&t_event)) {
+    return false;
+  }
+  hw->probe(APP_PROBE_REACT, true);
+  perf_add(&a->st[APP_ST_BTN_LAT], hw->cycles() - t_event);
+  a->btn_events++;
+  app_evt(a, APP_EV_BTN_PRESS);
+  app_next_mode(a);
+  hw->probe(APP_PROBE_REACT, false);
+  a->btn_state = APP_BTN_WAIT_RELEASE;
+  a->btn_release_ms = hw->time->millis();
+  return true;
+}
+
+static void imu_failed(app_t *a)
+{
+  const app_hw_t *hw = a->hw;
+  uint32_t now = hw->time->millis();
+  a->imu_err++;
+  if (!a->imu_failing) {
+    a->imu_failing = 1;
+    a->imu_fail_ms = now;
+  } else if (now - a->imu_fail_ms > APP_IMU_LOST_MS) {
+    if (!a->imu_lost) {
+      a->imu_lost = 1;
+      app_evt(a, APP_EV_IMU_LOST);
+      app_print(hw, "ERR,IMU lost,t_ms=%lu\r\n", (unsigned long)now);
+    }
+    a->imu_fail_ms = now - APP_IMU_LOST_MS + IMU_RECOVER_MS; /* наступне скидання через 100 мс */
+    hw->i2c_recover(); /* завислий контролер сам не відновиться (затиснутий SDA, сценарій 6.2.4) */
+  }
+}
+
+static void imu_ok(app_t *a)
+{
+  const app_hw_t *hw = a->hw;
+  a->imu_failing = 0;
+  if (a->imu_lost) {
+    a->imu_lost = 0;
+    (void)mpu6050_init(hw->mpu); /* сенсор міг втратити живлення: регістри скинуті */
+    motion_reset(&a->motion);
+    app_evt(a, APP_EV_IMU_RESTORED);
+    app_print(hw, "IMU,restored,t_ms=%lu\r\n", (unsigned long)hw->time->millis());
+  }
+  if (!a->boot_reported) {
+    a->boot_reported = 1;
+    app_print(hw, "BOOT,first_imu_us=%lu\r\n", (unsigned long)hw->micros());
+  }
+}
+
+static void cal_step(app_t *a, const mpu6050_data_t *v)
+{
+  for (int i = 0; i < 3; i++) {
+    a->cal_sum[i] += v->gyro_mdps[i];
+  }
+  if (--a->cal_left == 0u) {
+    for (int i = 0; i < 3; i++) {
+      a->motion.gyro_bias[i] = a->cal_sum[i] / (int32_t)APP_CAL_SAMPLES;
+    }
+    orient_t acc;
+    orient_from_accel(v->accel_mg, &acc);
+    a->motion.zero = acc;
+    a->motion.started = 0;
+    app_print(a->hw, "CAL,done,pitch0_cdeg=%ld,roll0_cdeg=%ld,gyro_bias_mdps=%ld/%ld/%ld\r\n",
+              (long)acc.pitch_cdeg, (long)acc.roll_cdeg, (long)a->motion.gyro_bias[0],
+              (long)a->motion.gyro_bias[1], (long)a->motion.gyro_bias[2]);
+  }
+}
+
+static bool imu_task(app_t *a)
+{
+  const app_hw_t *hw = a->hw;
+  uint32_t now = hw->cycles();
+  if (!due(now, a->imu_next)) {
+    return false;
+  }
+  hw->probe(APP_PROBE_IMU, true);
+  uint32_t dt_us = (now - a->imu_prev) / a->cyc_per_us;
+  if (a->imu_prev_valid) {
+    perf_jitter_add(&a->jit_imu, dt_us);
+  }
+  a->imu_prev = now;
+  a->imu_prev_valid = 1;
+  reschedule(&a->imu_next, a->imu_period_cyc, now);
 
   mpu6050_raw_t raw;
-  mpu6050_data_t v;
-  mpu6050_parse(raw_bytes, &raw);
-  mpu6050_convert(&raw, &v);
-  app_print(hw, "CAP,i2c,who_am_i=0x%02X,st=%s\r\n", who, dev_status_str(st1));
-  app_print(hw, "CAP,i2c,burst=");
-  for (unsigned i = 0; i < sizeof raw_bytes; i++) {
-    app_print(hw, "%02X", raw_bytes[i]);
+  uint32_t t0 = hw->cycles();
+  dev_status_t st = mpu6050_read_raw(hw->mpu, &raw);
+  perf_add(&a->st[APP_ST_I2C], hw->cycles() - t0);
+  if (st != DEV_OK) {
+    imu_failed(a);
+  } else {
+    imu_ok(a);
+    mpu6050_data_t v;
+    mpu6050_convert(&raw, &v);
+    for (int i = 0; i < 3; i++) {
+      int32_t d = v.accel_mg[i] - a->accel_prev[i];
+      if (a->motion.started && (d > MOTION_STEP_MG || d < -MOTION_STEP_MG) && !a->motion_pending) {
+        a->motion_pending = 1;
+        a->t_motion = now;
+        hw->mark(true);
+      }
+      a->accel_prev[i] = v.accel_mg[i];
+    }
+    motion_fuse(&a->motion, v.accel_mg, v.gyro_mdps, dt_us);
+    if (a->cal_left != 0u) {
+      cal_step(a, &v);
+    }
   }
-  app_print(hw, ",st=%s\r\n", dev_status_str(st2));
-  app_print(hw, "CAP,i2c,acc_mg=%ld/%ld/%ld,temp_cdeg=%ld,gyro_mdps=%ld/%ld/%ld\r\n", (long)v.accel_mg[0],
-            (long)v.accel_mg[1], (long)v.accel_mg[2], (long)v.temp_cdeg, (long)v.gyro_mdps[0],
-            (long)v.gyro_mdps[1], (long)v.gyro_mdps[2]);
+  hw->probe(APP_PROBE_IMU, false);
+  return true;
 }
 
-static void cap_spi(const app_hw_t *hw)
+static bool servo_task(app_t *a)
 {
-  uint8_t id[3] = { 0 };
-  uint8_t wr[CAP_FLASH_LEN];
-  uint8_t rd[CAP_FLASH_LEN] = { 0 };
-  selftest_flash_pattern(wr, sizeof wr, 0xA5);
-
-  hw->mark(true);
-  dev_status_t st = w25q64_read_jedec(hw->flash, id);
-  hw->mark(false);
-  app_print(hw, "CAP,spi,jedec=%02X%02X%02X,st=%s\r\n", id[0], id[1], id[2], dev_status_str(st));
-
-  hw->mark(true);
-  st = w25q64_page_program(hw->flash, CAP_FLASH_ADDR, wr, sizeof wr); /* WREN -> 02h -> poll BUSY */
-  hw->mark(false);
-  app_print(hw, "CAP,spi,program_addr=0x%06lX,len=%u,st=%s\r\n", (unsigned long)CAP_FLASH_ADDR,
-            (unsigned)sizeof wr, dev_status_str(st));
-
-  hw->mark(true);
-  st = w25q64_read(hw->flash, CAP_FLASH_ADDR, rd, sizeof rd);
-  hw->mark(false);
-  app_print(hw, "CAP,spi,read=");
-  for (unsigned i = 0; i < sizeof rd; i++) {
-    app_print(hw, "%02X", rd[i]);
+  const app_hw_t *hw = a->hw;
+  uint32_t now = hw->cycles();
+  if (!due(now, a->servo_next)) {
+    return false;
   }
-  app_print(hw, ",st=%s\r\n", dev_status_str(st));
-}
+  if (a->servo_prev_valid) {
+    perf_jitter_add(&a->jit_servo, (now - a->servo_prev) / a->cyc_per_us);
+  }
+  a->servo_prev = now;
+  a->servo_prev_valid = 1;
+  reschedule(&a->servo_next, a->servo_period_cyc, now);
 
-static void cap_pwm(const app_hw_t *hw)
-{
-  static const int32_t seq[][2] = { { 0, 45 }, { 90, 90 }, { 180, 135 } };
-  for (unsigned i = 0; i < sizeof seq / sizeof seq[0]; i++) {
-    hw->mark(true);
-    uint32_t p = servo_set_deg(hw->servo_pan, seq[i][0]);
-    uint32_t t = servo_set_deg(hw->servo_tilt, seq[i][1]);
+  if ((a->mode != APP_MODE_LIVE && a->mode != APP_MODE_REC) || a->imu_lost) {
+    return true; /* HOLD, PLAY або FR-10: серво лишаються в останньому положенні */
+  }
+  /* FR-05: за один період 20 мс не більше 300 °/с × 20 мс = 6° */
+  int32_t max_step = (int32_t)(((uint64_t)MOTION_MAX_RATE_CDPS * APP_SERVO_PERIOD_US) / 1000000u);
+  int32_t pan = motion_slew(hw->servo_pan->angle_cdeg, motion_to_servo_cdeg(a->motion.est.roll_cdeg),
+                            MOTION_DEADZONE_CDEG, max_step);
+  int32_t tilt = motion_slew(hw->servo_tilt->angle_cdeg, motion_to_servo_cdeg(a->motion.est.pitch_cdeg),
+                             MOTION_DEADZONE_CDEG, max_step);
+  bool changed = pan != hw->servo_pan->angle_cdeg || tilt != hw->servo_tilt->angle_cdeg;
+  hw->probe(APP_PROBE_PWM, true);
+  servo_set_cdeg(hw->servo_pan, pan);
+  servo_set_cdeg(hw->servo_tilt, tilt);
+  hw->probe(APP_PROBE_PWM, false);
+  if (changed && a->motion_pending) {
+    perf_add(&a->st[APP_ST_E2E], hw->cycles() - a->t_motion);
+    a->motion_pending = 0;
     hw->mark(false);
-    app_print(hw, "CAP,pwm,pan_deg=%ld,pan_us=%lu,tilt_deg=%ld,tilt_us=%lu\r\n", (long)seq[i][0],
-              (unsigned long)p, (long)seq[i][1], (unsigned long)t);
-    hw->time->delay_ms(CAP_PWM_HOLD_MS);
+  }
+  return true;
+}
+
+static bool rec_task(app_t *a)
+{
+  if (a->mode != APP_MODE_REC) {
+    return false;
+  }
+  uint32_t now = a->hw->cycles();
+  if (!due(now, a->rec_next)) {
+    return false;
+  }
+  reschedule(&a->rec_next, APP_REC_PERIOD_US * a->cyc_per_us, now);
+  app_rec_sample(a);
+  return true;
+}
+
+static bool play_task(app_t *a)
+{
+  if (a->mode != APP_MODE_PLAY) {
+    return false;
+  }
+  uint32_t now = a->hw->cycles();
+  if (!due(now, a->rec_next)) {
+    return false;
+  }
+  reschedule(&a->rec_next, APP_REC_PERIOD_US * a->cyc_per_us, now);
+  if (!app_play_sample(a)) {
+    app_set_mode(a, APP_MODE_HOLD);
+  }
+  return true;
+}
+
+static void load_task(app_t *a)
+{
+  uint32_t window = a->hw->cycles() - a->window_start;
+  if (window < a->hw->sysclk_hz) {
+    return;
+  }
+  uint8_t pct = (uint8_t)(((uint64_t)a->busy_cycles * 100u) / window);
+  a->load_last = pct;
+  if (a->load_min > pct) {
+    a->load_min = pct;
+  }
+  if (a->load_max < pct) {
+    a->load_max = pct;
+  }
+  a->busy_cycles = 0;
+  a->window_start = a->hw->cycles();
+}
+
+/** Час рахується лише для проходів, де задача справді працювала (методичка §5.1, приклад 4). */
+static void run_task(app_t *a, app_stat_t id, bool (*task)(app_t *))
+{
+  uint32_t t0 = a->hw->cycles();
+  if (task(a)) {
+    uint32_t d = a->hw->cycles() - t0;
+    perf_add(&a->st[id], d);
+    a->busy_cycles += d;
   }
 }
 
-static void cap_uart(const app_hw_t *hw)
+/* ---- Журнал подій і скидання статистики ---------------------------------- */
+void app_evt(app_t *a, app_event_t id)
 {
-  hw->mark(true);
-  app_print(hw, "CAP,uart,payload=LR2-UART-0123456789\r\n");
-  hw->mark(false);
-  dev_status_t st = app_print_aux(hw, "CAP,uart,aux_payload=LR2-FT232RL-0123456789\r\n");
-  app_print(hw, "CAP,uart,aux_st=%s\r\n", dev_status_str(st));
+  app_evt_t *e = &a->evt[a->evt_n & (APP_EVT_LOG - 1u)];
+  e->t_us = a->hw->micros();
+  e->id = id;
+  a->evt_n++;
 }
 
-static void cap_anomaly(const app_hw_t *hw)
+void app_stats_reset(app_t *a)
 {
-  uint8_t v = 0;
-  const uint8_t reg = MPU6050_REG_WHO_AM_I;
-
-  /* 1) неіснуюча адреса: AD0=1 -> 0x69, на стенді AD0=0 -> очікуємо NACK */
-  hw->mark(true);
-  dev_status_t st = hw->i2c->write_read(hw->i2c->ctx, MPU6050_ADDR_AD0_HIGH, &reg, 1, &v, 1);
-  hw->mark(false);
-  app_print(hw, "CAP,anomaly,step=wrong_addr,addr=0x69,st=%s\r\n", dev_status_str(st));
-  hw->time->delay_ms(1);
-
-  /* 2) HAL_I2C_Mem_Read (repeated START) — у симуляторі шина зависає після байта регістра */
-  hw->mark(true);
-  st = hw->i2c_mem_read_restart(MPU6050_ADDR_AD0_LOW, reg, &v);
-  hw->mark(false);
-  app_print(hw, "CAP,anomaly,step=mem_read_restart,val=0x%02X,st=%s\r\n", v, dev_status_str(st));
-
-  /* 3) звичайне читання до відновлення — шина зайнята */
-  v = 0;
-  st = hw->i2c->write_read(hw->i2c->ctx, MPU6050_ADDR_AD0_LOW, &reg, 1, &v, 1);
-  app_print(hw, "CAP,anomaly,step=read_before_recover,val=0x%02X,st=%s\r\n", v, dev_status_str(st));
-
-  /* 4) відновлення периферії і повторне читання */
-  hw->i2c_recover();
-  hw->mark(true);
-  v = 0;
-  st = hw->i2c->write_read(hw->i2c->ctx, MPU6050_ADDR_AD0_LOW, &reg, 1, &v, 1);
-  hw->mark(false);
-  app_print(hw, "CAP,anomaly,step=read_after_recover,val=0x%02X,st=%s\r\n", v, dev_status_str(st));
-}
-
-void app_execute(app_t *app, const cli_cmd_t *cmd)
-{
-  const app_hw_t *hw = app->hw;
-  static const char *const cap_names[] = { "i2c", "spi", "pwm", "uart", "anomaly" };
-
-  switch (cmd->id) {
-    case CLI_NONE:
-      return;
-    case CLI_HELP:
-      print_help(hw);
-      break;
-    case CLI_SELFTEST:
-      selftest_run(hw);
-      break;
-    case CLI_STATUS:
-      print_status(app);
-      break;
-    case CLI_MODE_LIVE:
-      set_mode(app, APP_MODE_LIVE);
-      break;
-    case CLI_MODE_HOLD:
-      set_mode(app, APP_MODE_HOLD);
-      break;
-    case CLI_SERVO: {
-      servo_t *s = cmd->servo_index == 0 ? hw->servo_pan : hw->servo_tilt;
-      uint32_t us = servo_set_deg(s, cmd->value);
-      if (cmd->servo_index == 0) {
-        app->pan_deg = (int32_t)s->angle_deg;
-      } else {
-        app->tilt_deg = (int32_t)s->angle_deg;
-      }
-      app_print(hw, "SERVO,%s,deg=%lu,pulse_us=%lu\r\n", cmd->servo_index == 0 ? "pan" : "tilt",
-                (unsigned long)s->angle_deg, (unsigned long)us);
-      break;
-    }
-    case CLI_CAP_I2C:
-    case CLI_CAP_SPI:
-    case CLI_CAP_PWM:
-    case CLI_CAP_UART:
-    case CLI_CAP_ANOMALY: {
-      unsigned k = (unsigned)(cmd->id - CLI_CAP_I2C);
-      app_print(hw, "CAP,%s,BEGIN\r\n", cap_names[k]);
-      switch (cmd->id) {
-        case CLI_CAP_I2C: cap_i2c(hw); break;
-        case CLI_CAP_SPI: cap_spi(hw); break;
-        case CLI_CAP_PWM: cap_pwm(hw); break;
-        case CLI_CAP_UART: cap_uart(hw); break;
-        default: cap_anomaly(hw); break;
-      }
-      app_print(hw, "CAP,%s,END\r\n", cap_names[k]);
-      break;
-    }
-    case CLI_ERROR:
-    default:
-      app_print(hw, "ERR,unknown_command\r\n");
-      break;
+  for (unsigned i = 0; i < APP_ST_COUNT; i++) {
+    a->st[i] = (perf_stat_t){ 0, 0, 0, 0 };
   }
+  perf_jitter_reset(&a->jit_imu, a->imu_period_cyc / a->cyc_per_us, APP_IMU_TOL_US);
+  perf_jitter_reset(&a->jit_servo, APP_SERVO_PERIOD_US, APP_IMU_TOL_US);
+  a->imu_prev_valid = 0;
+  a->servo_prev_valid = 0;
+  a->busy_cycles = 0;
+  a->window_start = a->hw->cycles();
+  a->load_last = 0;
+  a->load_min = 100;
+  a->load_max = 0;
 }
 
-void app_on_button(app_t *app, uint8_t pressed)
-{
-  if (pressed && !app->btn_prev) {
-    set_mode(app, app->mode == APP_MODE_LIVE ? APP_MODE_HOLD : APP_MODE_LIVE);
-  }
-  app->btn_prev = pressed;
-}
-
+/* ---- Старт і головний цикл ----------------------------------------------- */
 void app_init(app_t *app, const app_hw_t *hw)
 {
   app->hw = hw;
-  app->mode = APP_MODE_LIVE;
-  app->btn_prev = 0;
-  app->pan_deg = 90;
-  app->tilt_deg = 90;
-  app->orient.pitch_cdeg = 0;
-  app->orient.roll_cdeg = 0;
+  app->cyc_per_us = hw->sysclk_hz / 1000000u;
+  app->mode = APP_MODE_HOLD;
+  app->btn_state = APP_BTN_IDLE;
+  app->btn_events = 0;
+  app->imu_lost = 0;
+  app->imu_failing = 0;
+  app->boot_reported = 0;
+  app->imu_err = 0;
+  app->cal_left = 0;
+  app->motion_pending = 0;
+  app->tear_next_page = 0;
+  app->evt_n = 0;
+  motion_reset(&app->motion);
   app->cli = (cli_reader_t){ { 0 }, 0, 0, 0 };
 
-  app_print(hw, "\r\n==== LR2 Motion-Mirroring: %s, fw %s ====\r\n", hw->board_name, hw->fw_version);
+  app_print(hw, "\r\nBOOT,fw=%s,git=%s,board=%s\r\n", hw->fw_version, hw->fw_git, hw->board_name);
+  app_evt(app, APP_EV_BOOT);
   selftest_result_t r = selftest_run(hw);
-  app->mpu_ok = (uint8_t)(hw->mpu->who_am_i == MPU6050_WHO_AM_I_VALUE);
+  if (hw->mpu->who_am_i != MPU6050_WHO_AM_I_VALUE) {
+    app->imu_lost = 1; /* сенсор не готовий: imu_task повторює читання, FR-10 відновить роботу */
+    app->imu_failing = 1;
+    app->imu_fail_ms = hw->time->millis();
+  }
   (void)r;
-  servo_set_deg(hw->servo_pan, app->pan_deg);
-  servo_set_deg(hw->servo_tilt, app->tilt_deg);
-  set_mode(app, APP_MODE_LIVE);
-  print_help(hw);
+  servo_set_limits(hw->servo_pan, 10, 170); /* FR-04: межі за замовчуванням */
+  servo_set_limits(hw->servo_tilt, 10, 170);
+  servo_set_deg(hw->servo_pan, 90);
+  servo_set_deg(hw->servo_tilt, 90);
+
+  app_traj_info_t info;
+  app_traj_scan(app, &info);
+  app_print(hw, "TRAJ,session=%u,pages=%lu,samples=%lu,torn=%u\r\n", info.session, (unsigned long)info.pages,
+            (unsigned long)info.samples, info.torn);
+
+  app->imu_period_cyc = APP_IMU_PERIOD_US * app->cyc_per_us;
+  app->servo_period_cyc = APP_SERVO_PERIOD_US * app->cyc_per_us;
+  app_stats_reset(app);
+  app_set_mode(app, APP_MODE_LIVE);
   app_print(hw, "READY\r\n");
-  app->next_ctrl_ms = hw->time->millis();
+  uint32_t now = hw->cycles();
+  app->imu_next = now;
+  app->servo_next = now;
+  app->rec_next = now;
 }
 
-void app_poll(app_t *app)
+void app_poll(app_t *a)
 {
-  const app_hw_t *hw = app->hw;
-
-  int c;
-  while ((c = hw->con_getc()) >= 0) {
-    if (cli_feed(&app->cli, (char)c)) {
-      cli_cmd_t cmd = app->cli.overflow ? (cli_cmd_t){ CLI_ERROR, 0, 0 } : cli_parse(app->cli.buf);
-      app_execute(app, &cmd);
-    }
-  }
-
-  uint32_t now = hw->time->millis();
-  if ((int32_t)(now - app->next_ctrl_ms) < 0) {
-    return;
-  }
-  app->next_ctrl_ms = now + APP_CONTROL_PERIOD_MS;
-
-  app_on_button(app, (uint8_t)hw->button_pressed());
-
-  if (app->mode != APP_MODE_LIVE || !app->mpu_ok) {
-    return;
-  }
-  mpu6050_raw_t raw;
-  if (mpu6050_read_raw(hw->mpu, &raw) != DEV_OK) {
-    return;
-  }
-  mpu6050_data_t v;
-  mpu6050_convert(&raw, &v);
-  orient_from_accel(v.accel_mg, &app->orient);
-  app->pan_deg = orient_to_servo_deg(app->orient.roll_cdeg);
-  app->tilt_deg = orient_to_servo_deg(app->orient.pitch_cdeg);
-  servo_set_deg(hw->servo_pan, app->pan_deg);
-  servo_set_deg(hw->servo_tilt, app->tilt_deg);
+  uint32_t t_loop = a->hw->cycles();
+  run_task(a, APP_ST_CLI, cli_task);
+  run_task(a, APP_ST_BTN, button_task);
+  run_task(a, APP_ST_IMU, imu_task);
+  run_task(a, APP_ST_SERVO, servo_task);
+  run_task(a, APP_ST_REC, rec_task);
+  run_task(a, APP_ST_PLAY, play_task);
+  load_task(a);
+  perf_add(&a->st[APP_ST_LOOP], a->hw->cycles() - t_loop);
 }

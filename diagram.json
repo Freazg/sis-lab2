@@ -14,6 +14,7 @@
     { "type": "wokwi-led", "id": "led_rec", "top": -60, "left": 380, "attrs": { "color": "red", "label": "REC" } },
     { "type": "wokwi-resistor", "id": "r_rec", "top": -10, "left": 350, "rotate": 90, "attrs": { "value": "330" } },
     { "type": "wokwi-pushbutton", "id": "btn_b1", "top": 120, "left": -250, "attrs": { "color": "blue", "label": "B1 USER", "key": "b" } },
+    { "type": "wokwi-pushbutton", "id": "btn_sda", "top": -130, "left": 430, "attrs": { "color": "black", "label": "SDA fault" } },
     {
       "type": "wokwi-logic-analyzer",
       "id": "logic",
@@ -61,6 +62,9 @@
 
     [ "btn_b1:1.l", "nucleo:PC13", "blue", [] ],
     [ "btn_b1:2.l", "nucleo:GND.7", "black", [] ],
+
+    [ "btn_sda:1.l", "nucleo:PB9", "green", [] ],
+    [ "btn_sda:2.l", "nucleo:GND.8", "black", [] ],
 
     [ "logic:D0", "nucleo:PB8", "yellow", [] ],
     [ "logic:D1", "nucleo:PB9", "green", [] ],

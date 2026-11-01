@@ -50,9 +50,33 @@ static int parse_int(const char *s, int32_t *out)
   return 1;
 }
 
+/* Команди без числових аргументів: перше слово + необов'язкове друге */
+static const struct {
+  const char *word;
+  const char *arg;
+  cli_cmd_id_t id;
+} fixed[] = {
+  { "help", NULL, CLI_HELP },         { "selftest", NULL, CLI_SELFTEST },
+  { "status", NULL, CLI_STATUS },     { "cal", NULL, CLI_CAL },
+  { "dump", NULL, CLI_DUMP },         { "erase", NULL, CLI_ERASE },
+  { "stats", NULL, CLI_STATS },       { "stats", "reset", CLI_STATS_RESET },
+  { "hist", NULL, CLI_HIST },         { "mem", NULL, CLI_MEM },
+  { "evt", NULL, CLI_EVT },           { "perfcal", NULL, CLI_PERFCAL },
+  { "reset", NULL, CLI_RESET },       { "mode", "live", CLI_MODE_LIVE },
+  { "mode", "hold", CLI_MODE_HOLD },  { "mode", "rec", CLI_MODE_REC },
+  { "mode", "play", CLI_MODE_PLAY },
+#if APP_CAPTURES
+  { "cap", "i2c", CLI_CAP_I2C },      { "cap", "spi", CLI_CAP_SPI },
+  { "cap", "pwm", CLI_CAP_PWM },      { "cap", "uart", CLI_CAP_UART },
+  { "cap", "anomaly", CLI_CAP_ANOMALY },
+#endif
+  { "fault", "nack", CLI_FAULT_NACK },
+  { "fault", "off", CLI_FAULT_OFF },  { "fault", "powerloss", CLI_FAULT_POWERLOSS },
+};
+
 cli_cmd_t cli_parse(const char *line)
 {
-  cli_cmd_t c = { CLI_NONE, 0, 0 };
+  cli_cmd_t c = { CLI_NONE, 0, 0, 0 };
   char buf[CLI_LINE_MAX];
   char *t[MAX_TOKENS];
   size_t len = strlen(line);
@@ -69,39 +93,34 @@ cli_cmd_t cli_parse(const char *line)
   if (n < 0) {
     return c;
   }
-  if (n == 1 && token_eq(t[0], "help")) {
-    c.id = CLI_HELP;
-  } else if (n == 1 && token_eq(t[0], "selftest")) {
-    c.id = CLI_SELFTEST;
-  } else if (n == 1 && token_eq(t[0], "status")) {
-    c.id = CLI_STATUS;
-  } else if (n == 2 && token_eq(t[0], "mode")) {
-    if (token_eq(t[1], "live")) {
-      c.id = CLI_MODE_LIVE;
-    } else if (token_eq(t[1], "hold")) {
-      c.id = CLI_MODE_HOLD;
+  for (size_t i = 0; i < sizeof fixed / sizeof fixed[0]; i++) {
+    if (token_eq(t[0], fixed[i].word)
+        && (fixed[i].arg == NULL ? n == 1 : (n == 2 && token_eq(t[1], fixed[i].arg)))) {
+      c.id = fixed[i].id;
+      return c;
     }
-  } else if (n == 3 && token_eq(t[0], "servo")) {
-    int32_t v;
+  }
+  int32_t v;
+  if (n == 3 && token_eq(t[0], "servo")) {
     int which = token_eq(t[1], "pan") ? 0 : (token_eq(t[1], "tilt") ? 1 : -1);
     if (which >= 0 && parse_int(t[2], &v) && v >= 0 && v <= 180) {
       c.id = CLI_SERVO;
       c.servo_index = (uint8_t)which;
       c.value = v;
     }
-  } else if (n == 2 && token_eq(t[0], "cap")) {
-    static const struct {
-      const char *name;
-      cli_cmd_id_t id;
-    } caps[] = {
-      { "i2c", CLI_CAP_I2C }, { "spi", CLI_CAP_SPI }, { "pwm", CLI_CAP_PWM },
-      { "uart", CLI_CAP_UART }, { "anomaly", CLI_CAP_ANOMALY },
-    };
-    for (size_t i = 0; i < sizeof caps / sizeof caps[0]; i++) {
-      if (token_eq(t[1], caps[i].name)) {
-        c.id = caps[i].id;
-      }
+  } else if (n == 3 && token_eq(t[0], "limits")) {
+    int32_t hi;
+    if (parse_int(t[1], &v) && parse_int(t[2], &hi)) {
+      c.id = CLI_LIMITS;
+      c.value = v;
+      c.value2 = hi;
     }
+  } else if (n == 2 && token_eq(t[0], "rate") && parse_int(t[1], &v)) {
+    c.id = CLI_RATE;
+    c.value = v;
+  } else if (n == 3 && token_eq(t[0], "fault") && token_eq(t[1], "boot") && parse_int(t[2], &v) && v > 0) {
+    c.id = CLI_FAULT_BOOT;
+    c.value = v;
   }
   return c;
 }

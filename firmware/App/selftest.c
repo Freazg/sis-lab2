@@ -1,6 +1,5 @@
 #include "selftest.h"
 
-#include <stdio.h>
 #include <string.h>
 
 #include "app_io.h"
@@ -25,7 +24,7 @@ void selftest_flash_pattern(uint8_t *buf, uint32_t len, uint8_t seed)
 /* ---- MCU ---------------------------------------------------------------- */
 static void check_mcu(const app_hw_t *hw, selftest_result_t *r, char *d, size_t n)
 {
-  snprintf(d, n, "board=%s,sysclk_hz=%lu", hw->board_name, (unsigned long)hw->sysclk_hz);
+  app_format(d, n, "board=%s,sysclk_hz=%lu", hw->board_name, (unsigned long)hw->sysclk_hz);
   verdict(hw, r, "MCU", hw->sysclk_hz == 48000000u, d);
 }
 
@@ -35,7 +34,7 @@ static void check_mpu(const app_hw_t *hw, selftest_result_t *r, char *d, size_t 
   mpu6050_t *m = hw->mpu;
   dev_status_t st = mpu6050_probe(m, hw->i2c, hw->time, MPU6050_ADDR_AD0_LOW);
   if (st != DEV_OK) {
-    snprintf(d, n, "bus=I2C1,addr=0x%02X,who=0x%02X,err=%s", MPU6050_ADDR_AD0_LOW, m->who_am_i,
+    app_format(d, n, "bus=I2C1,addr=0x%02X,who=0x%02X,err=%s", MPU6050_ADDR_AD0_LOW, m->who_am_i,
              dev_status_str(st));
     verdict(hw, r, "MPU6050", 0, d);
     return;
@@ -46,7 +45,7 @@ static void check_mpu(const app_hw_t *hw, selftest_result_t *r, char *d, size_t 
     st = mpu6050_read_raw(m, &raw);
   }
   if (st != DEV_OK) {
-    snprintf(d, n, "bus=I2C1,addr=0x%02X,who=0x%02X,err=%s", m->addr, m->who_am_i, dev_status_str(st));
+    app_format(d, n, "bus=I2C1,addr=0x%02X,who=0x%02X,err=%s", m->addr, m->who_am_i, dev_status_str(st));
     verdict(hw, r, "MPU6050", 0, d);
     return;
   }
@@ -62,7 +61,7 @@ static void check_mpu(const app_hw_t *hw, selftest_result_t *r, char *d, size_t 
     }
   }
   int ok_t = v.temp_cdeg >= ST_TEMP_MIN_CDEG && v.temp_cdeg <= ST_TEMP_MAX_CDEG;
-  snprintf(d, n,
+  app_format(d, n,
            "bus=I2C1,addr=0x%02X,who=0x%02X,acc_mg=%ld/%ld/%ld,norm_mg=%ld,dev_mg=%ld,"
            "gyro_mdps=%ld/%ld/%ld,temp_cdeg=%ld,chk=%c%c%c",
            m->addr, m->who_am_i, (long)v.accel_mg[0], (long)v.accel_mg[1], (long)v.accel_mg[2], (long)norm,
@@ -113,7 +112,7 @@ static void check_flash(const app_hw_t *hw, selftest_result_t *r, char *d, size_
       st = DEV_ERR_VERIFY;
     }
   }
-  snprintf(d, n, "bus=SPI1,jedec=%02X%02X%02X,test_addr=0x%06lX,len=%u,erase_ms=%lu,mismatch=%lu,stage=%s,err=%s",
+  app_format(d, n, "bus=SPI1,jedec=%02X%02X%02X,test_addr=0x%06lX,len=%u,erase_ms=%lu,mismatch=%lu,stage=%s,err=%s",
            f->jedec[0], f->jedec[1], f->jedec[2], (unsigned long)ST_FLASH_TEST_ADDR,
            (unsigned)ST_FLASH_TEST_LEN, (unsigned long)t_erase, (unsigned long)mismatch, stage,
            dev_status_str(st));
@@ -125,6 +124,9 @@ static void check_servo(const app_hw_t *hw, selftest_result_t *r, char *d, size_
 {
   static const uint32_t angles[3] = { 0, 180, 90 };
   uint32_t got[3] = { 0 };
+  uint32_t lim_lo = s->lim_lo_deg;
+  uint32_t lim_hi = s->lim_hi_deg;
+  servo_set_limits(s, 0, 180); /* перевіряється весь діапазон; межі FR-04 повертаються нижче */
   int ok = s->pwm->get_period_us(s->pwm->ctx) == SERVO_PERIOD_US;
   for (int i = 0; i < 3; i++) {
     uint32_t want = servo_set_deg(s, (int32_t)angles[i]);
@@ -133,7 +135,8 @@ static void check_servo(const app_hw_t *hw, selftest_result_t *r, char *d, size_
       ok = 0;
     }
   }
-  snprintf(d, n, "pwm=%s,period_us=%lu,pulse_us_0deg=%lu,pulse_us_180deg=%lu,pulse_us_90deg=%lu", name,
+  servo_set_limits(s, lim_lo, lim_hi);
+  app_format(d, n, "pwm=%s,period_us=%lu,pulse_us_0deg=%lu,pulse_us_180deg=%lu,pulse_us_90deg=%lu", name,
            (unsigned long)s->pwm->get_period_us(s->pwm->ctx), (unsigned long)got[0], (unsigned long)got[1],
            (unsigned long)got[2]);
   verdict(hw, r, s == hw->servo_pan ? "SERVO_PAN" : "SERVO_TILT", ok, d);
@@ -148,7 +151,7 @@ static void check_leds(const app_hw_t *hw, selftest_result_t *r, char *d, size_t
     int on = hw->led_get((app_led_t)i);
     hw->led_set((app_led_t)i, false);
     int off = !hw->led_get((app_led_t)i);
-    snprintf(d, n, "readback_on=%d,readback_off=%d", on, off);
+    app_format(d, n, "readback_on=%d,readback_off=%d", on, off);
     verdict(hw, r, names[i], on && off, d);
   }
 }
@@ -156,14 +159,14 @@ static void check_leds(const app_hw_t *hw, selftest_result_t *r, char *d, size_t
 static void check_button(const app_hw_t *hw, selftest_result_t *r, char *d, size_t n)
 {
   int pressed = hw->button_pressed();
-  snprintf(d, n, "pin=PC13,idle=%s", pressed ? "pressed" : "released");
+  app_format(d, n, "pin=PC13,idle=%s", pressed ? "pressed" : "released");
   verdict(hw, r, "BTN_B1", !pressed, d);
 }
 
 static void check_ft232(const app_hw_t *hw, selftest_result_t *r, char *d, size_t n)
 {
   dev_status_t st = app_print_aux(hw, "FT232RL link check: %s %s\r\n", hw->board_name, hw->fw_version);
-  snprintf(d, n, "uart=USART1,baud=115200,tx=%s", dev_status_str(st));
+  app_format(d, n, "uart=USART1,baud=115200,tx=%s", dev_status_str(st));
   verdict(hw, r, "FT232RL", st == DEV_OK, d);
 }
 

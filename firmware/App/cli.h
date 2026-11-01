@@ -3,10 +3,12 @@
  * @brief   Розбір команд консолі (чиста логіка, без вводу/виводу).
  *
  * Команди (одна на рядок, регістр не важливий):
- *   help | selftest | status
- *   mode live|hold
+ *   help | selftest | status | cal | dump | erase       — FR-09
+ *   mode live|hold|rec|play | limits <min> <max>        — FR-06, FR-09
  *   servo pan|tilt <0..180>
- *   cap i2c|spi|pwm|uart|anomaly   — відтворювані транзакції для логічного аналізатора
+ *   cap i2c|spi|pwm|uart|anomaly                        — транзакції для логічного аналізатора (ЛР2)
+ *   stats | stats reset | hist | mem | evt | perfcal    — вимірювання (ЛР3)
+ *   rate <hz> | reset | fault nack|off|powerloss | fault boot <ms> — сценарії 6.2
  */
 #ifndef CLI_H
 #define CLI_H
@@ -23,6 +25,24 @@ typedef enum {
   CLI_STATUS,
   CLI_MODE_LIVE,
   CLI_MODE_HOLD,
+  CLI_MODE_REC,
+  CLI_MODE_PLAY,
+  CLI_CAL,
+  CLI_LIMITS,
+  CLI_DUMP,
+  CLI_ERASE,
+  CLI_STATS,
+  CLI_STATS_RESET,
+  CLI_HIST,
+  CLI_MEM,
+  CLI_EVT,
+  CLI_PERFCAL,
+  CLI_RATE,
+  CLI_RESET,
+  CLI_FAULT_NACK,
+  CLI_FAULT_OFF,
+  CLI_FAULT_POWERLOSS,
+  CLI_FAULT_BOOT,
   CLI_SERVO,
   CLI_CAP_I2C,
   CLI_CAP_SPI,
@@ -36,6 +56,7 @@ typedef struct {
   cli_cmd_id_t id;
   uint8_t servo_index; /**< 0 = pan, 1 = tilt */
   int32_t value;
+  int32_t value2;
 } cli_cmd_t;
 
 /** Розібрати один рядок (без '\n'). Порожній рядок -> CLI_NONE. */

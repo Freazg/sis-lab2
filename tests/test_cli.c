@@ -13,6 +13,44 @@ static void test_simple_commands_case_insensitive(void)
   TEST_ASSERT_EQUAL(CLI_STATUS, cli_parse("  status  ").id);
   TEST_ASSERT_EQUAL(CLI_MODE_HOLD, cli_parse("mode HOLD").id);
   TEST_ASSERT_EQUAL(CLI_MODE_LIVE, cli_parse("mode\tlive").id);
+  TEST_ASSERT_EQUAL(CLI_MODE_REC, cli_parse("mode rec").id);
+  TEST_ASSERT_EQUAL(CLI_MODE_PLAY, cli_parse("mode play").id);
+  TEST_ASSERT_EQUAL(CLI_CAL, cli_parse("cal").id);
+  TEST_ASSERT_EQUAL(CLI_DUMP, cli_parse("dump").id);
+  TEST_ASSERT_EQUAL(CLI_ERASE, cli_parse("erase").id);
+}
+
+static void test_measurement_and_fault_commands(void)
+{
+  TEST_ASSERT_EQUAL(CLI_STATS, cli_parse("STATS").id); /* методичка §5.1: команда STATS */
+  TEST_ASSERT_EQUAL(CLI_STATS_RESET, cli_parse("stats reset").id);
+  TEST_ASSERT_EQUAL(CLI_HIST, cli_parse("hist").id);
+  TEST_ASSERT_EQUAL(CLI_MEM, cli_parse("mem").id);
+  TEST_ASSERT_EQUAL(CLI_EVT, cli_parse("evt").id);
+  TEST_ASSERT_EQUAL(CLI_PERFCAL, cli_parse("perfcal").id);
+  TEST_ASSERT_EQUAL(CLI_RESET, cli_parse("reset").id);
+  TEST_ASSERT_EQUAL(CLI_FAULT_NACK, cli_parse("fault nack").id);
+  TEST_ASSERT_EQUAL(CLI_FAULT_OFF, cli_parse("fault off").id);
+  TEST_ASSERT_EQUAL(CLI_FAULT_POWERLOSS, cli_parse("fault powerloss").id);
+  cli_cmd_t c = cli_parse("fault boot 300");
+  TEST_ASSERT_EQUAL(CLI_FAULT_BOOT, c.id);
+  TEST_ASSERT_EQUAL_INT32(300, c.value);
+  TEST_ASSERT_EQUAL(CLI_ERROR, cli_parse("fault boot 0").id);
+  TEST_ASSERT_EQUAL(CLI_ERROR, cli_parse("fault boot").id);
+}
+
+static void test_numeric_commands(void)
+{
+  cli_cmd_t c = cli_parse("limits 20 160");
+  TEST_ASSERT_EQUAL(CLI_LIMITS, c.id);
+  TEST_ASSERT_EQUAL_INT32(20, c.value);
+  TEST_ASSERT_EQUAL_INT32(160, c.value2);
+  TEST_ASSERT_EQUAL(CLI_ERROR, cli_parse("limits 20").id);
+  TEST_ASSERT_EQUAL(CLI_ERROR, cli_parse("limits a b").id);
+  c = cli_parse("rate 400");
+  TEST_ASSERT_EQUAL(CLI_RATE, c.id);
+  TEST_ASSERT_EQUAL_INT32(400, c.value);
+  TEST_ASSERT_EQUAL(CLI_ERROR, cli_parse("rate x").id);
 }
 
 static void test_capture_commands(void)
@@ -80,6 +118,8 @@ int main(void)
 {
   UNITY_BEGIN();
   RUN_TEST(test_simple_commands_case_insensitive);
+  RUN_TEST(test_measurement_and_fault_commands);
+  RUN_TEST(test_numeric_commands);
   RUN_TEST(test_capture_commands);
   RUN_TEST(test_servo_command);
   RUN_TEST(test_errors_and_empty);

@@ -5,7 +5,7 @@
 #include "fake_time.h"
 #include "selftest.h"
 
-char fake_con[8192];
+char fake_con[65536];
 size_t fake_con_len;
 char fake_aux[512];
 int fake_leds[APP_LED_COUNT];
@@ -15,6 +15,15 @@ int fake_mark_edges;
 const char *fake_con_input;
 int fake_aux_fail;
 int fake_recovered;
+uint32_t fake_cycles_extra;
+int fake_btn_pending;
+uint32_t fake_btn_t;
+int fake_probe_edges[4];
+int fake_resets;
+uint32_t fake_boot_fault_ms;
+unsigned fake_i2c_fault_mode;
+uint32_t fake_rx_dropped;
+int fake_eol_pending;
 
 static uint32_t pulse[2];
 static void pwm_set(void *ctx, uint32_t us) { pulse[(intptr_t)ctx] = us; }
@@ -71,6 +80,35 @@ static dev_status_t mem_read_restart(uint8_t addr7, uint8_t reg, uint8_t *val)
 
 static void recover(void) { fake_recovered++; }
 
+static uint32_t cycles(void) { return fake_time_now_ms * 48000u + fake_cycles_extra; }
+static uint32_t micros(void) { return fake_time_now_ms * 1000u + fake_cycles_extra / 48u; }
+static uint32_t cal_loop(void) { return 1750u; }
+static void probe(unsigned n, bool level) { fake_probe_edges[n] += level ? 1 : 0; }
+static bool btn_take(uint32_t *t)
+{
+  if (!fake_btn_pending) {
+    return false;
+  }
+  fake_btn_pending = 0;
+  *t = fake_btn_t;
+  return true;
+}
+static bool rx_eol_take(uint32_t *t)
+{
+  if (!fake_eol_pending) {
+    return false;
+  }
+  fake_eol_pending--;
+  *t = cycles();
+  return true;
+}
+static uint32_t rx_dropped(void) { return fake_rx_dropped; }
+static uint32_t stack_used(void) { return 800u; }
+static uint32_t stack_size(void) { return 1024u; }
+static void do_reset(void) { fake_resets++; }
+static void boot_fault_set(uint32_t ms) { fake_boot_fault_ms = ms; }
+static void i2c_fault(unsigned mode) { fake_i2c_fault_mode = mode; }
+
 void fake_hw_init(fake_hw_t *f)
 {
   static const uint8_t rest[14] = { 0, 0, 0, 0, 0x40, 0x00, 0xEF, 0x5C, 0, 0, 0, 0, 0, 0 };
@@ -85,6 +123,15 @@ void fake_hw_init(fake_hw_t *f)
   fake_con_input = NULL;
   fake_aux_fail = 0;
   fake_recovered = 0;
+  fake_cycles_extra = 0;
+  fake_btn_pending = 0;
+  fake_btn_t = 0;
+  memset(fake_probe_edges, 0, sizeof fake_probe_edges);
+  fake_resets = 0;
+  fake_boot_fault_ms = 0;
+  fake_i2c_fault_mode = 0;
+  fake_rx_dropped = 0;
+  fake_eol_pending = 0;
   fake_time_reset();
 
   fake_i2c_init_mpu6050(&f->i2c_fake);
@@ -101,7 +148,11 @@ void fake_hw_init(fake_hw_t *f)
     .led_set = led_set, .led_get = led_get, .button_pressed = button_pressed, .mark = mark,
     .con_write = con_write, .con_getc = con_getc, .aux_write = aux_write,
     .i2c_mem_read_restart = mem_read_restart, .i2c_recover = recover,
-    .sysclk_hz = 48000000u, .board_name = "FAKE", .fw_version = "test",
+    .cycles = cycles, .micros = micros, .cal_loop = cal_loop, .probe = probe, .btn_take = btn_take,
+    .rx_eol_take = rx_eol_take, .rx_dropped = rx_dropped, .stack_used = stack_used,
+    .stack_size = stack_size, .reset = do_reset, .boot_fault_set = boot_fault_set,
+    .i2c_fault = i2c_fault,
+    .sysclk_hz = 48000000u, .board_name = "FAKE", .fw_version = "test", .fw_git = "deadbeef",
   };
 }
 
