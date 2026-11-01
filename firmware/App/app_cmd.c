@@ -16,9 +16,9 @@ static const char *const evt_names[APP_EV_COUNT] = {
 static void print_help(const app_hw_t *hw)
 {
   app_print(hw, "cmds: help selftest status cal dump erase mode live|hold|rec|play limits <a> <b>\r\n");
-  app_print(hw, "      servo pan|tilt <0..180>\r\n");
+  app_print(hw, "      servo pan|tilt <0..180> cap i2c|spi|pwm|uart|anomaly\r\n");
   app_print(hw, "      stats [reset] hist mem evt perfcal rate <hz> reset\r\n");
-  app_print(hw, "      fault nack|off|powerloss|boot <ms>\r\n");
+  app_print(hw, "      fault powerloss\r\n");
 }
 
 static void print_status(app_t *a)
@@ -37,6 +37,16 @@ static void print_jitter(const app_hw_t *hw, const char *name, const perf_jitter
             (unsigned long)perf_jitter_percentile_us(j, 99), (unsigned long)j->missed, (unsigned long)j->viol);
 }
 
+static void print_hist(const app_t *a)
+{
+  const app_hw_t *hw = a->hw;
+  app_print(hw, "HIST name=imu bin_us=%u", PERF_HIST_BIN_US);
+  for (unsigned i = 0; i < PERF_HIST_BINS; i++) {
+    app_print(hw, " %lu", (unsigned long)a->jit_imu.hist[i]);
+  }
+  app_print(hw, "\r\n");
+}
+
 void app_print_stats(app_t *a)
 {
   const app_hw_t *hw = a->hw;
@@ -53,17 +63,8 @@ void app_print_stats(app_t *a)
   app_print(hw, "LOAD pct=%u min=%u max=%u\r\n", a->load_last, a->load_min, a->load_max);
   app_print(hw, "CNT rx_dropped=%lu imu_err=%lu btn=%lu\r\n", (unsigned long)hw->rx_dropped(),
             (unsigned long)a->imu_err, (unsigned long)a->btn_events);
+  print_hist(a); /* разом зі stats: вивід окремої команди сам додав би джитер */
   app_print(hw, "STATS,END\r\n");
-}
-
-static void print_hist(app_t *a)
-{
-  const app_hw_t *hw = a->hw;
-  app_print(hw, "HIST name=imu bin_us=%u", PERF_HIST_BIN_US);
-  for (unsigned i = 0; i < PERF_HIST_BINS; i++) {
-    app_print(hw, " %lu", (unsigned long)a->jit_imu.hist[i]);
-  }
-  app_print(hw, "\r\n");
 }
 
 static void print_mem(const app_hw_t *hw)
@@ -216,21 +217,9 @@ void app_execute(app_t *a, const cli_cmd_t *cmd)
     case CLI_RESET:
       hw->reset();
       break;
-    case CLI_FAULT_NACK:
-    case CLI_FAULT_OFF:
-      hw->i2c_fault(cmd->id == CLI_FAULT_NACK ? 1u : 0u);
-      if (cmd->id == CLI_FAULT_OFF) {
-        hw->boot_fault_set(0);
-      }
-      app_print(hw, "FAULT,t_ms=%lu\r\n", (unsigned long)hw->time->millis());
-      break;
     case CLI_FAULT_POWERLOSS:
       a->tear_next_page = 1;
       app_print(hw, "FAULT,powerloss_armed\r\n");
-      break;
-    case CLI_FAULT_BOOT:
-      hw->boot_fault_set((uint32_t)cmd->value);
-      hw->reset();
       break;
     case CLI_ERROR:
     default:

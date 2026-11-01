@@ -84,22 +84,11 @@ static dev_status_t i2c_write(void *ctx, uint8_t addr7, const uint8_t *data, siz
 }
 #endif
 
-/* Відмови для сценарію 6.2.4. У формі B сенсор не можна від'єднати, тому «сенсор зник» —
- * транзакція на сусідню адресу: на шині справжній NACK. Затиснутий SDA — фізичний: кнопка
- * btn_sda на схемі з'єднує лінію із землею. */
-static volatile unsigned i2c_fault_mode;
-
-void platform_i2c_fault(unsigned mode) { i2c_fault_mode = mode; }
-
 static dev_status_t i2c_write_read(void *ctx, uint8_t addr7, const uint8_t *wdata, size_t wlen,
                                    uint8_t *rdata, size_t rlen)
 {
   I2C_HandleTypeDef *h = ctx;
   HAL_StatusTypeDef st;
-  uint32_t boot_fault = platform_boot_fault_ms();
-  if (i2c_fault_mode == 1u || (boot_fault != 0u && HAL_GetTick() < boot_fault)) {
-    addr7 ^= 1u;
-  }
 #if BOARD_I2C_REPEATED_START
   if (wlen == 1) {
     st = HAL_I2C_Mem_Read(h, (uint16_t)(addr7 << 1), wdata[0], I2C_MEMADD_SIZE_8BIT, rdata, (uint16_t)rlen,
@@ -140,9 +129,26 @@ dev_status_t platform_i2c_mem_read_restart(uint8_t addr7, uint8_t reg, uint8_t *
 
 void platform_i2c_recover(void)
 {
-  /* RM0490 §25.4: при зависанні контролера — скинути PE; HAL_I2C_DeInit/Init робить це
-   * і заново налаштовує піни через MSP. */
+  /* Скидання лише PE не допомагає, коли обмін обірвався посередині: контролер тримає BUSY
+   * (сценарій 6.2.4). Повна процедура: відпустити ведений дев'ятьма тактами SCL (UM10204 §3.1.16),
+   * STOP, скинути блок через RCC, ініціалізувати заново. */
+  GPIO_InitTypeDef g = { 0 };
   HAL_I2C_DeInit(&hi2c1);
+  g.Mode = GPIO_MODE_OUTPUT_OD;
+  g.Pull = GPIO_PULLUP;
+  g.Speed = GPIO_SPEED_FREQ_LOW;
+  g.Pin = I2C_SCL_PIN | I2C_SDA_PIN;
+  HAL_GPIO_WritePin(I2C_SCL_PORT, I2C_SCL_PIN | I2C_SDA_PIN, GPIO_PIN_SET);
+  HAL_GPIO_Init(I2C_SCL_PORT, &g);
+  for (int i = 0; i < 9; i++) {
+    HAL_GPIO_WritePin(I2C_SCL_PORT, I2C_SCL_PIN, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(I2C_SCL_PORT, I2C_SCL_PIN, GPIO_PIN_SET);
+  }
+  HAL_GPIO_WritePin(I2C_SDA_PORT, I2C_SDA_PIN, GPIO_PIN_RESET); /* STOP: SDA вгору при високому SCL */
+  HAL_GPIO_WritePin(I2C_SDA_PORT, I2C_SDA_PIN, GPIO_PIN_SET);
+  HAL_GPIO_DeInit(I2C_SCL_PORT, I2C_SCL_PIN | I2C_SDA_PIN);
+  __HAL_RCC_I2C1_FORCE_RESET();
+  __HAL_RCC_I2C1_RELEASE_RESET();
   HAL_I2C_Init(&hi2c1);
   HAL_I2CEx_ConfigAnalogFilter(&hi2c1, I2C_ANALOGFILTER_ENABLE);
   HAL_I2CEx_ConfigDigitalFilter(&hi2c1, 0);
@@ -442,22 +448,6 @@ uint32_t platform_stack_used(void)
 uint32_t platform_stack_size(void) { return (uint32_t)&_Min_Stack_Size; }
 
 void platform_reset(void) { NVIC_SystemReset(); }
-
-/* Секція .noinit не обнуляється стартовим кодом; магічне слово відрізняє програмне скидання
- * від увімкнення живлення (після нього в RAM довільні значення). */
-#define BOOT_FAULT_MAGIC 0x5AFEB007u
-static uint32_t boot_fault_word[2] __attribute__((section(".noinit")));
-
-void platform_boot_fault_set(uint32_t ms)
-{
-  boot_fault_word[0] = BOOT_FAULT_MAGIC;
-  boot_fault_word[1] = ms;
-}
-
-uint32_t platform_boot_fault_ms(void)
-{
-  return boot_fault_word[0] == BOOT_FAULT_MAGIC ? boot_fault_word[1] : 0u;
-}
 
 /** Калібрування швидкості ядра: 500 ітерацій subs+bne, номінально 3-4 такти на ітерацію. */
 uint32_t platform_cal_loop(void)

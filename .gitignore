@@ -1,5 +1,7 @@
 # Артефакти збірки
 build/
+build-nucleo/
+build-su/
 *.o
 *.d
 *.lst

@@ -89,8 +89,6 @@ int main(void)
     .stack_used = platform_stack_used,
     .stack_size = platform_stack_size,
     .reset = platform_reset,
-    .boot_fault_set = platform_boot_fault_set,
-    .i2c_fault = platform_i2c_fault,
     .sysclk_hz = platform_sysclk_hz(),
     .board_name = BOARD_NAME,
     .fw_version = FW_VERSION,

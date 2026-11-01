@@ -61,11 +61,4 @@ uint32_t platform_stack_used(void);
 uint32_t platform_stack_size(void);
 void platform_reset(void);
 
-/** Прапорець «сенсор не готовий після старту»: переживає програмне скидання (.noinit). */
-void platform_boot_fault_set(uint32_t ms);
-uint32_t platform_boot_fault_ms(void);
-
-/** Впорскування відмови I2C: 0 — немає, 1 — NACK на шині. */
-void platform_i2c_fault(unsigned mode);
-
 #endif /* PLATFORM_H */

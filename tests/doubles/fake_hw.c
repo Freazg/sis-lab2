@@ -20,8 +20,6 @@ int fake_btn_pending;
 uint32_t fake_btn_t;
 int fake_probe_edges[4];
 int fake_resets;
-uint32_t fake_boot_fault_ms;
-unsigned fake_i2c_fault_mode;
 uint32_t fake_rx_dropped;
 int fake_eol_pending;
 
@@ -106,8 +104,6 @@ static uint32_t rx_dropped(void) { return fake_rx_dropped; }
 static uint32_t stack_used(void) { return 800u; }
 static uint32_t stack_size(void) { return 1024u; }
 static void do_reset(void) { fake_resets++; }
-static void boot_fault_set(uint32_t ms) { fake_boot_fault_ms = ms; }
-static void i2c_fault(unsigned mode) { fake_i2c_fault_mode = mode; }
 
 void fake_hw_init(fake_hw_t *f)
 {
@@ -128,8 +124,6 @@ void fake_hw_init(fake_hw_t *f)
   fake_btn_t = 0;
   memset(fake_probe_edges, 0, sizeof fake_probe_edges);
   fake_resets = 0;
-  fake_boot_fault_ms = 0;
-  fake_i2c_fault_mode = 0;
   fake_rx_dropped = 0;
   fake_eol_pending = 0;
   fake_time_reset();
@@ -150,8 +144,7 @@ void fake_hw_init(fake_hw_t *f)
     .i2c_mem_read_restart = mem_read_restart, .i2c_recover = recover,
     .cycles = cycles, .micros = micros, .cal_loop = cal_loop, .probe = probe, .btn_take = btn_take,
     .rx_eol_take = rx_eol_take, .rx_dropped = rx_dropped, .stack_used = stack_used,
-    .stack_size = stack_size, .reset = do_reset, .boot_fault_set = boot_fault_set,
-    .i2c_fault = i2c_fault,
+    .stack_size = stack_size, .reset = do_reset,
     .sysclk_hz = 48000000u, .board_name = "FAKE", .fw_version = "test", .fw_git = "deadbeef",
   };
 }

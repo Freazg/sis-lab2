@@ -2,11 +2,17 @@
 
 Курс «Системне програмування вбудованих систем», КПІ ім. Ігоря Сікорського, ІО-31, Сас Євгеній.
 
+**ЛР3:** продукт працює як ціле на super loop: режими LIVE/HOLD/REC/PLAY, комплементарний фільтр, запис траєкторії у W25Q64, CLI, виміри часу, пам'яті й меж підходу. Звіт — [docs/lab3-report.md](docs/lab3-report.md).
+
 **ЛР2:** усі пристрої PRD в одній прошивці (MPU-6050, W25Q64, 2×SG92R, FT232RL, 2 LED, B1), самоперевірка,
 відтворювані записи логічного аналізатора з декодуванням і аналізом, шарова архітектура, хостові тести, CI.
 
 | Документ | Що всередині |
 |---|---|
+| [docs/lab3-report.md](docs/lab3-report.md) | звіт ЛР3 |
+| [docs/tasks.md](docs/tasks.md) | задачі, періоди, дедлайни, переривання |
+| [docs/metrics/results.md](docs/metrics/results.md) | результати S1–S3 і сценаріїв 6.2 |
+| [docs/limitations.md](docs/limitations.md), [docs/baseline-lab4.md](docs/baseline-lab4.md) | реєстр обмежень, базова лінія для ЛР4 |
 | [docs/lab2-report.md](docs/lab2-report.md) | звіт ЛР2 ([PDF](docs/lab2-report.pdf), [відеозвіт](https://drive.google.com/file/d/1oGNvfJEP8LUogLoFS4Q4c2V6_uePuqIl/view?usp=sharing)) |
 | [docs/pinout.md](docs/pinout.md) | піни, адреси, живлення, шини, схема, конфлікти, інструкція зі складання |
 | [docs/architecture.md](docs/architecture.md) | шари, правила залежностей, component diagram |
@@ -30,11 +36,14 @@ make build        # check-deps + прошивка (Wokwi)
 make test         # хостові тести
 make coverage     # тести + покриття (поріг 90 % рядків)
 make sim          # Wokwi CLI: самоперевірка має дати ST,dev=SUMMARY,res=PASS
-make captures     # перезаписати всі записи логічного аналізатора
+make captures     # перезаписати записи логічного аналізатора ЛР2
+make scenarios    # сценарії ЛР3 у Wokwi: docs/metrics/runs, docs/captures/lr3-*
+make metrics      # зведення: docs/metrics/results.md
+make mem          # пам'ять: docs/metrics/memory.md
 make build-nucleo # для реальної плати; make flash-hw / make monitor
 ```
 
-Для `make sim` / `make captures` потрібні [wokwi-cli](https://docs.wokwi.com/wokwi-ci/cli-installation), `sigrok-cli`
+Для `make sim` / `make scenarios` потрібні [wokwi-cli](https://docs.wokwi.com/wokwi-ci/cli-installation), `sigrok-cli`
 і токен `WOKWI_CLI_TOKEN` (або файл `~/.wokwi_token`).
 
 ## Справжня плата (бонус)

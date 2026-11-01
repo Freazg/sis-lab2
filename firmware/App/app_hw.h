@@ -67,8 +67,6 @@ typedef struct {
 
   /* сценарії відмов (методичка §6.2) */
   void (*reset)(void);
-  void (*boot_fault_set)(uint32_t ms);
-  void (*i2c_fault)(unsigned mode);
 
   uint32_t sysclk_hz;
   const char *board_name;

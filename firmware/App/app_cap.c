@@ -1,6 +1,4 @@
 #include "app_internal.h"
-
-#if APP_CAPTURES
 #include "app_io.h"
 #include "selftest.h"
 
@@ -139,11 +137,3 @@ void app_cap(app_t *a, cli_cmd_id_t id)
   }
   app_print(hw, "CAP,%s,END\r\n", name);
 }
-
-#else
-void app_cap(app_t *a, cli_cmd_id_t id)
-{
-  (void)a;
-  (void)id;
-}
-#endif /* APP_CAPTURES */

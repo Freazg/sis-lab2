@@ -29,14 +29,8 @@ static void test_measurement_and_fault_commands(void)
   TEST_ASSERT_EQUAL(CLI_EVT, cli_parse("evt").id);
   TEST_ASSERT_EQUAL(CLI_PERFCAL, cli_parse("perfcal").id);
   TEST_ASSERT_EQUAL(CLI_RESET, cli_parse("reset").id);
-  TEST_ASSERT_EQUAL(CLI_FAULT_NACK, cli_parse("fault nack").id);
-  TEST_ASSERT_EQUAL(CLI_FAULT_OFF, cli_parse("fault off").id);
   TEST_ASSERT_EQUAL(CLI_FAULT_POWERLOSS, cli_parse("fault powerloss").id);
-  cli_cmd_t c = cli_parse("fault boot 300");
-  TEST_ASSERT_EQUAL(CLI_FAULT_BOOT, c.id);
-  TEST_ASSERT_EQUAL_INT32(300, c.value);
-  TEST_ASSERT_EQUAL(CLI_ERROR, cli_parse("fault boot 0").id);
-  TEST_ASSERT_EQUAL(CLI_ERROR, cli_parse("fault boot").id);
+  TEST_ASSERT_EQUAL(CLI_ERROR, cli_parse("fault nack").id);
 }
 
 static void test_numeric_commands(void)

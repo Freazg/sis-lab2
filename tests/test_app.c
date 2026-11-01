@@ -477,19 +477,11 @@ static void test_diagnostic_commands(void)
   TEST_ASSERT_EQUAL(1, fake_con_count("cmds:"));
 }
 
-static void test_fault_commands(void)
+static void test_reset_command(void)
 {
   app_init(&app, &f.hw);
-  feed("fault nack\n");
-  TEST_ASSERT_EQUAL_UINT32(1, fake_i2c_fault_mode);
-  feed("fault boot 300\n");
-  TEST_ASSERT_EQUAL_UINT32(300, fake_boot_fault_ms);
-  TEST_ASSERT_EQUAL(1, fake_resets);
-  feed("fault off\n");
-  TEST_ASSERT_EQUAL_UINT32(0, fake_i2c_fault_mode);
-  TEST_ASSERT_EQUAL_UINT32(0, fake_boot_fault_ms);
   feed("reset\n");
-  TEST_ASSERT_EQUAL(2, fake_resets);
+  TEST_ASSERT_EQUAL(1, fake_resets);
 }
 
 static void test_event_log_keeps_last_entries(void)
@@ -581,7 +573,7 @@ int main(void)
   RUN_TEST(test_cal_sets_zero_and_gyro_bias);
   RUN_TEST(test_limits_and_rate_commands);
   RUN_TEST(test_diagnostic_commands);
-  RUN_TEST(test_fault_commands);
+  RUN_TEST(test_reset_command);
   RUN_TEST(test_event_log_keeps_last_entries);
   RUN_TEST(test_capture_commands_are_framed);
   RUN_TEST(test_capture_i2c_prints_bus_bytes);

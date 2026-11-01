@@ -37,8 +37,6 @@ extern int fake_btn_pending;         /**< подія EXTI, яку забере b
 extern uint32_t fake_btn_t;
 extern int fake_probe_edges[4];
 extern int fake_resets;
-extern uint32_t fake_boot_fault_ms;
-extern unsigned fake_i2c_fault_mode;
 extern uint32_t fake_rx_dropped;
 extern int fake_eol_pending;
 

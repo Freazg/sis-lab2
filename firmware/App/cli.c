@@ -65,13 +65,10 @@ static const struct {
   { "reset", NULL, CLI_RESET },       { "mode", "live", CLI_MODE_LIVE },
   { "mode", "hold", CLI_MODE_HOLD },  { "mode", "rec", CLI_MODE_REC },
   { "mode", "play", CLI_MODE_PLAY },
-#if APP_CAPTURES
   { "cap", "i2c", CLI_CAP_I2C },      { "cap", "spi", CLI_CAP_SPI },
   { "cap", "pwm", CLI_CAP_PWM },      { "cap", "uart", CLI_CAP_UART },
   { "cap", "anomaly", CLI_CAP_ANOMALY },
-#endif
-  { "fault", "nack", CLI_FAULT_NACK },
-  { "fault", "off", CLI_FAULT_OFF },  { "fault", "powerloss", CLI_FAULT_POWERLOSS },
+  { "fault", "powerloss", CLI_FAULT_POWERLOSS },
 };
 
 cli_cmd_t cli_parse(const char *line)
@@ -117,9 +114,6 @@ cli_cmd_t cli_parse(const char *line)
     }
   } else if (n == 2 && token_eq(t[0], "rate") && parse_int(t[1], &v)) {
     c.id = CLI_RATE;
-    c.value = v;
-  } else if (n == 3 && token_eq(t[0], "fault") && token_eq(t[1], "boot") && parse_int(t[2], &v) && v > 0) {
-    c.id = CLI_FAULT_BOOT;
     c.value = v;
   }
   return c;

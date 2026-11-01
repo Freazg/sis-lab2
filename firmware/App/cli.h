@@ -8,7 +8,7 @@
  *   servo pan|tilt <0..180>
  *   cap i2c|spi|pwm|uart|anomaly                        — транзакції для логічного аналізатора (ЛР2)
  *   stats | stats reset | hist | mem | evt | perfcal    — вимірювання (ЛР3)
- *   rate <hz> | reset | fault nack|off|powerloss | fault boot <ms> — сценарії 6.2
+ *   rate <hz> | reset | fault powerloss                 — сценарії 6.2
  */
 #ifndef CLI_H
 #define CLI_H
@@ -39,10 +39,7 @@ typedef enum {
   CLI_PERFCAL,
   CLI_RATE,
   CLI_RESET,
-  CLI_FAULT_NACK,
-  CLI_FAULT_OFF,
   CLI_FAULT_POWERLOSS,
-  CLI_FAULT_BOOT,
   CLI_SERVO,
   CLI_CAP_I2C,
   CLI_CAP_SPI,

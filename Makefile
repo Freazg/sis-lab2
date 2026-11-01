@@ -11,6 +11,9 @@
 #   make sim          — headless-прогін у Wokwi CLI: чекає ST,dev=SUMMARY,res=PASS
 #   make captures     — перезаписати всі docs/captures/*.vcd і декодувати sigrok-cli
 #   make vectors      — оновити tests/vectors/ з декодованих записів
+#   make scenarios    — сценарії ЛР3 у Wokwi: логи docs/metrics/runs, записи docs/captures/lr3-*
+#   make metrics      — зведення логів і записів: docs/metrics/results.md
+#   make mem          — звіт про пам'ять: docs/metrics/memory.md
 #   make flash        — Форма B: «прошивка» = перезапуск симулятора з новим ELF
 #   make flash-hw     — прошити справжню плату через ST-LINK (st-flash)
 #   make monitor      — UART-термінал до справжньої плати (picocom, 115200 8N1)
@@ -34,7 +37,7 @@ GIT_HASH   := $(shell git rev-parse --short=8 HEAD 2>/dev/null || echo unknown)$
 DOCKER_RUN = docker run --rm -v "$(CURDIR)":/workspace -w /workspace \
              --user $(shell id -u):$(shell id -g) $(IMAGE)
 
-.PHONY: all image build build-nucleo test coverage check-deps chips sim captures vectors \
+.PHONY: all image build build-nucleo test coverage check-deps chips sim captures vectors scenarios metrics mem \
         flash flash-hw monitor clean
 
 all: build
@@ -71,6 +74,15 @@ captures: build build-nucleo chips/dist/w25q64.chip.wasm
 
 vectors:
 	python3 tools/make_test_vectors.py
+
+scenarios: build chips/dist/w25q64.chip.wasm
+	python3 tools/run_scenarios.py
+
+metrics:
+	python3 tools/analyze_metrics.py
+
+mem:
+	$(DOCKER_RUN) python3 tools/mem_report.py $(GIT_HASH)
 
 flash: $(ELF)
 	@echo "Форма B (Wokwi): ELF готовий -> $(ELF)"

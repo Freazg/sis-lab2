@@ -21,7 +21,7 @@ TESTS    = $(patsubst %.c,%,$(wildcard test_*.c))
 
 CFLAGS   = -std=gnu11 -O0 -g -Wall -Wextra -Werror -Wshadow \
            -I$(FW)/Devices -I$(FW)/App -Idoubles -Ivendor/unity -Ivectors \
-           -DUNITY_INCLUDE_DOUBLE -DAPP_CAPTURES=1
+           -DUNITY_INCLUDE_DOUBLE
 LDLIBS   = -lm
 
 ifeq ($(COVERAGE),1)
