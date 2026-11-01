@@ -9,7 +9,7 @@
 
 | Документ | Що всередині |
 |---|---|
-| [docs/lab3-report.md](docs/lab3-report.md) | звіт ЛР3 |
+| [docs/lab3-report.md](docs/lab3-report.md) | звіт ЛР3 ([PDF](docs/lab3-report.pdf), [відеозвіт](https://drive.google.com/file/d/1JDDGTTT_tXXBkp9Qv6n2L_oGPKjgLpMF/view?usp=sharing)) |
 | [docs/tasks.md](docs/tasks.md) | задачі, періоди, дедлайни, переривання |
 | [docs/metrics/results.md](docs/metrics/results.md) | результати S1–S3 і сценаріїв 6.2 |
 | [docs/limitations.md](docs/limitations.md), [docs/baseline-lab4.md](docs/baseline-lab4.md) | реєстр обмежень, базова лінія для ЛР4 |
