@@ -10,6 +10,7 @@ import json
 import pathlib
 import re
 import statistics
+import subprocess
 import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
@@ -152,7 +153,7 @@ def wire_e2e(name):
     if not sig:
         return None
     pp = pulses(sig["PWM_PAN"])
-    marks = pulses(sig["MARK"])
+    marks = pulses(sig["MARK"])[1:]  # перший імпульс — до початку вимірювального вікна
     ccr = [w / 1000 for _, w in marks]
     out = []
     for t, _ in marks:
@@ -189,6 +190,49 @@ def wire_rate(name):
     return round(max(rates), 1) if rates else None
 
 
+def sigrok_widths(name, channel, edge, downsample=100):
+    """Декодер timing (методичка §5.3): інтервали між фронтами каналу, мкс."""
+    res = subprocess.run(["sigrok-cli", "-I", f"vcd:downsample={downsample}", "-i", str(CAP / f"lr3-{name}.vcd"),
+                          "-P", f"timing:data={channel}:edge={edge}", "-A", "timing=time"],
+                         capture_output=True, text=True)
+    k = {"s": 1e6, "ms": 1e3, "μs": 1, "us": 1, "ns": 1e-3}
+    return [float(v) * k[u] for v, u in re.findall(r"timing-1: ([\d.]+) (s|ms|μs|us|ns)", res.stdout)]
+
+
+def evt_latencies(name, pairs):
+    """Затримки за мітками часу МК у журналі EVT (методичка §5.2)."""
+    events = [(int(t), n) for t, n in EVT.findall(read_log(name))]
+    out = {}
+    for a, b in pairs:
+        d, t0 = [], None
+        for t, n in events:
+            if n == a:
+                t0 = t
+            elif n == b and t0 is not None:
+                d.append(t - t0)
+                t0 = None
+        out[f"{a}->{b}"] = spread(d)
+    return out
+
+
+def methods_erase():
+    """Одна метрика трьома способами: стирання сектора 4 КБ (модель: tSE = 45 мс)."""
+    log = summary("sc1-erase")["blocks"]
+    sig = load_vcd("sc1-erase")
+    wire = [w / 1000 for _, w in pulses(sig["P_LONG"])] if sig else []
+    wire = [w for w in wire if w > 20000]
+    timing = [v for v in sigrok_widths("sc1-erase", "P_LONG", "any") if 40000 < v < 60000]
+    return {"mcu_counter": log[0]["stat"]["flash_erase"] if log else None, "wire_python": spread(wire),
+            "wire_sigrok_timing": spread(timing),
+            "evt_log": evt_latencies("sc1-erase", [("erase_start", "erase_done")])}
+
+
+def methods_button():
+    log = summary("sc2-btn-idle")["blocks"]
+    return {"mcu_counter": log[0]["stat"]["btn_latency"] if log else None, "wire": wire_button("sc2-btn-idle"),
+            "evt_log": evt_latencies("fr06", [("btn_press", "mode")])}
+
+
 def fr08(name):
     """Порівняння траєкторії запису і відтворення: тривалості з логу і вирівнювання за ШІМ."""
     text = read_log(name)
@@ -203,6 +247,38 @@ def fr08(name):
     if dump:
         res.update(dump_samples=int(dump[1]), dump_pages=int(dump[2]), dump_crc=dump[3])
     return res
+
+
+def wire_servo_motion(name):
+    """FR-05: найбільша швидкість за один період ШІМ і час відпрацювання стрибка."""
+    sig = load_vcd(name)
+    if not sig:
+        return None
+    k = 180 / (2400 - 544)
+    deg = [(t / 1e9, (w / 1000 - 544) * k) for t, w in pulses(sig["PWM_PAN"])]
+    moves = [(a, b) for a, b in zip(deg, deg[1:]) if abs(b[1] - a[1]) > 1]
+    seg, cur = [], [moves[0]]
+    for x, y in zip(moves, moves[1:]):
+        if y[0][0] - x[1][0] < 0.1:
+            cur.append(y)
+        else:
+            seg.append(cur)
+            cur = [y]
+    seg.append(cur)
+    last = seg[-1]
+    span = abs(last[-1][1][1] - last[0][0][1])
+    dur = last[-1][1][0] - last[0][0][0]
+    return {"step_deg": round(span, 1), "step_s": round(dur, 3), "avg_dps": round(span / dur, 1)}
+
+
+def fault_timing():
+    """Від першої невдалої транзакції (P_IMU різко вужчає) до ERR,IMU lost."""
+    sig = load_vcd("sc4-fault")
+    if not sig:
+        return None
+    p = pulses(sig["P_IMU"])
+    first = next((t for (t, w), (_, w0) in zip(p[1:], p) if w < 1_000_000 and w0 > 2_000_000), None)
+    return {"first_fail_ms": round(first / 1e6, 1) if first else None}
 
 
 def fr02():
@@ -252,6 +328,109 @@ def breakpoint_sweep():
     return rows
 
 
+def ms(us):
+    return f"{us / 1000:.1f} мс" if abs(us) >= 1000 else f"{us} мкс"
+
+
+def last(r, name):
+    return r["runs"][name]["blocks"][-1]
+
+
+def write_md(r):
+    git = sorted({v["git"] for v in r["runs"].values() if v["git"]})
+    s1, s2, s3 = (last(r, n) for n in ("s1", "s2", "s3"))
+    o = ["# Результати вимірювань ЛР3", "",
+         "Генерується `make metrics` (tools/analyze_metrics.py) з `docs/metrics/runs/*.log` і `docs/captures/lr3-*.vcd`.",
+         "Усі числа отримано в симуляторі Wokwi (форма B). Які з них достовірні — розділ 3.5 звіту.", "",
+         f"Збірка: `{', '.join(git)}`, 48 МГц, UART 115200, SPI 3 МГц, вимірювальний код увімкнено.", "",
+         "## Навантаження S1–S3", "",
+         "S1 — HOLD, 10 с. S2 — запис траєкторії 45 с, рух, `status` раз на 2 с. S3 — 40 циклів: `dump`, потік `status`, рух, кнопка.", "",
+         "| Метрика | S1 | S2 | S3 | S3−S1 | Вимога | Спосіб |", "|---|---:|---:|---:|---:|---|---|"]
+
+    def row(title, f, need, how, unit=ms):
+        a, b, c = f(s1), f(s2), f(s3)
+        fmt = lambda v: "—" if v is None else unit(v)  # noqa: E731
+        delta = "—" if a is None or c is None else unit(c - a)
+        o.append(f"| {title} | {fmt(a)} | {fmt(b)} | {fmt(c)} | {delta} | {need} | {how} |")
+
+    def stat(name, key):
+        return lambda b: b["stat"][name][key] if b["stat"][name]["n"] else None
+
+    row("imu_task, avg", stat("imu", "avg"), "—", "лічильник")
+    row("imu_task, max", stat("imu", "max"), "—", "лічильник")
+    row("servo_task, max", stat("servo", "max"), "—", "лічильник")
+    row("rec_task, max", stat("rec", "max"), "—", "лічильник")
+    row("Період циклу, avg", stat("loop", "avg"), "—", "лічильник")
+    row("Період циклу, max", stat("loop", "max"), "—", "лічильник")
+    row("Джитер IMU, max", lambda b: b["jit"]["imu"]["max"], "≤ 0,5 мс (FR-01)", "лічильник")
+    row("Джитер IMU, p99 (межа кошика)", lambda b: b["jit"]["imu"]["p99"], "—", "гістограма")
+    row("Джитер серво, max", lambda b: b["jit"]["servo"]["max"], "—", "лічильник")
+    row("Затримка кнопки, max", stat("btn_latency", "max"), "≤ 100 мс (tasks.md)", "лічильник + аналізатор")
+    row("Команда → відповідь, max", stat("cmd_latency", "max"), "≤ 100 мс (tasks.md)", "лічильник")
+    row("Рух → CCR, max", stat("e2e_latency", "max"), "≤ 50 мс (FR-03)", "лічильник")
+    n = str
+    row("Пропущені запуски IMU", lambda b: b["jit"]["imu"]["missed"], "0", "лічильник", n)
+    row("Порушення ±0,5 мс", lambda b: b["jit"]["imu"]["viol"], "0", "лічильник", n)
+    row("Запусків IMU", lambda b: b["jit"]["imu"]["n"], "≥ 1000", "лічильник", n)
+    row("Завантаження CPU, max", lambda b: b["load"]["max"], "—", "лічильник", lambda v: f"{v} %")
+    o += ["", f"Глибина стека за stack painting: S1 {r['runs']['s1']['stack_used']} Б, S2 {r['runs']['s2']['stack_used']} Б, "
+          f"S3 {r['runs']['s3']['stack_used']} Б (максимум припадає на самотест при старті). Heap: не використовується.", "",
+          "## Сценарії 6.2", "",
+          "| Сценарій | Джитер IMU, max | Пропуски | Завантаження | Головне |", "|---|---:|---:|---:|---|"]
+    for name, title, extra in (
+        ("s1", "S1, контроль", "—"),
+        ("sc1-erase", "6.2.1 стирання 16 секторів", f"блокування {ms(last(r, 'sc1-erase')['stat']['cli']['max'])}"),
+        ("sc1-dump", "6.2.1 dump 500 семплів", f"блокування {ms(last(r, 'sc1-dump')['stat']['cli']['max'])}"),
+        ("sc2-btn-idle", "6.2.2 кнопка, контроль", f"затримка max {ms(last(r, 'sc2-btn-idle')['stat']['btn_latency']['max'])}"),
+        ("sc2-btn-long", "6.2.2 кнопка під час dump", f"затримка max {ms(last(r, 'sc2-btn-long')['stat']['btn_latency']['max'])}"),
+        ("sc3-flood", "6.2.3 потік команд", f"втрачено {last(r, 'sc3-flood')['cnt']['rx_dropped']} байт, "
+                                            f"команда → відповідь max {ms(last(r, 'sc3-flood')['stat']['cmd_latency']['max'])}"),
+    ):
+        b = last(r, name)
+        j = b["jit"]["imu"]
+        o.append(f"| {title} | {ms(j['max'])} | {j['missed']} | {b['load']['max']} % | {extra} |")
+    fb = r["fault"]["blocks"]
+    o += ["", "## Відмови (6.2.4, `sc4-fault`)", "", "| Стан | I²C, avg | I²C, max | imu_task, max | Джитер IMU, max | Завантаження |",
+          "|---|---:|---:|---:|---:|---:|"]
+    for title, b in zip(("Норма", "Сенсор від'єднано", "SDA на землі"), fb):
+        o.append(f"| {title} | {ms(b['stat']['i2c_read']['avg'])} | {ms(b['stat']['i2c_read']['max'])} | "
+                 f"{ms(b['stat']['imu']['max'])} | {ms(b['jit']['imu']['max'])} | {b['load']['max']} % |")
+    o += ["", f"Перша невдала транзакція {r['wire']['fault']['first_fail_ms']} мс, `ERR,IMU lost` {r['fault']['lost_ms'][0]} мс. "
+          f"Відновлення: `IMU,restored` на {r['fault']['restored_ms']} мс.", "",
+          "## Точка зламу (6.2.5, `sc5-break`)", "", "| Задано, Гц | Досягнуто, Гц | Порушення ±0,5 мс | Пропуски | Джитер max | Завантаження |",
+          "|---:|---:|---:|---:|---:|---:|"]
+    for x in r["sweep"]:
+        o.append(f"| {x['hz']} | {x['imu_runs'] / 3:.0f} | {x['viol']} | {x['missed']} | {ms(x['jit_max'])} | {x['load']} % |")
+    bt = r["boot"]
+    pl = r["powerloss"]
+    o += ["", "## Старт і обрив живлення", "",
+          f"Від скидання до першого виміру IMU: {bt['first_imu_us'][0] / 1000:.1f} мс, із них самотест ≈ 256 мс. "
+          f"Сенсор під'єднано через 300 мс після READY: {bt['first_imu_us'][1] / 1000:.1f} мс. Через 1000 мс: {bt['first_imu_us'][2] / 1000:.1f} мс.", "",
+          f"Обрив запису сторінки: після старту `TRAJ,session={pl['traj'][-1][0]},pages={pl['traj'][-1][1]},samples={pl['traj'][-1][2]},torn={pl['traj'][-1][3]}`. "
+          f"`dump` дав {pl['dump'][-1][0]} семплів, відтворення {pl['play'][-1]}.", "",
+          "## Одна метрика різними способами", "", "| Метрика | Лічильник МК | Журнал EVT | Аналізатор, Python | Аналізатор, декодер timing |",
+          "|---|---:|---:|---:|---:|"]
+    e = r["methods"]["erase"]
+    b = r["methods"]["button"]
+    o.append(f"| Стирання сектора, avg (n = 64) | {e['mcu_counter']['avg']} мкс | {e['evt_log']['erase_start->erase_done']['avg']} мкс | "
+             f"{e['wire_python']['avg']} мкс | {e['wire_sigrok_timing']['avg']} мкс |")
+    o.append(f"| Затримка кнопки, avg (n = 50) | {b['mcu_counter']['avg']} мкс | — | {b['wire']['avg']} мкс | — |")
+    o.append(f"| Затримка кнопки, max | {b['mcu_counter']['max']} мкс | — | {b['wire']['max']} мкс | — |")
+    w = r["wire"]
+    o += ["", "## Вимоги PRD за окремими прогонами", "",
+          f"- FR-01, період IMU за P_IMU: S1 avg {w['imu_s1']['period']['avg']} мкс, min {w['imu_s1']['period']['min']}, max {w['imu_s1']['period']['max']}.",
+          f"- FR-02, нахил 15/30/45°: pitch {[p / 100 for p, _ in r['fr02'][2::2]]}, roll {[q / 100 for _, q in r['fr02'][3::2]]}.",
+          f"- FR-03: рух → CCR max {last(r, 'fr03')['stat']['e2e_latency']['max'] / 1000:.1f} мс (лічильник), {w['e2e']['to_ccr']['max'] / 1000:.1f} мс (MARK); "
+          f"рух → змінений імпульс на виводі max {w['e2e']['to_pwm_output']['max'] / 1000:.1f} мс.",
+          f"- FR-04: період ШІМ avg {w['pwm']['period']['avg']} мкс, ширини імпульсів {w['pwm']['widths']} мкс.",
+          f"- FR-05: тремтіння ±1° — серво не рухались ({r['fr05'][0]} → {r['fr05'][1]} сотих °). Стрибок {w['servo_motion']['step_deg']}° за {w['servo_motion']['step_s']} с; "
+          f"найбільша швидкість за один період ШІМ {w['rate_dps']} °/с.",
+          f"- FR-06: {last(r, 'fr06')['cnt']['btn']} натискань, стільки ж реакцій.",
+          f"- FR-07: {r['fr08']['rec_samples']} семплів, {r['fr08']['rec_pages']} сторінок, CRC {r['fr08']['dump_crc']}.",
+          f"- FR-08: запис {r['fr08']['rec_dur_us'] / 1e6:.3f} с, відтворення {r['fr08']['play_dur_us'] / 1e6:.3f} с, різниця {r['fr08']['diff_ms']} мс.", ""]
+    (OUT / "results.md").write_text("\n".join(o), encoding="utf-8")
+
+
 def main():
     names = sorted(p.stem for p in RUNS.glob("*.log"))
     r = {"runs": {n: summary(n) for n in names}}
@@ -261,7 +440,9 @@ def main():
         "button_idle": wire_button("sc2-btn-idle"), "button_long": wire_button("sc2-btn-long"),
         "button_s3": wire_button("s3"), "imu_s1": wire_imu("s1"), "imu_s2": wire_imu("s2"), "imu_s3": wire_imu("s3"),
         "e2e": wire_e2e("fr03"), "pwm": wire_pwm("fr04"), "rate_dps": wire_rate("fr05"),
+        "servo_motion": wire_servo_motion("fr05"), "fault": fault_timing(),
     }
+    r["methods"] = {"erase": methods_erase(), "button": methods_button()}
     r["fr02"] = fr02()
     r["fr05"] = fr05()
     r["fr08"] = fr08("fr07-08")
@@ -270,6 +451,7 @@ def main():
     r["fault"] = fault()
     r["sweep"] = breakpoint_sweep()
     (OUT / "results.json").write_text(json.dumps(r, ensure_ascii=False, indent=1), encoding="utf-8")
+    write_md(r)
     print(json.dumps({k: r[k] for k in ("wire", "fr08", "boot", "powerloss", "sweep")}, ensure_ascii=False)[:3000])
 
 

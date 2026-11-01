@@ -9,7 +9,7 @@
 | Згенерований / вендорський код | `firmware/Core/`, `firmware/Drivers/` | `main.c` (composition root), MSP, обробники IRQ, HAL/CMSIS ST | усе | — |
 | Адаптація до плати | `firmware/Platform/` | `board.h` (піни, AF, хендли, параметри шин), `platform.c` (реалізації `bus.h` над HAL, UART, GPIO) | HAL, CMSIS, `main.h`, `Devices/` (лише інтерфейси) | `App/` |
 | Драйвери пристроїв | `firmware/Devices/` | `mpu6050`, `w25q64`, `servo`, `imath`, `bus.h`, `dev_status` | лише `Devices/` і стандартну бібліотеку C | HAL, `Platform/`, `App/`, `main.h` |
-| Прикладна логіка | `firmware/App/` | режими LIVE/HOLD, self-test, CLI, команди `cap`, орієнтація | `App/`, `Devices/`, стандартну бібліотеку C | HAL, `Platform/`, `main.h` |
+| Прикладна логіка | `firmware/App/` | super loop і задачі (`app.c`), режими LIVE/HOLD/REC/PLAY, self-test, CLI, траєкторія, фільтр руху, вимірювання, команди `cap`, орієнтація | `App/`, `Devices/`, стандартну бібліотеку C | HAL, `Platform/`, `main.h` |
 | Тести | `tests/` | Unity, test doubles, тестові вектори з записів | `Devices/`, `App/`, `doubles/` | HAL, `Platform/`, `Core/` |
 
 Напрямок залежностей: `Core → App → Devices ← Platform → Drivers`. Залежність `Platform → Devices` іде лише на інтерфейси `bus.h`: Platform *реалізує* те, чого потребують драйвери (інверсія залежностей).
@@ -48,6 +48,10 @@ typedef struct i2c_bus {
 - нові функції можна додавати лише в `USER CODE BEGIN 0/4`;
 - змінені параметри `MX_*_Init()` CubeMX перезапише з `.ioc`, тож їх треба змінювати в `.ioc`, а не в коді;
 - генератор не знає про `board.h`, тому номери пінів у `.ioc` треба тримати узгодженими з `board.h` (див. журнал проблем звіту: `.ioc` у формі B не створювався, бо CubeMX вимагає облікового запису myST).
+
+## Виміри в шарах (ЛР3)
+
+`App/perf.*` рахує статистику над значеннями тактів і не знає джерела часу. Лічильник, службові GPIO, EXTI кнопки і stack painting живуть у `Platform/platform.c`, а App отримує їх через `app_hw_t`. Тому ті самі модулі виконуються в хостових тестах із fake-часом, і перенесення на FreeRTOS у ЛР4 не зачіпає форматів логів.
 
 ## Збірка
 

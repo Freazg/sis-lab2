@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-docs/lab2-report.md -> docs/lab2-report.pdf (Markdown -> HTML -> Chrome headless print-to-pdf).
-Потрібні: python-markdown, Google Chrome.  Запуск: python3 tools/report_pdf.py
+docs/labN-report.md -> docs/labN-report.pdf (Markdown -> HTML -> Chrome headless print-to-pdf).
+Потрібні: python-markdown, Google Chrome.  Запуск: python3 tools/report_pdf.py lab3-report
 """
 import pathlib
 import subprocess
@@ -10,9 +10,10 @@ import sys
 import markdown
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-SRC = ROOT / "docs" / "lab2-report.md"
-HTML = ROOT / "docs" / "lab2-report.html"
-PDF = ROOT / "docs" / "lab2-report.pdf"
+NAME = sys.argv[1] if len(sys.argv) > 1 else "lab3-report"
+SRC = ROOT / "docs" / f"{NAME}.md"
+HTML = ROOT / "docs" / f"{NAME}.html"
+PDF = ROOT / "docs" / f"{NAME}.pdf"
 CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 
 CSS = """
@@ -34,7 +35,7 @@ img { max-width: 100%; page-break-inside: avoid; }
 
 def main():
     body = markdown.markdown(SRC.read_text(encoding="utf-8"), extensions=["tables", "fenced_code", "md_in_html"])
-    HTML.write_text(f"<!doctype html><html lang='uk'><head><meta charset='utf-8'><title>ЛР2 — Сас Є.О., ІО-31</title>"
+    HTML.write_text(f"<!doctype html><html lang='uk'><head><meta charset='utf-8'><title>{NAME} — Сас Є.О., ІО-31</title>"
                     f"<style>{CSS}</style></head><body>{body}</body></html>", encoding="utf-8")
     res = subprocess.run([CHROME, "--headless=new", "--disable-gpu", "--no-pdf-header-footer",
                           f"--print-to-pdf={PDF}", HTML.as_uri()], capture_output=True, text=True, timeout=180)

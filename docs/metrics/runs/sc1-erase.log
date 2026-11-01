@@ -1,0 +1,68 @@
+
+BOOT,fw=lr3-1.0,git=ab3dcf9e,board=NUCLEO-C031C6
+ST,dev=BEGIN,fw=lr3-1.0,board=NUCLEO-C031C6
+ST,dev=MCU,res=PASS,board=NUCLEO-C031C6,sysclk_hz=48000000
+ST,dev=MPU6050,res=PASS,bus=I2C1,addr=0x68,who=0x68,acc_mg=0/0/1000,norm_mg=1000,dev_mg=0,gyro_mdps=0/0/0,temp_cdeg=2400,chk=AGT
+ST,dev=W25Q64,res=PASS,bus=SPI1,jedec=EF4017,test_addr=0x7FF000,len=32,erase_ms=46,mismatch=0,stage=readback,err=OK
+ST,dev=SERVO_PAN,res=PASS,pwm=TIM3_CH1,period_us=20000,pulse_us_0deg=544,pulse_us_180deg=2400,pulse_us_90deg=1472
+ST,dev=SERVO_TILT,res=PASS,pwm=TIM3_CH2,period_us=20000,pulse_us_0deg=544,pulse_us_180deg=2400,pulse_us_90deg=1472
+ST,dev=LED_LIVE,res=PASS,readback_on=1,readback_off=1
+ST,dev=LED_REC,res=PASS,readback_on=1,readback_off=1
+ST,dev=BTN_B1,res=PASS,pin=PC13,idle=released
+ST,dev=FT232RL,res=PASS,uart=USART1,baud=115200,tx=OK
+ST,dev=SUMMARY,res=PASS,pass=9,fail=0
+TRAJ,session=0,pages=0,samples=0,torn=0
+MODE,LIVE
+READYBOOT,first_imu_us=271087
+MODE,LIVESTATS,RESETERASE,DONE,sectors=16
+ERASE,DONE,sectors=16
+ERASE,DONE,sectors=16
+ERASE,DONE,sectors=16
+STATS,BEGIN
+STAT name=cli n=18 min_us=26 avg_us=163221 max_us=733958
+STAT name=btn n=0 min_us=0 avg_us=0 max_us=0
+STAT name=imu n=242 min_us=2418 avg_us=2433 max_us=2464
+STAT name=servo n=61 min_us=135 avg_us=175 max_us=206
+STAT name=rec n=0 min_us=0 avg_us=0 max_us=0
+STAT name=play n=0 min_us=0 avg_us=0 max_us=0
+STAT name=loop n=5268 min_us=98 avg_us=772 max_us=736729
+STAT name=i2c_read n=242 min_us=1637 avg_us=1639 max_us=1643
+STAT name=flash_prog n=0 min_us=0 avg_us=0 max_us=0
+STAT name=flash_erase n=64 min_us=45629 avg_us=45631 max_us=45632
+STAT name=flash_read n=0 min_us=0 avg_us=0 max_us=0
+STAT name=btn_latency n=0 min_us=0 avg_us=0 max_us=0
+STAT name=cmd_latency n=0 min_us=0 avg_us=0 max_us=0
+STAT name=e2e_latency n=0 min_us=0 avg_us=0 max_us=0
+JITTER name=imu period_us=5000 n=241 min_us=-154 max_us=733579 p99_us=1600 missed=4 viol=4
+JITTER name=servo period_us=20000 n=60 min_us=-89 max_us=733353 p99_us=1600 missed=4 viol=4
+LOAD pct=86 min=86 max=86
+CNT rx_dropped=0 imu_err=0 btn=0
+HIST name=imu bin_us=100 236 1 0 0 0 0 0 0 0 0 0 0 0 0 0 4
+STATS,ENDSTACK used=912 reserved=1024
+EVT t_us=3519130 name=erase_start
+EVT t_us=3564795 name=erase_done
+EVT t_us=3564837 name=erase_start
+EVT t_us=3610511 name=erase_done
+EVT t_us=3610554 name=erase_start
+EVT t_us=3656228 name=erase_done
+EVT t_us=3656264 name=erase_start
+EVT t_us=3701934 name=erase_done
+EVT t_us=3701977 name=erase_start
+EVT t_us=3747651 name=erase_done
+EVT t_us=3747692 name=erase_start
+EVT t_us=3793366 name=erase_done
+EVT t_us=3793408 name=erase_start
+EVT t_us=3839083 name=erase_done
+EVT t_us=3839118 name=erase_start
+EVT t_us=3884785 name=erase_done
+EVT t_us=3884826 name=erase_start
+EVT t_us=3930501 name=erase_done
+EVT t_us=3930543 name=erase_start
+EVT t_us=3976217 name=erase_done
+EVT t_us=3976253 name=erase_start
+EVT t_us=4021921 name=erase_done
+EVT t_us=4021962 name=erase_start
+EVT t_us=4067637 name=erase_done
+EVT t_us=4067679 name=erase_start
+EVT t_us=4113353 name=erase_done
+EVT t_us

@@ -17,9 +17,10 @@ import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 FW = ROOT / "firmware"
-ELF = FW / "build" / "firmware.elf"
+BUILD = "build-mem"  # окремий каталог: firmware/build може бути відкритий у симуляторі
+ELF = FW / BUILD / "firmware.elf"
 OUT = ROOT / "docs" / "metrics" / "memory.md"
-SU_DIR = FW / "build"
+SU_DIR = FW / BUILD
 
 # Цілі непрямих викликів: функції, що потрапляють у app_hw_t, i2c_bus_t, spi_bus_t, pwm_out_t, dev_time_t
 INDIRECT = {
@@ -28,10 +29,11 @@ INDIRECT = {
     "platform_con_write", "platform_con_getc", "platform_aux_write", "platform_i2c_mem_read_restart",
     "platform_i2c_recover", "platform_cycles", "platform_micros", "platform_cal_loop", "platform_probe",
     "platform_btn_take", "platform_rx_eol_take", "platform_rx_dropped", "platform_stack_used",
-    "platform_stack_size", "platform_reset", "platform_boot_fault_set", "platform_i2c_fault",
-    # задачі головного циклу викликаються через run_task(task)
-    "cli_task", "button_task", "imu_task", "servo_task", "rec_task", "play_task",
+    "platform_stack_size", "platform_reset",
 }
+# Задачі викликаються через вказівник лише з run_task() (після вбудовування — з app_poll)
+TASKS = {"cli_task", "button_task", "imu_task", "servo_task", "rec_task", "play_task"}
+TASK_CALLERS = {"run_task", "app_poll"}
 ISRS = ["SysTick_Handler", "EXTI4_15_IRQHandler", "USART2_IRQHandler"]
 EXC_FRAME = 32  # апаратний кадр винятку Cortex-M0+: R0-R3, R12, LR, PC, xPSR
 
@@ -95,35 +97,40 @@ def parse_ci():
     return frames, edges
 
 
-def deepest(fn, frames, edges, stack=()):
+def deepest(fn, frames, edges, memo, stack=()):
+    """Найглибший ланцюжок від fn. Рекурсія через вказівники обривається на вже відкритому вузлі."""
     if fn in stack:
         return 0, []
+    if fn in memo:
+        return memo[fn]
     best, path = 0, []
     targets = set(edges.get(fn, ()))
     if "__indirect_call" in targets:
-        targets |= INDIRECT
-    for t in targets - {"__indirect_call"}:
-        d, p = deepest(t, frames, edges, stack + (fn,))
+        targets |= TASKS if fn in TASK_CALLERS else INDIRECT
+    for t in sorted(targets - {"__indirect_call"}):
+        d, p = deepest(t, frames, edges, memo, stack + (fn,))
         if d > best:
             best, path = d, p
-    return frames.get(fn, 0) + best, [fn] + path
+    memo[fn] = (frames.get(fn, 0) + best, [fn] + path)
+    return memo[fn]
 
 
 def main():
+    subprocess.run(["rm", "-rf", str(SU_DIR)])
+    usage = re.findall(r"(RAM|FLASH):\s+(\d+) B\s+(\d+) KB\s+([\d.]+)%",
+                       subprocess.run(["make", "-C", "firmware", "all", "BOARD_TARGET=wokwi", f"BUILD_DIR={BUILD}",
+                                       f"GIT_HASH={sys.argv[1] if len(sys.argv) > 1 else 'unknown'}"],
+                                      cwd=ROOT, capture_output=True, text=True).stdout)
     frames, edges = parse_ci()
     rows = symbols()
     flash, ram = by_module(rows)
-    usage = re.findall(r"(RAM|FLASH):\s+(\d+) B\s+(\d+) KB\s+([\d.]+)%",
-                       subprocess.run(["make", "-C", "firmware", "-W", "Makefile", "build/firmware.elf",
-                                       "BOARD_TARGET=wokwi", f"GIT_HASH={sys.argv[1] if len(sys.argv) > 1 else 'unknown'}"],
-                                      cwd=ROOT, capture_output=True, text=True).stdout)
     size = sh("arm-none-eabi-size", str(ELF)).splitlines()[1].split()
     sections = sh("arm-none-eabi-size", "-A", str(ELF))
-    main_depth, main_path = deepest("main", frames, edges)
+    main_depth, main_path = deepest("main", frames, edges, {})
     isr_rows = []
     isr_total = 0
     for isr in ISRS:
-        d, p = deepest(isr, frames, edges)
+        d, p = deepest(isr, frames, edges, {})
         isr_rows.append((isr, d + EXC_FRAME, p))
         isr_total += d + EXC_FRAME
     biggest = sorted(frames.items(), key=lambda kv: -kv[1])[:12]

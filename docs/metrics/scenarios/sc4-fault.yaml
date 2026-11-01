@@ -1,0 +1,96 @@
+name: 'sc4-fault'
+version: 1
+author: 'tools/run_scenarios.py'
+steps:
+  - set-control:
+      part-id: btn_det_a
+      control: pressed
+      value: 1
+  - set-control:
+      part-id: btn_det_b
+      control: pressed
+      value: 1
+  - wait-serial: 'READY'
+  - delay: 100ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 30ms
+  - write-serial: "stats reset\n"
+  - wait-serial: 'STATS,RESET'
+  - delay: 10ms
+  - delay: 1000ms
+  - write-serial: "stats\n"
+  - wait-serial: 'STATS,END'
+  - delay: 20ms
+  - write-serial: "stats reset\n"
+  - wait-serial: 'STATS,RESET'
+  - delay: 10ms
+  - set-control:
+      part-id: btn_det_a
+      control: pressed
+      value: 0
+  - set-control:
+      part-id: btn_det_b
+      control: pressed
+      value: 0
+  - delay: 1000ms
+  - set-control:
+      part-id: imu
+      control: accelX
+      value: -0.0
+  - set-control:
+      part-id: imu
+      control: accelY
+      value: 0.5
+  - set-control:
+      part-id: imu
+      control: accelZ
+      value: 0.866
+  - delay: 500ms
+  - write-serial: "status\n"
+  - delay: 30ms
+  - write-serial: "stats\n"
+  - wait-serial: 'STATS,END'
+  - delay: 20ms
+  - set-control:
+      part-id: btn_det_a
+      control: pressed
+      value: 1
+  - set-control:
+      part-id: btn_det_b
+      control: pressed
+      value: 1
+  - wait-serial: 'IMU,restored'
+  - delay: 500ms
+  - set-control:
+      part-id: imu
+      control: accelX
+      value: -0.0
+  - set-control:
+      part-id: imu
+      control: accelY
+      value: 0.0
+  - set-control:
+      part-id: imu
+      control: accelZ
+      value: 1.0
+  - delay: 500ms
+  - write-serial: "stats reset\n"
+  - wait-serial: 'STATS,RESET'
+  - delay: 10ms
+  - set-control:
+      part-id: btn_sda
+      control: pressed
+      value: 1
+  - delay: 1000ms
+  - set-control:
+      part-id: btn_sda
+      control: pressed
+      value: 0
+  - wait-serial: 'IMU,restored'
+  - delay: 300ms
+  - write-serial: "stats\n"
+  - wait-serial: 'STATS,END'
+  - delay: 20ms
+  - write-serial: "evt\n"
+  - delay: 100ms

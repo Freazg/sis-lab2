@@ -1,4 +1,4 @@
-# CI ЛР2: на кожен pull request і push у main/lab* — збірка прошивки в Docker,
+# CI: на кожен pull request і push у main/lab* — збірка прошивки в Docker,
 # перевірка залежностей шарів, хостові тести з покриттям; за наявності секрету
 # WOKWI_CLI_TOKEN — headless-симуляція з перевіркою самотесту.
 name: ci

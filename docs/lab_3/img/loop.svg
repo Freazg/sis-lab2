@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 300" font-family="Arial" font-size="12">
+<rect width="980" height="300" fill="white"/>
+<text x="10" y="20" font-size="14" font-weight="bold">Головний цикл app_poll() і переривання</text>
+<rect x="18" y="60" width="122" height="60" rx="6" fill="#ecfdf5" stroke="#047857"/>
+<text x="79.0" y="85" text-anchor="middle" font-weight="bold">cli_task</text>
+<text x="79.0" y="104" text-anchor="middle">подія: байт у буфері</text>
+<rect x="156" y="60" width="122" height="60" rx="6" fill="#ecfdf5" stroke="#047857"/>
+<text x="217.0" y="85" text-anchor="middle" font-weight="bold">button_task</text>
+<text x="217.0" y="104" text-anchor="middle">подія: EXTI13</text>
+<line x1="140" y1="90" x2="156" y2="90" stroke="#333"/><polygon points="156,90 150,86 150,94" fill="#333"/>
+<rect x="294" y="60" width="122" height="60" rx="6" fill="#ecfdf5" stroke="#047857"/>
+<text x="355.0" y="85" text-anchor="middle" font-weight="bold">imu_task</text>
+<text x="355.0" y="104" text-anchor="middle">кожні 5 мс</text>
+<line x1="278" y1="90" x2="294" y2="90" stroke="#333"/><polygon points="294,90 288,86 288,94" fill="#333"/>
+<rect x="432" y="60" width="122" height="60" rx="6" fill="#ecfdf5" stroke="#047857"/>
+<text x="493.0" y="85" text-anchor="middle" font-weight="bold">servo_task</text>
+<text x="493.0" y="104" text-anchor="middle">кожні 20 мс</text>
+<line x1="416" y1="90" x2="432" y2="90" stroke="#333"/><polygon points="432,90 426,86 426,94" fill="#333"/>
+<rect x="570" y="60" width="122" height="60" rx="6" fill="#ecfdf5" stroke="#047857"/>
+<text x="631.0" y="85" text-anchor="middle" font-weight="bold">rec_task</text>
+<text x="631.0" y="104" text-anchor="middle">20 мс, REC</text>
+<line x1="554" y1="90" x2="570" y2="90" stroke="#333"/><polygon points="570,90 564,86 564,94" fill="#333"/>
+<rect x="708" y="60" width="122" height="60" rx="6" fill="#ecfdf5" stroke="#047857"/>
+<text x="769.0" y="85" text-anchor="middle" font-weight="bold">play_task</text>
+<text x="769.0" y="104" text-anchor="middle">20 мс, PLAY</text>
+<line x1="692" y1="90" x2="708" y2="90" stroke="#333"/><polygon points="708,90 702,86 702,94" fill="#333"/>
+<rect x="846" y="60" width="122" height="60" rx="6" fill="#ecfdf5" stroke="#047857"/>
+<text x="907.0" y="85" text-anchor="middle" font-weight="bold">load_task</text>
+<text x="907.0" y="104" text-anchor="middle">вікно 1 с</text>
+<line x1="830" y1="90" x2="846" y2="90" stroke="#333"/><polygon points="846,90 840,86 840,94" fill="#333"/>
+<polyline points="907.0,120 907.0,150 79,150 79,120" fill="none" stroke="#333" stroke-dasharray="5 3"/>
+<text x="430" y="166" text-anchor="middle">наступний прохід: задача перевіряє час і повертає керування</text>
+<rect x="60" y="200" width="260" height="60" rx="6" fill="#fef3c7" stroke="#b45309"/>
+<text x="190" y="225" text-anchor="middle" font-weight="bold">SysTick, пріоритет 0</text>
+<text x="190" y="244" text-anchor="middle">uwTick, база лічильника тактів</text>
+<rect x="360" y="200" width="260" height="60" rx="6" fill="#fef3c7" stroke="#b45309"/>
+<text x="490" y="225" text-anchor="middle" font-weight="bold">EXTI13, пріоритет 1</text>
+<text x="490" y="244" text-anchor="middle">мітка часу, btn_pending</text>
+<rect x="660" y="200" width="260" height="60" rx="6" fill="#fef3c7" stroke="#b45309"/>
+<text x="790" y="225" text-anchor="middle" font-weight="bold">USART2 RX, пріоритет 2</text>
+<text x="790" y="244" text-anchor="middle">кільцевий буфер 64 байти</text>
+<text x="10" y="285" fill="#555">Витіснення є лише в ISR. Задачі між собою не витісняються, тому довга задача затримує всі наступні.</text></svg>

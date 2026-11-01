@@ -1,0 +1,27 @@
+name: 'fr04'
+version: 1
+author: 'tools/run_scenarios.py'
+steps:
+  - wait-serial: 'READY'
+  - delay: 100ms
+  - write-serial: "mode hold\n"
+  - wait-serial: 'MODE,HOLD'
+  - delay: 30ms
+  - write-serial: "servo pan 0\n"
+  - delay: 100ms
+  - write-serial: "servo pan 180\n"
+  - delay: 100ms
+  - write-serial: "limits 0 180\n"
+  - delay: 30ms
+  - write-serial: "servo pan 0\n"
+  - delay: 100ms
+  - write-serial: "servo pan 90\n"
+  - delay: 100ms
+  - write-serial: "servo pan 180\n"
+  - delay: 100ms
+  - write-serial: "limits 30 150\n"
+  - delay: 30ms
+  - write-serial: "servo pan 180\n"
+  - delay: 100ms
+  - write-serial: "servo pan 0\n"
+  - delay: 100ms

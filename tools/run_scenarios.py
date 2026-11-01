@@ -123,7 +123,7 @@ def sc1_erase():
     steps = start() + set_mode("live") + begin_measure()
     for _ in range(4):
         steps += cmd("erase") + wait("ERASE,DONE") + delay(300)
-    return steps + report()
+    return steps + report() + cmd("evt") + delay(100)
 
 
 def sc1_dump():
@@ -252,7 +252,7 @@ def fr06():
     steps += cmd("mode live") + wait("MODE,LIVE") + delay(50) + begin_measure()
     for _ in range(20):
         steps += press(45) + delay(45)
-    return steps + delay(300) + report()
+    return steps + delay(300) + report() + cmd("evt") + delay(100)
 
 
 def fr07_08():

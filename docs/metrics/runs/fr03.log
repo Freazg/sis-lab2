@@ -1,0 +1,37 @@
+
+BOOT,fw=lr3-1.0,git=ab3dcf9e,board=NUCLEO-C031C6
+ST,dev=BEGIN,fw=lr3-1.0,board=NUCLEO-C031C6
+ST,dev=MCU,res=PASS,board=NUCLEO-C031C6,sysclk_hz=48000000
+ST,dev=MPU6050,res=PASS,bus=I2C1,addr=0x68,who=0x68,acc_mg=0/0/1000,norm_mg=1000,dev_mg=0,gyro_mdps=0/0/0,temp_cdeg=2400,chk=AGT
+ST,dev=W25Q64,res=PASS,bus=SPI1,jedec=EF4017,test_addr=0x7FF000,len=32,erase_ms=46,mismatch=0,stage=readback,err=OK
+ST,dev=SERVO_PAN,res=PASS,pwm=TIM3_CH1,period_us=20000,pulse_us_0deg=544,pulse_us_180deg=2400,pulse_us_90deg=1472
+ST,dev=SERVO_TILT,res=PASS,pwm=TIM3_CH2,period_us=20000,pulse_us_0deg=544,pulse_us_180deg=2400,pulse_us_90deg=1472
+ST,dev=LED_LIVE,res=PASS,readback_on=1,readback_off=1
+ST,dev=LED_REC,res=PASS,readback_on=1,readback_off=1
+ST,dev=BTN_B1,res=PASS,pin=PC13,idle=released
+ST,dev=FT232RL,res=PASS,uart=USART1,baud=115200,tx=OK
+ST,dev=SUMMARY,res=PASS,pass=9,fail=0
+TRAJ,session=0,pages=0,samples=0,torn=0
+MODE,LIVE
+READYBOOT,first_imu_us=271087
+MODE,LIVESTATS,RESETSTATS,BEGIN
+STAT name=cli n=3 min_us=46 avg_us=611 max_us=1741
+STAT name=btn n=0 min_us=0 avg_us=0 max_us=0
+STAT name=imu n=2717 min_us=2418 avg_us=2700 max_us=2713
+STAT name=servo n=680 min_us=135 avg_us=176 max_us=202
+STAT name=rec n=0 min_us=0 avg_us=0 max_us=0
+STAT name=play n=0 min_us=0 avg_us=0 max_us=0
+STAT name=loop n=53166 min_us=100 avg_us=241 max_us=3006
+STAT name=i2c_read n=2717 min_us=1638 avg_us=1640 max_us=1640
+STAT name=flash_prog n=0 min_us=0 avg_us=0 max_us=0
+STAT name=flash_erase n=0 min_us=0 avg_us=0 max_us=0
+STAT name=flash_read n=0 min_us=0 avg_us=0 max_us=0
+STAT name=btn_latency n=0 min_us=0 avg_us=0 max_us=0
+STAT name=cmd_latency n=0 min_us=0 avg_us=0 max_us=0
+STAT name=e2e_latency n=30 min_us=7900 avg_us=20719 max_us=32908
+JITTER name=imu period_us=5000 n=2716 min_us=-244 max_us=291 p99_us=300 missed=0 viol=0
+JITTER name=servo period_us=20000 n=679 min_us=-2811 max_us=2815 p99_us=1600 missed=0 viol=145
+LOAD pct=54 min=54 max=55
+CNT rx_dropped=0 imu_err=0 btn=0
+HIST name=imu bin_us=100 2429 188 99 0 0 0 0 0 0 0 0 0 0 0 0 0
+STATS,ENDSTACK used=912 reserved=1024
