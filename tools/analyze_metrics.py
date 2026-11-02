@@ -5,7 +5,11 @@ docs/metrics/results.json, docs/metrics/results.md.
 
 Числа з логів — час МК (мітки всередині прошивки). Числа з VCD — час на дроті: незалежний спосіб
 вимірювання того самого (логічний аналізатор Wokwi, щупи на службових GPIO).
+
+ЛР4: python3 tools/analyze_metrics.py --fw lr3|lr4 — ті самі функції над docs/metrics/runs-<fw>/ і
+docs/captures/cmp/<fw>-*.vcd, результат у docs/metrics/results-<fw>.json (порівняння — tools/compare.py).
 """
+import argparse
 import json
 import pathlib
 import re
@@ -97,8 +101,15 @@ def next_after(sorted_times, t, start=0):
     return (sorted_times[i], i) if i < len(sorted_times) else (None, i)
 
 
+VCD_PREFIX = "lr3-"  # ЛР4 (--fw): cmp/<fw>-
+
+
+def vcd_path(name):
+    return CAP / f"{VCD_PREFIX}{name}.vcd"
+
+
 def load_vcd(name):
-    p = CAP / f"lr3-{name}.vcd"
+    p = vcd_path(name)
     return ac.load_vcd(p) if p.exists() else None
 
 
@@ -192,7 +203,7 @@ def wire_rate(name):
 
 def sigrok_widths(name, channel, edge, downsample=100):
     """Декодер timing (методичка §5.3): інтервали між фронтами каналу, мкс."""
-    res = subprocess.run(["sigrok-cli", "-I", f"vcd:downsample={downsample}", "-i", str(CAP / f"lr3-{name}.vcd"),
+    res = subprocess.run(["sigrok-cli", "-I", f"vcd:downsample={downsample}", "-i", str(vcd_path(name)),
                           "-P", f"timing:data={channel}:edge={edge}", "-A", "timing=time"],
                          capture_output=True, text=True)
     k = {"s": 1e6, "ms": 1e3, "μs": 1, "us": 1, "ns": 1e-3}
@@ -444,7 +455,42 @@ def write_md(r):
     (OUT / "results.md").write_text("\n".join(o), encoding="utf-8")
 
 
+def safe(fn, *args):
+    """ЛР4: частина прогонів може бути відсутня або обірвана (напр. sc5-break на FreeRTOS) — не падати."""
+    try:
+        return fn(*args)
+    except (KeyError, IndexError, TypeError, ZeroDivisionError, ValueError, StopIteration):
+        return None
+
+
+def main_fw(fw):
+    global RUNS, VCD_PREFIX
+    RUNS = OUT / f"runs-{fw}"
+    VCD_PREFIX = f"cmp/{fw}-"
+    names = sorted(p.stem for p in RUNS.glob("*.log"))
+    r = {"fw": fw, "runs": {n: summary(n) for n in names}}
+    r["wire"] = {
+        "button_idle": safe(wire_button, "sc2-btn-idle"), "button_long": safe(wire_button, "sc2-btn-long"),
+        "button_s3": safe(wire_button, "s3"), "imu_s1": safe(wire_imu, "s1"), "imu_s2": safe(wire_imu, "s2"),
+        "imu_s3": safe(wire_imu, "s3"), "e2e": safe(wire_e2e, "fr03"), "pwm": safe(wire_pwm, "fr04"),
+        "rate_dps": safe(wire_rate, "fr05"), "servo_motion": safe(wire_servo_motion, "fr05"),
+        "fault": safe(fault_timing),
+    }
+    r["methods"] = {"erase": safe(methods_erase), "button": safe(methods_button)}
+    for key, fn, args in (("fr02", fr02, ()), ("fr05", fr05, ()), ("fr08", fr08, ("fr07-08",)), ("boot", boot, ()),
+                          ("powerloss", powerloss, ()), ("fault", fault, ()), ("sweep", breakpoint_sweep, ())):
+        r[key] = safe(fn, *args)
+    (OUT / f"results-{fw}.json").write_text(json.dumps(r, ensure_ascii=False, indent=1), encoding="utf-8")
+    print(f"written results-{fw}.json: {len(names)} runs")
+
+
 def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--fw", choices=("lr3", "lr4"))
+    a = ap.parse_args()
+    if a.fw:
+        main_fw(a.fw)
+        return
     names = sorted(p.stem for p in RUNS.glob("*.log"))
     r = {"runs": {n: summary(n) for n in names}}
     r["perfcal"] = re.findall(r"PERFCAL loop500_cyc=(\d+)|read_cyc=(\d+) probe_pair_cyc=(\d+) line40_us=(\d+) "

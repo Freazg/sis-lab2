@@ -230,11 +230,13 @@ static volatile uint8_t trace_state; /* 0 — вимкнено, 1 — чекає
 static volatile uint8_t trace_n;
 #endif
 static uint32_t idle_acc_us, idle_since_us;
+static volatile uint32_t switches; /* перемикань контексту з моменту старту (накладні витрати, §6.5) */
 static uint8_t cur_task;
 
 void rtos_trace_switched_in(unsigned task_number)
 {
   uint32_t t = platform_micros();
+  switches++;
   if (cur_task == TN_IDLE) {
     idle_acc_us += t - idle_since_us;
   }
@@ -448,8 +450,9 @@ static void cmd_tasks(void)
     n++;
   }
   g_hw->con_write(stats_buf, n);
-  con_line("OSCNT log_lost=%lu rec_lost=%lu mode_lost=%lu i2c_busy=%lu\r\n", (unsigned long)log_lost,
-           (unsigned long)rec_lost, (unsigned long)mode_lost, (unsigned long)g_app->i2c_busy);
+  con_line("OSCNT log_lost=%lu rec_lost=%lu mode_lost=%lu i2c_busy=%lu sw=%lu\r\n", (unsigned long)log_lost,
+           (unsigned long)rec_lost, (unsigned long)mode_lost, (unsigned long)g_app->i2c_busy,
+           (unsigned long)switches);
   con_line("TASKS,END\r\n");
   rtos_unlock(APP_LOCK_CON);
 }
