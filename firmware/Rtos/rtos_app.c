@@ -219,13 +219,10 @@ void rtos_tick_cost(uint32_t cycles) { perf_add(&tick_cost, cycles); }
 #if RTOS_FAULTS
 /* Кільцевий буфер хронології — у варіанті зі сценаріями ОС: у продуктову збірку не вміщається
  * (флеш 99,8 %); там хронологію показують службові піни на логічному аналізаторі. */
-#define TRACE_LEN 64u
-typedef struct {
-  uint32_t t_us;
-  uint8_t task;
-} trace_rec_t;
+#define TRACE_LEN  32u
+#define TRACE_MASK 0x0FFFFFFFu /* запис — одне слово: номер задачі в 4 старших бітах, мкс — у 28 молодших */
 
-static trace_rec_t trace_buf[TRACE_LEN];
+static uint32_t trace_buf[TRACE_LEN];
 static volatile uint8_t trace_state; /* 0 — вимкнено, 1 — чекає B1, 2 — пише, 3 — заповнено */
 static volatile uint8_t trace_n;
 #endif
@@ -246,7 +243,7 @@ void rtos_trace_switched_in(unsigned task_number)
   }
 #if RTOS_FAULTS
   if (trace_state == 2u) {
-    trace_buf[trace_n] = (trace_rec_t){ t, cur_task };
+    trace_buf[trace_n] = ((uint32_t)cur_task << 28) | (t & TRACE_MASK);
     if (++trace_n == TRACE_LEN) {
       trace_state = 3u;
     }
@@ -410,6 +407,7 @@ static void log_task(void *arg)
 
 #if RTOS_FAULTS
 static volatile uint8_t starve_flag;
+static volatile uint8_t inv_held; /* long уже тримає ресурс сценарію інверсії */
 #endif
 
 static void long_task(void *arg)
@@ -426,9 +424,11 @@ static void long_task(void *arg)
     else if (op == LONG_OP_INV_MUTEX || op == LONG_OP_INV_SEM) {
       SemaphoreHandle_t res = op == LONG_OP_INV_MUTEX ? inv_mutex : inv_sem;
       (void)xSemaphoreTake(res, portMAX_DELAY);
+      inv_held = 1;
       g_hw->probe(APP_PROBE_LONG, true);
       busy_us(50000u); /* «низька» задача тримає ресурс 50 мс процесорного часу */
       g_hw->probe(APP_PROBE_LONG, false);
+      inv_held = 0;
       (void)xSemaphoreGive(res);
     } else if (op == LONG_OP_STARVE_FLAG) {
       starve_flag = 1; /* виставить прапорець, лише якщо отримає процесор */
@@ -438,7 +438,7 @@ static void long_task(void *arg)
 }
 
 /* ---- Команди ОС ------------------------------------------------------------ */
-static char stats_buf[TN_COUNT * 40u];
+static char stats_buf[TN_COUNT * 28u]; /* рядок vTaskGetRunTimeStatistics ≈ 22 символи */
 
 static void cmd_tasks(void)
 {
@@ -516,8 +516,9 @@ static void cmd_trace(void)
   }
   app_print(g_hw, "TRACE,BEGIN,n=%u\r\n", (unsigned)TRACE_LEN);
   for (unsigned i = 0; i < TRACE_LEN; i++) {
-    app_print(g_hw, "TRACE t_us=%lu task=%s\r\n", (unsigned long)trace_buf[i].t_us,
-              tn_name[trace_buf[i].task < TN_COUNT ? trace_buf[i].task : 0u]);
+    uint32_t task = trace_buf[i] >> 28;
+    app_print(g_hw, "TRACE t_us=%lu task=%s\r\n", (unsigned long)(trace_buf[i] & TRACE_MASK),
+              tn_name[task < TN_COUNT ? task : 0u]);
   }
   app_print(g_hw, "TRACE,END\r\n");
   trace_state = 0;
@@ -530,7 +531,10 @@ static void cmd_inversion(bool use_mutex)
 {
   SemaphoreHandle_t res = use_mutex ? inv_mutex : inv_sem;
   (void)xTaskNotify(h_long, use_mutex ? LONG_OP_INV_MUTEX : LONG_OP_INV_SEM, eSetValueWithOverwrite);
-  vTaskDelay(ticks_for_ms(5u)); /* long бере ресурс і працює */
+  for (int i = 0; i < 500 && !inv_held; i++) {
+    vTaskDelay(1); /* long бере ресурс, щойно отримає процесор (попередній дослід міг ще займати log) */
+  }
+  vTaskDelay(ticks_for_ms(5u)); /* long тримає ресурс і працює */
   log_rec_t spin = { 0, { 0 } };
   (void)xQueueSend(q_log, &spin, 0); /* «середня» задача стає готовою */
   uint32_t t0 = g_hw->cycles();
