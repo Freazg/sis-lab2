@@ -2,6 +2,32 @@
 
 #include "board.h"
 
+/*
+ * Очікування прапорця периферії з timeout (ЛР4). Після спливання часу прапорець перевіряється
+ * ще раз: задачу могли витіснити на довше за timeout, а апаратура тим часом давно закінчила.
+ * Без повторної перевірки витіснення давало хибний timeout посеред обміну SPI, у FIFO лишався
+ * байт, і всі наступні читання флеш зсувались на один байт (журнал проблем ЛР4).
+ */
+static bool wait_set(volatile uint32_t *reg, uint32_t mask, uint32_t t0, uint32_t timeout_ms)
+{
+  while ((*reg & mask) == 0u) {
+    if (HAL_GetTick() - t0 > timeout_ms) {
+      return (*reg & mask) != 0u;
+    }
+  }
+  return true;
+}
+
+static bool wait_clear(volatile uint32_t *reg, uint32_t mask, uint32_t t0, uint32_t timeout_ms)
+{
+  while ((*reg & mask) != 0u) {
+    if (HAL_GetTick() - t0 > timeout_ms) {
+      return (*reg & mask) == 0u;
+    }
+  }
+  return true;
+}
+
 /* ---- I2C1 ---------------------------------------------------------------- */
 /*
  * Обмін на регістрах I2C (RM0490 §25.4.9 «Controller transmitter», §25.4.10 «Controller receiver»).
@@ -30,10 +56,8 @@ void platform_i2c_init(void)
 
 static int i2c_wait(I2C_TypeDef *i2c, uint32_t mask, uint32_t t0)
 {
-  while ((i2c->ISR & (mask | I2C_ISR_NACKF)) == 0u) {
-    if (HAL_GetTick() - t0 > I2C_TIMEOUT_MS) {
-      return -1;
-    }
+  if (!wait_set(&i2c->ISR, mask | I2C_ISR_NACKF, t0, I2C_TIMEOUT_MS)) {
+    return -1;
   }
   return (i2c->ISR & I2C_ISR_NACKF) ? 1 : 0;
 }
@@ -41,10 +65,8 @@ static int i2c_wait(I2C_TypeDef *i2c, uint32_t mask, uint32_t t0)
 /** Шина вільна; для запису ще й прапорці контролера скинуті. false — BUSY не знявся за timeout. */
 static bool i2c_begin(I2C_TypeDef *i2c, uint32_t t0, bool for_write)
 {
-  while (i2c->ISR & I2C_ISR_BUSY) {
-    if (HAL_GetTick() - t0 > I2C_TIMEOUT_MS) {
-      return false;
-    }
+  if (!wait_clear(&i2c->ISR, I2C_ISR_BUSY, t0, I2C_TIMEOUT_MS)) {
+    return false;
   }
   if (!for_write) {
     i2c->ICR = I2C_ICR_STOPCF | I2C_ICR_NACKCF; /* як HAL_I2C_Master_Receive: без скидання PE */
@@ -228,28 +250,27 @@ static dev_status_t spi_transfer(void *ctx, const uint8_t *tx, uint8_t *rx, size
     spi->CR1 |= SPI_CR1_SPE;
   }
   for (size_t i = 0; i < len; i++) {
-    while ((spi->SR & SPI_SR_TXE) == 0u) {
-      if (HAL_GetTick() - t0 > SPI_TIMEOUT_MS) {
-        return DEV_ERR_TIMEOUT;
-      }
+    if (!wait_set(&spi->SR, SPI_SR_TXE, t0, SPI_TIMEOUT_MS)) {
+      break;
     }
     *dr = tx != NULL ? tx[i] : 0xFFu;
-    while ((spi->SR & SPI_SR_RXNE) == 0u) {
-      if (HAL_GetTick() - t0 > SPI_TIMEOUT_MS) {
-        return DEV_ERR_TIMEOUT;
-      }
+    if (!wait_set(&spi->SR, SPI_SR_RXNE, t0, SPI_TIMEOUT_MS)) {
+      break;
     }
     uint8_t b = *dr;
     if (rx != NULL) {
       rx[i] = b;
     }
-  }
-  while (spi->SR & SPI_SR_BSY) {
-    if (HAL_GetTick() - t0 > SPI_TIMEOUT_MS) {
-      return DEV_ERR_TIMEOUT;
+    if (i + 1u == len) {
+      return wait_clear(&spi->SR, SPI_SR_BSY, t0, SPI_TIMEOUT_MS) ? DEV_OK : DEV_ERR_TIMEOUT;
     }
   }
-  return DEV_OK;
+  /* Обмін обірвано: дочекатися кінця кадру і спорожнити RX FIFO, щоб наступний обмін не зсунувся */
+  (void)wait_clear(&spi->SR, SPI_SR_BSY, HAL_GetTick(), SPI_TIMEOUT_MS);
+  while (spi->SR & SPI_SR_FRLVL) {
+    (void)*dr;
+  }
+  return len == 0u ? DEV_OK : DEV_ERR_TIMEOUT;
 }
 
 const spi_bus_t platform_spi1_flash = {
@@ -332,19 +353,12 @@ static dev_status_t uart_tx(USART_TypeDef *u, const char *s, size_t len)
 {
   uint32_t t0 = HAL_GetTick();
   for (size_t i = 0; i < len; i++) {
-    while ((u->ISR & USART_ISR_TXE_TXFNF) == 0u) {
-      if (HAL_GetTick() - t0 > 100u) {
-        return DEV_ERR_TIMEOUT;
-      }
+    if (!wait_set(&u->ISR, USART_ISR_TXE_TXFNF, t0, 100u)) {
+      return DEV_ERR_TIMEOUT;
     }
     u->TDR = (uint8_t)s[i];
   }
-  while ((u->ISR & USART_ISR_TC) == 0u) {
-    if (HAL_GetTick() - t0 > 100u) {
-      return DEV_ERR_TIMEOUT;
-    }
-  }
-  return DEV_OK;
+  return wait_set(&u->ISR, USART_ISR_TC, t0, 100u) ? DEV_OK : DEV_ERR_TIMEOUT;
 }
 
 void platform_con_write(const char *s, size_t len)

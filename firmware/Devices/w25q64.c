@@ -76,6 +76,9 @@ dev_status_t w25q64_wait_ready(w25q64_t *dev, uint32_t timeout_ms)
 {
   uint32_t t0 = dev->time->millis();
   for (;;) {
+    /* Час перевіряється ДО читання статусу: якщо задачу витіснили після опитування довше за
+     * timeout (ЛР4, FreeRTOS), висновок «BUSY» робиться лише за свіжим читанням. */
+    bool late = (uint32_t)(dev->time->millis() - t0) > timeout_ms;
     uint8_t sr1 = 0;
     dev_status_t st = w25q64_read_sr1(dev, &sr1);
     if (st != DEV_OK) {
@@ -84,7 +87,7 @@ dev_status_t w25q64_wait_ready(w25q64_t *dev, uint32_t timeout_ms)
     if ((sr1 & W25Q_SR1_BUSY) == 0) {
       return DEV_OK;
     }
-    if ((uint32_t)(dev->time->millis() - t0) > timeout_ms) {
+    if (late) {
       return DEV_ERR_BUSY;
     }
   }

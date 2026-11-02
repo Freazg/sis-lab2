@@ -34,6 +34,8 @@ typedef struct {
   uint16_t rx_pos;
   /** Повертати SR1 = busy_polls разів 0x01 (BUSY) на команду 05h, далі 0x00 або wel_value. */
   int busy_polls;
+  /** ЛР4: після читання BUSY час стрибає на стільки мс — задачу витіснили одразу після опитування. */
+  uint32_t preempt_after_busy_ms;
   uint8_t sr1_after_wren; /**< значення SR1 одразу після WREN (WEL=1 -> 0x02) */
   int last_was_wren;
   int fail_on_transfer;   /**< 1-based номер виклику transfer, що поверне DEV_ERR_BUS */

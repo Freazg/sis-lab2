@@ -61,7 +61,7 @@ extern void rtos_trace_switched_in(unsigned task_number);
 #define configSUPPORT_STATIC_ALLOCATION         0
 #define configSUPPORT_DYNAMIC_ALLOCATION        1
 #ifndef RTOS_HEAP_BYTES
-#define RTOS_HEAP_BYTES                         7168
+#define RTOS_HEAP_BYTES                         7680
 #endif
 #define configTOTAL_HEAP_SIZE                   RTOS_HEAP_BYTES
 #define configAPPLICATION_ALLOCATED_HEAP        0
@@ -82,8 +82,18 @@ extern void rtos_trace_switched_in(unsigned task_number);
 #define portGET_RUN_TIME_COUNTER_VALUE()        platform_micros()
 #define configASSERT(x)                         do { if ((x) == 0) { rtos_assert_failed(__LINE__); } } while (0)
 
-/* Хронологія задач (§6.5): номер задачі і мітка часу в кільцевий буфер */
+/* Хронологія задач (§6.5): номер задачі і мітка часу в кільцевий буфер; час idle для завантаження CPU */
+#if BOARD_WOKWI
+/* Симулятор: вибір наступної задачі в PendSV — під емульованою маскою (Rtos/wokwi/portmacro.h) */
+extern void wokwi_disable_irq(void);
+extern void wokwi_enable_irq(void);
+#define traceTASK_SWITCHED_OUT()                wokwi_disable_irq()
+#define traceTASK_SWITCHED_IN()                 do { rtos_trace_switched_in((unsigned)pxCurrentTCB->uxTaskNumber); \
+                                                     wokwi_enable_irq(); } while (0)
+#define configCHECK_HANDLER_INSTALLATION        0   /* PendSV_Handler — обгортка в Core/Src/stm32c0xx_it.c */
+#else
 #define traceTASK_SWITCHED_IN()                 rtos_trace_switched_in((unsigned)pxCurrentTCB->uxTaskNumber)
+#endif
 
 /* ---- Переривання ----------------------------------------------------------- */
 /* Порт ARM_CM0: у Cortex-M0+ немає BASEPRI, критична секція — cpsid i, тобто маскуються всі

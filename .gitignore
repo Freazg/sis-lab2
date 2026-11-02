@@ -2,6 +2,8 @@
 build/
 build-nucleo/
 build-mem/
+build-*/
+build-lr3/
 *.o
 *.d
 *.lst
@@ -32,3 +34,4 @@ wokwi.vcd
 
 # Записи логічного аналізатора — артефакти ЛР2
 !docs/captures/*.vcd
+!docs/captures/cmp/*.vcd

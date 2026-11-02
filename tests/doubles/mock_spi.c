@@ -1,5 +1,7 @@
 #include "mock_spi.h"
 
+#include "fake_time.h"
+
 #include <string.h>
 
 void mock_spi_init(mock_spi_t *m)
@@ -41,6 +43,7 @@ static uint8_t next_miso(mock_spi_t *m)
     }
     if (m->busy_polls > 0) {
       m->busy_polls--;
+      fake_time_now_ms += m->preempt_after_busy_ms;
       return 0x01; /* BUSY */
     }
     return 0x00;

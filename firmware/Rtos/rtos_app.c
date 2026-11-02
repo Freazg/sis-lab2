@@ -25,7 +25,7 @@ enum {
 #define RTOS_STACK_IMU 160
 #endif
 enum {
-  STACK_BTN = 112, STACK_IMU = RTOS_STACK_IMU, STACK_SERVO = 160, STACK_CLI = 256,
+  STACK_BTN = 112, STACK_IMU = RTOS_STACK_IMU, STACK_SERVO = 160, STACK_CLI = 320, /* selftest у cli */
   STACK_TRAJ = 192, STACK_LOG = 96, STACK_LONG = 176,
 };
 
@@ -166,10 +166,6 @@ void rtos_log_post(const char *s, size_t len)
 
 void rtos_mode_post(int mode)
 {
-  if (!running()) {
-    app_set_mode(g_app, (app_mode_t)mode);
-    return;
-  }
   traj_msg_t m = { MSG_MODE, (uint8_t)mode, 0, 0 };
   if (xQueueSend(q_traj, &m, ticks_for_ms(10u)) != pdTRUE) {
     mode_lost++;
@@ -220,7 +216,10 @@ void rtos_con_rx_from_isr(void)
 void rtos_tick_cost(uint32_t cycles) { perf_add(&tick_cost, cycles); }
 
 /* ---- Хронологія і завантаження (traceTASK_SWITCHED_IN, tick hook) -------- */
-#define TRACE_LEN 64u /* степінь двійки */
+#if RTOS_FAULTS
+/* Кільцевий буфер хронології — у варіанті зі сценаріями ОС: у продуктову збірку не вміщається
+ * (флеш 99,8 %); там хронологію показують службові піни на логічному аналізаторі. */
+#define TRACE_LEN 64u
 typedef struct {
   uint32_t t_us;
   uint8_t task;
@@ -229,6 +228,7 @@ typedef struct {
 static trace_rec_t trace_buf[TRACE_LEN];
 static volatile uint8_t trace_state; /* 0 — вимкнено, 1 — чекає B1, 2 — пише, 3 — заповнено */
 static volatile uint8_t trace_n;
+#endif
 static uint32_t idle_acc_us, idle_since_us;
 static uint8_t cur_task;
 
@@ -242,12 +242,14 @@ void rtos_trace_switched_in(unsigned task_number)
   if (cur_task == TN_IDLE) {
     idle_since_us = t;
   }
+#if RTOS_FAULTS
   if (trace_state == 2u) {
     trace_buf[trace_n] = (trace_rec_t){ t, cur_task };
     if (++trace_n == TRACE_LEN) {
       trace_state = 3u;
     }
   }
+#endif
 }
 
 void vApplicationTickHook(void)
@@ -299,6 +301,7 @@ void rtos_assert_failed(int line)
 static void btn_task(void *arg)
 {
   (void)arg;
+  portENABLE_INTERRUPTS(); /* перший запуск: ядро стартує з вимкненими перериваннями (Wokwi — емуляція) */
   for (;;) {
     uint32_t bits = 0;
     (void)xTaskNotifyWait(0, 0xFFFFFFFFu, &bits, portMAX_DELAY);
@@ -308,10 +311,12 @@ static void btn_task(void *arg)
     }
     uint32_t t_event;
     if ((bits & NOTE_BTN) && g_hw->btn_take(&t_event)) {
+#if RTOS_FAULTS
       if (trace_state == 1u) {
         trace_n = 0;
         trace_state = 2u; /* хронологія з моменту натискання */
       }
+#endif
       app_btn_event(g_app, t_event);
       /* Брязкіт: чекати 20 мс стабільно відпущеної кнопки, задача при цьому заблокована */
       uint32_t quiet_ms = 0;
@@ -327,6 +332,7 @@ static void btn_task(void *arg)
 static void imu_task(void *arg)
 {
   (void)arg;
+  portENABLE_INTERRUPTS();
   TickType_t last = xTaskGetTickCount();
   for (;;) {
     /* Пропущені періоди не наздоганяються, як і в ЛР3: після запізнення відлік — від поточного тіку */
@@ -340,6 +346,7 @@ static void imu_task(void *arg)
 static void servo_task(void *arg)
 {
   (void)arg;
+  portENABLE_INTERRUPTS();
   TickType_t last = xTaskGetTickCount();
   for (;;) {
     if (xTaskDelayUntil(&last, ticks_for_us(APP_SERVO_PERIOD_US)) == pdFALSE) {
@@ -352,6 +359,7 @@ static void servo_task(void *arg)
 static void cli_task(void *arg)
 {
   (void)arg;
+  portENABLE_INTERRUPTS();
   for (;;) {
     uint32_t bits = 0;
     (void)xTaskNotifyWait(0, 0xFFFFFFFFu, &bits, portMAX_DELAY);
@@ -362,6 +370,7 @@ static void cli_task(void *arg)
 static void traj_task(void *arg)
 {
   (void)arg;
+  portENABLE_INTERRUPTS();
   for (;;) {
     traj_msg_t m;
     (void)xQueueReceive(q_traj, &m, portMAX_DELAY);
@@ -381,6 +390,7 @@ static void traj_task(void *arg)
 static void log_task(void *arg)
 {
   (void)arg;
+  portENABLE_INTERRUPTS();
   for (;;) {
     log_rec_t r;
     (void)xQueueReceive(q_log, &r, portMAX_DELAY);
@@ -403,6 +413,7 @@ static volatile uint8_t starve_flag;
 static void long_task(void *arg)
 {
   (void)arg;
+  portENABLE_INTERRUPTS();
   for (;;) {
     uint32_t op = 0;
     (void)xTaskNotifyWait(0, 0xFFFFFFFFu, &op, portMAX_DELAY);
@@ -454,7 +465,7 @@ static bool name_eq(const char *a, const char *b)
 
 static void cmd_stack(void)
 {
-  TaskStatus_t st[TN_COUNT];
+  static TaskStatus_t st[TN_COUNT]; /* 288 Б: на стеку cli лишалось 10 вільних слів (журнал проблем) */
   UBaseType_t n = uxTaskGetSystemState(st, TN_COUNT, NULL);
   for (UBaseType_t i = 0; i < n; i++) {
     unsigned tn = TN_COUNT;
@@ -482,10 +493,8 @@ static void cmd_ctxsw(void)
     (void)xTaskNotify(h_btn, NOTE_PING, eSetBits); /* btn має вищий пріоритет: витісняє одразу */
     perf_add(&sw, ping_t1 - t0);
   }
-  uint32_t k = g_app->cyc_per_us;
-  app_print(g_hw, "CTXSW n=%lu min_cyc=%lu avg_cyc=%lu max_cyc=%lu min_us=%lu max_us=%lu\r\n",
-            (unsigned long)sw.count, (unsigned long)sw.min, (unsigned long)perf_avg(&sw), (unsigned long)sw.max,
-            (unsigned long)(sw.min / k), (unsigned long)(sw.max / k));
+  app_print(g_hw, "CTXSW n=%lu min_cyc=%lu avg_cyc=%lu max_cyc=%lu\r\n", (unsigned long)sw.count,
+            (unsigned long)sw.min, (unsigned long)perf_avg(&sw), (unsigned long)sw.max);
   rtos_crit(true);
   perf_stat_t tc = tick_cost;
   rtos_crit(false);
@@ -493,6 +502,7 @@ static void cmd_ctxsw(void)
             (unsigned long)tc.count, (unsigned long)tc.min, (unsigned long)perf_avg(&tc), (unsigned long)tc.max);
 }
 
+#if RTOS_FAULTS
 static void cmd_trace(void)
 {
   if (trace_state != 3u) {
@@ -509,6 +519,7 @@ static void cmd_trace(void)
   app_print(g_hw, "TRACE,END\r\n");
   trace_state = 0;
 }
+#endif
 
 #if RTOS_FAULTS
 /* §7.2.1: cli (3) чекає ресурс, який тримає long (1), а log (2) займає процесор 100 мс */
@@ -572,14 +583,14 @@ void rtos_os_cmd(int id)
     case CLI_STACK: cmd_stack(); break;
     case CLI_HEAP: cmd_heap(); break;
     case CLI_CTXSW: cmd_ctxsw(); break;
-    case CLI_TRACE: cmd_trace(); break;
 #if RTOS_FAULTS
+    case CLI_TRACE: cmd_trace(); break;
     case CLI_FAULT_INV_MUTEX: cmd_inversion(true); break;
     case CLI_FAULT_INV_SEM: cmd_inversion(false); break;
     case CLI_FAULT_STARVE: cmd_starve(); break;
     default: cmd_qflood(); break;
 #else
-    default: app_print(g_hw, "ERR,needs_build,make RTOS_DEFS=-DRTOS_FAULTS=1\r\n"); break;
+    default: app_print(g_hw, "ERR,needs_build_faults\r\n"); break; /* make RTOS_DEFS=-DRTOS_FAULTS=1 */
 #endif
   }
 }

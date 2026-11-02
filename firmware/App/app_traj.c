@@ -238,6 +238,7 @@ void app_traj_dump(app_t *a)
   }
   hw->probe(APP_PROBE_LONG, false);
   app_evt(a, APP_EV_DUMP_DONE);
+  a->long_busy = 0; /* до рядка END: хост може одразу надіслати наступну довгу команду */
   app_print(hw, "DUMP,END,session=%u,samples=%lu,pages=%lu,crc=OK\r\n", session, (unsigned long)samples,
             (unsigned long)pages);
 }
@@ -248,5 +249,6 @@ void app_traj_erase(app_t *a)
   for (uint32_t addr = APP_TRAJ_BASE; addr < TRAJ_END; addr += W25Q_SECTOR_SIZE) {
     n += flash_erase(a, addr) == DEV_OK;
   }
+  a->long_busy = 0;
   app_print(a->hw, "ERASE,DONE,sectors=%lu\r\n", (unsigned long)n);
 }

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Відтворювані сценарії ЛР3 (методичка §6) у Wokwi, форма B.
+Відтворювані сценарії ЛР3 (методичка §6) і ЛР4 (§7) у Wokwi, форма B.
 
 Кожен сценарій — список кроків автоматизації Wokwi. Скрипт генерує:
   docs/metrics/scenarios/<name>.yaml     — сценарій (команди UART, керування IMU, кнопка B1);
@@ -11,7 +11,15 @@
 
 Запуск:  python3 tools/run_scenarios.py [ім'я ...]     без імен — усі, крім long.
 Випадкові моменти натискань задані фіксованим зерном: той самий сценарій можна повторити в ЛР4.
+
+ЛР4 (методичка §7.1: обидві прошивки на тому самому стенді в один день):
+  python3 tools/run_scenarios.py --fw lr3 [ім'я ...]   прошивка з тегу lab3 (worktree build-lr3/)
+  python3 tools/run_scenarios.py --fw lr4 [ім'я ...]   поточна прошивка на FreeRTOS
+Логи — docs/metrics/runs-<fw>/, записи — docs/captures/cmp/<fw>-<ім'я>.vcd. Сценарії ОС (§7.2) — лише
+lr4, частина з них потребує окремої збірки (VARIANTS). До і після вікна вимірювання lr4 друкує tasks:
+run-time stats за сценарій — різниця двох знімків; вікно вимірювання від цього не змінюється.
 """
+import argparse
 import json
 import math
 import pathlib
@@ -29,6 +37,7 @@ MET = ROOT / "docs" / "metrics"
 SCN = MET / "scenarios"
 RUNS = MET / "runs"
 CAP = ROOT / "docs" / "captures"
+VCD = CAP  # ЛР3: docs/captures/lr3-<ім'я>.vcd
 WOKWI = capture.WOKWI
 
 capture.SIG.update({
@@ -36,6 +45,16 @@ capture.SIG.update({
 })
 BASE_CHANNELS = ["BTN", "P_REACT", "P_IMU", "P_PWM", "P_LONG", "PWM_PAN", "MARK", "VCP_RX"]
 SEED = 3
+FW = "lr3"  # яку прошивку проганяємо: впливає лише на кроки os_* поза вікном вимірювання
+
+# Варіанти збірки ЛР4 для сценаріїв ОС (методичка §7.2): ім'я -> RTOS_DEFS
+VARIANTS = {
+    "faults": "-DRTOS_FAULTS=1 -DAPP_CAP=0",
+    "tick100": "-DRTOS_TICK_HZ=100",
+    "stack-small": "-DRTOS_STACK_IMU=96",
+    "stack-nocheck": "-DRTOS_STACK_IMU=96 -DRTOS_STACK_CHECK=0",
+    "heap-small": "-DRTOS_HEAP_BYTES=6144",
+}
 
 
 # ---- Кроки ------------------------------------------------------------------
@@ -76,12 +95,24 @@ def start():
     return wait("READY") + delay(100)
 
 
+def os_snapshot():
+    """Знімок run-time stats (ЛР4, команда tasks). У прошивки ЛР3 команди немає — крок пропускається."""
+    return cmd("tasks") + wait("TASKS,END") + delay(10) if FW == "lr4" else []
+
+
+def os_report():
+    """Після вікна вимірювання: run-time stats, запас стека кожної задачі, heap ОС (§6.2–6.4)."""
+    if FW != "lr4":
+        return []
+    return os_snapshot() + cmd("stack") + wait("task=MSP") + delay(10) + cmd("heap") + wait("HEAP") + delay(10)
+
+
 def begin_measure():
-    return cmd("stats reset") + wait("STATS,RESET") + delay(10)
+    return os_snapshot() + cmd("stats reset") + wait("STATS,RESET") + delay(10)
 
 
 def report():
-    return cmd("stats") + wait("STATS,END") + delay(20) + cmd("mem") + delay(30)
+    return cmd("stats") + wait("STATS,END") + delay(20) + cmd("mem") + delay(30) + os_report()
 
 
 def set_mode(m):
@@ -298,7 +329,55 @@ def long_run():
     return steps
 
 
-# name: (функція, щупи аналізатора або None, запас часу симуляції, мс)
+# ---- Сценарії, специфічні для ОС (ЛР4 §7.2) ---------------------------------
+def os_inversion():
+    """7.2.1: cli (3) чекає ресурс, який тримає long (1) 50 мс, а log (2) займає процесор 100 мс."""
+    steps = start()
+    for kind in ("invmutex", "invsem") * 3:
+        steps += cmd(f"fault {kind}") + wait("INV,kind=") + delay(300)
+    return steps
+
+
+def os_starve():
+    """7.2.3: cli активно чекає прапорця від нижчої задачі 3 с; що отримують нижчі задачі й idle."""
+    return start() + set_mode("live") + begin_measure() + cmd("fault starve") + wait("STARVE,") + delay(20) \
+        + report()
+
+
+def os_qflood():
+    """7.2.4: 50 записів у чергу log глибиною 4 без очікування і з timeout 20 мс."""
+    return start() + cmd("fault qflood") + wait("QFLOOD,timeout_ms=20") + delay(50) + cmd("tasks") + wait("TASKS,END")
+
+
+def os_stack():
+    """7.2.2: стек imu 96 слів — нижче виміряного high water mark; хук переповнення має спрацювати."""
+    return wait("FATAL") + delay(200)
+
+
+def os_stack_nocheck():
+    """7.2.2: той самий стек без контролю переповнення: що відбувається з прошивкою."""
+    return delay(3000) + cmd("status") + delay(500) + cmd("stack") + delay(1000) + cmd("stats") + delay(1500)
+
+
+def os_heap():
+    """7.2.5: heap ОС 6144 Б — менше, ніж потрібно семи задачам і чергам."""
+    return wait("FATAL") + delay(200)
+
+
+def os_trace():
+    """6.5, звіт §10: хронологія задач — запис стартує з натискання B1 під час dump."""
+    return start() + record_first(4) + set_mode("live") + cmd("trace") + wait("TRACE,armed") + cmd("dump") \
+        + delay(150) + press(60) + wait("DUMP,END") + delay(50) + cmd("trace") + wait("TRACE,END") + delay(20)
+
+
+def os_ctxsw():
+    """6.5: вартість перемикання контексту і тіку в простої (HOLD) і під час dump."""
+    steps = start() + set_mode("hold") + delay(500) + cmd("ctxsw") + wait("OSTICK") + delay(20)
+    steps += record_first(4) + set_mode("hold") + cmd("dump") + delay(100) + cmd("ctxsw") + wait("OSTICK")
+    return steps + wait("DUMP,END") + delay(50)
+
+
+# name: (функція, щупи аналізатора або None, запас часу симуляції, мс[, варіант збірки ЛР4])
 SCENARIOS = {
     "s1": (s1, BASE_CHANNELS, 15000),
     "s2": (s2, BASE_CHANNELS, 55000),
@@ -321,7 +400,18 @@ SCENARIOS = {
     "fr09": (fr09, None, 8000),
     "wrap": (s_wrap, None, 210000),
     "long": (long_run, None, 4200000),
+    "os-inv": (os_inversion, ["P_LONG", "P_IMU", "P_PWM", "VCP_RX", "VCP_TX", "MARK", "P_REACT", "BTN"], 15000,
+               "faults"),
+    "os-starve": (os_starve, None, 15000, "faults"),
+    "os-qflood": (os_qflood, None, 10000, "faults"),
+    "os-stack": (os_stack, None, 6000, "stack-small"),
+    "os-stack-nocheck": (os_stack_nocheck, None, 8000, "stack-nocheck"),
+    "os-heap": (os_heap, None, 6000, "heap-small"),
+    "os-trace": (os_trace, BASE_CHANNELS, 30000, "faults"),
+    "os-ctxsw": (os_ctxsw, None, 30000),
+    "s3-tick100": (s3, BASE_CHANNELS, 90000, "tick100"),
 }
+OS_ONLY = [n for n in SCENARIOS if n.startswith("os-") or n == "s3-tick100"]
 FIXTURE = ("sc4-fault", "sc7-boot")  # схеми з тестовим оснащенням відмов
 
 
@@ -344,13 +434,39 @@ def fault_fixture(path):
     return path
 
 
-DEFAULT = [n for n in SCENARIOS if n not in ("long", "wrap")]
+DEFAULT = [n for n in SCENARIOS if n not in ("long", "wrap") and n not in OS_ONLY]
+
+
+def elf_for(variant):
+    """ELF прошивки: lr3 — з тегу lab3 (git worktree build-lr3/), lr4 — поточна або варіант із VARIANTS."""
+    if FW == "lr3":
+        wt = ROOT / "build-lr3"
+        if not wt.exists():
+            subprocess.run(["git", "worktree", "add", "--detach", str(wt), "refs/tags/lab3"], cwd=ROOT, check=True)
+        build, defs, git = wt / "firmware" / "build", "", "lab3"
+        cwd = wt
+    else:
+        build = ROOT / "firmware" / (f"build-{variant}" if variant else "build")
+        defs, cwd = VARIANTS.get(variant, ""), ROOT
+        git = subprocess.run(["git", "rev-parse", "--short=8", "HEAD"], cwd=ROOT, capture_output=True,
+                             text=True).stdout.strip() + (f"-{variant}" if variant else "")
+    if FW == "lr3" or variant:
+        uid = f"{subprocess.check_output(['id', '-u']).decode().strip()}:{subprocess.check_output(['id', '-g']).decode().strip()}"
+        subprocess.run(["docker", "run", "--rm", "-v", f"{cwd}:/workspace", "-w", "/workspace", "--user", uid,
+                        "stm32-build", "make", "-s", "-C", "firmware", "all", "BOARD_TARGET=wokwi",
+                        f"BUILD_DIR={build.name}", f"GIT_HASH={git}", f"RTOS_DEFS={defs}"], check=True,
+                       capture_output=True)
+    return build / "firmware.elf"
 
 
 def run(name):
-    fn, channels, timeout = SCENARIOS[name]
+    fn, channels, timeout, *rest = SCENARIOS[name]
+    variant = rest[0] if rest else None
+    if FW == "lr3" and name in OS_ONLY:
+        raise SystemExit(f"{name}: сценарій ОС, лише для --fw lr4")
     SCN.mkdir(parents=True, exist_ok=True)
     RUNS.mkdir(parents=True, exist_ok=True)
+    elf = elf_for(variant)
     yaml = SCN / f"{name}.yaml"
     yaml.write_text("\n".join([f"name: '{name}'", "version: 1", "author: 'tools/run_scenarios.py'",
                                "steps:"] + fn()) + "\n", encoding="utf-8")
@@ -363,9 +479,9 @@ def run(name):
         diag = ROOT / "diagram.json"
     log = RUNS / f"{name}.log"
     cli = [WOKWI, "--quiet", "--timeout", str(timeout), "--diagram-file", str(diag.relative_to(ROOT)),
-           "--scenario", str(yaml.relative_to(ROOT)), "--serial-log-file", str(log)]
+           "--scenario", str(yaml.relative_to(ROOT)), "--serial-log-file", str(log), "--elf", str(elf)]
     if channels:
-        cli += ["--vcd-file", str(CAP / f"lr3-{name}.vcd")]
+        cli += ["--vcd-file", str(VCD / f"{FW}-{name}.vcd")]  # ЛР3 без --fw: lr3-<ім'я>.vcd, як раніше
     t0 = time.time()
     res = subprocess.run(cli + ["."], cwd=ROOT, env=capture.token_env(), capture_output=True, text=True)
     print(f"== {name}: exit {res.returncode}, {time.time() - t0:.0f} с")
@@ -375,7 +491,16 @@ def run(name):
 
 
 def main(argv):
-    names = argv or DEFAULT
+    global FW, SCN, RUNS, VCD
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--fw", choices=("lr3", "lr4"), help="ЛР4: яку прошивку проганяти")
+    ap.add_argument("names", nargs="*")
+    a = ap.parse_args(argv)
+    if a.fw:  # ЛР4: логи обох прошивок поруч; без --fw — як у ЛР3
+        FW = a.fw
+        SCN, RUNS, VCD = MET / "scenarios" / FW, MET / f"runs-{FW}", CAP / "cmp"
+        VCD.mkdir(parents=True, exist_ok=True)
+    names = a.names or DEFAULT
     bad = [n for n in names if run(n) != 0]
     if bad:
         raise SystemExit(f"не завершились: {bad}")

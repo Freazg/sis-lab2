@@ -132,6 +132,17 @@ static void test_page_program_busy_timeout(void)
   TEST_ASSERT_INT_WITHIN(3, 3 + W25Q_T_PP_MAX_MS, m.count);
 }
 
+/* ЛР4: задачу витіснили на 10 мс між опитуванням BUSY і перевіркою часу. Мікросхема тим часом
+ * закінчила запис — драйвер має опитати ще раз, а не повернути BUSY за старим читанням. */
+static void test_busy_wait_rechecks_after_preemption(void)
+{
+  static const uint8_t d[1] = { 0x55 };
+  m.busy_polls = 1;               /* перше опитування після 02h — BUSY, далі готова */
+  m.preempt_after_busy_ms = 10;   /* одразу після цього опитування задача не працює 10 мс */
+  fake_time_step_ms = 0;
+  TEST_ASSERT_EQUAL(DEV_OK, w25q64_page_program(&dev, 0, d, 1));
+}
+
 static void test_sector_erase_sequence_aligns_address(void)
 {
   static const uint8_t se[4] = { 0x20, 0x7F, 0xF0, 0x00 };
@@ -171,6 +182,7 @@ int main(void)
   RUN_TEST(test_page_program_without_wel_is_aborted);
   RUN_TEST(test_page_program_rejects_page_crossing);
   RUN_TEST(test_page_program_busy_timeout);
+  RUN_TEST(test_busy_wait_rechecks_after_preemption);
   RUN_TEST(test_sector_erase_sequence_aligns_address);
   RUN_TEST(test_read_sequence_and_data);
   RUN_TEST(test_write_enable_bus_error);

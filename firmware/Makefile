@@ -93,14 +93,16 @@ MCU = -mcpu=cortex-m0plus -mthumb
 
 C_DEFS = -DUSE_HAL_DRIVER -DSTM32C031xx -DFW_GIT_HASH=\"$(strip $(GIT_HASH))\" $(RTOS_DEFS)
 ifeq ($(BOARD_TARGET),nucleo)
-C_DEFS += -DBOARD_I2C_REPEATED_START=1
+C_DEFS += -DBOARD_I2C_REPEATED_START=1 -DBOARD_WOKWI=0
 else ifeq ($(BOARD_TARGET),wokwi)
-C_DEFS += -DBOARD_I2C_REPEATED_START=0
+C_DEFS += -DBOARD_I2C_REPEATED_START=0 -DBOARD_WOKWI=1
+# Модель Cortex-M0+ у Wokwi ігнорує PRIMASK: макроси маскування порту замінено (Rtos/wokwi/portmacro.h)
+WOKWI_INC = -IRtos/wokwi
 else
 $(error BOARD_TARGET має бути wokwi або nucleo)
 endif
 
-C_INCLUDES = \
+C_INCLUDES = $(WOKWI_INC) \
 -ICore/Inc \
 -IPlatform \
 -IDevices \
@@ -155,6 +157,9 @@ $(BUILD_DIR)/vendor/%.o: %.c Makefile | $(BUILD_DIR)/vendor
 
 # Ядро: без LTO; SysTick_Handler порту перейменовано, щоб Core/Src/stm32c0xx_it.c міряв тривалість тіку
 $(BUILD_DIR)/kernel/port.o: KERNEL_DEFS = -DSysTick_Handler=xPortSysTickHandler
+ifeq ($(BOARD_TARGET),wokwi)
+$(BUILD_DIR)/kernel/portasm.o: KERNEL_DEFS = -DPendSV_Handler=xPortPendSVHandler
+endif
 $(BUILD_DIR)/kernel/%.o: %.c Makefile | $(BUILD_DIR)/kernel
 	$(CC) -c $(CFLAGS) $(KERNEL_DEFS) $(VENDOR_WARN) $< -o $@
 
