@@ -1,15 +1,16 @@
 #include "cli.h"
 
-#include <ctype.h>
-#include <stdlib.h>
 #include <string.h>
 
 #define MAX_TOKENS 4
 
+/* Власні lower і розбір числа замість ctype/strtol: таблиця _ctype_ і strtol займали 0,7 КБ флеш (ЛР4) */
+static char lower(char c) { return (c >= 'A' && c <= 'Z') ? (char)(c - 'A' + 'a') : c; }
+
 static int token_eq(const char *a, const char *b)
 {
   while (*a && *b) {
-    if (tolower((unsigned char)*a) != tolower((unsigned char)*b)) {
+    if (lower(*a) != lower(*b)) {
       return 0;
     }
     a++;
@@ -39,14 +40,24 @@ static int split(char *s, char *tok[], int max)
   return *s ? -1 : n; /* -1: забагато токенів */
 }
 
+/** Десяткове ціле зі знаком; увесь токен — число, інакше 0. */
 static int parse_int(const char *s, int32_t *out)
 {
-  char *end = NULL;
-  long v = strtol(s, &end, 10);
-  if (end == s || *end != '\0') {
+  int neg = *s == '-';
+  if (*s == '-' || *s == '+') {
+    s++;
+  }
+  if (*s == '\0') {
     return 0;
   }
-  *out = (int32_t)v;
+  uint32_t v = 0;
+  for (; *s != '\0'; s++) {
+    if (*s < '0' || *s > '9' || v > 214748364u) {
+      return 0;
+    }
+    v = v * 10u + (uint32_t)(*s - '0');
+  }
+  *out = neg ? -(int32_t)v : (int32_t)v;
   return 1;
 }
 
@@ -69,6 +80,11 @@ static const struct {
   { "cap", "pwm", CLI_CAP_PWM },      { "cap", "uart", CLI_CAP_UART },
   { "cap", "anomaly", CLI_CAP_ANOMALY },
   { "fault", "powerloss", CLI_FAULT_POWERLOSS },
+  { "tasks", NULL, CLI_TASKS },       { "stack", NULL, CLI_STACK },
+  { "heap", NULL, CLI_HEAP },         { "ctxsw", NULL, CLI_CTXSW },
+  { "trace", NULL, CLI_TRACE },
+  { "fault", "invmutex", CLI_FAULT_INV_MUTEX }, { "fault", "invsem", CLI_FAULT_INV_SEM },
+  { "fault", "starve", CLI_FAULT_STARVE },      { "fault", "qflood", CLI_FAULT_QFLOOD },
 };
 
 cli_cmd_t cli_parse(const char *line)

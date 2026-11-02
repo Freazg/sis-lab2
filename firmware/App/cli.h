@@ -9,6 +9,8 @@
  *   cap i2c|spi|pwm|uart|anomaly                        — транзакції для логічного аналізатора (ЛР2)
  *   stats | stats reset | hist | mem | evt | perfcal    — вимірювання (ЛР3)
  *   rate <hz> | reset | fault powerloss                 — сценарії 6.2
+ *   tasks | stack | heap | ctxsw | trace                — метрики ОС (ЛР4 §6)
+ *   fault invmutex|invsem|starve|qflood                 — сценарії ОС (ЛР4 §7.2)
  */
 #ifndef CLI_H
 #define CLI_H
@@ -46,6 +48,15 @@ typedef enum {
   CLI_CAP_PWM,
   CLI_CAP_UART,
   CLI_CAP_ANOMALY,
+  CLI_TASKS,
+  CLI_STACK,
+  CLI_HEAP,
+  CLI_CTXSW,
+  CLI_TRACE,
+  CLI_FAULT_INV_MUTEX,
+  CLI_FAULT_INV_SEM,
+  CLI_FAULT_STARVE,
+  CLI_FAULT_QFLOOD,
   CLI_ERROR
 } cli_cmd_id_t;
 

@@ -24,7 +24,7 @@ typedef struct {
 
 void app_traj_scan(app_t *a, app_traj_info_t *out);
 bool app_rec_begin(app_t *a);
-void app_rec_sample(app_t *a);
+void app_rec_sample(app_t *a, traj_sample_t s);
 void app_rec_end(app_t *a);
 bool app_play_begin(app_t *a);
 bool app_play_sample(app_t *a);  /**< false — траєкторія закінчилась */

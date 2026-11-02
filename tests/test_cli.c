@@ -108,6 +108,21 @@ static void test_reader_overflow_flagged(void)
   TEST_ASSERT_EQUAL(1, r.len);
 }
 
+/* ЛР4: власний розбір чисел замість strtol — той самий результат на межах */
+static void test_number_parsing_edges(void)
+{
+  cli_cmd_t c = cli_parse("limits -10 +20");
+  TEST_ASSERT_EQUAL(CLI_LIMITS, c.id);
+  TEST_ASSERT_EQUAL_INT32(-10, c.value);
+  TEST_ASSERT_EQUAL_INT32(20, c.value2);
+  TEST_ASSERT_EQUAL(CLI_RATE, cli_parse("rate 2147483647").id);
+  TEST_ASSERT_EQUAL(CLI_ERROR, cli_parse("rate 21474836470").id); /* переповнення */
+  TEST_ASSERT_EQUAL(CLI_ERROR, cli_parse("rate 4x").id);
+  TEST_ASSERT_EQUAL(CLI_ERROR, cli_parse("rate -").id);
+  TEST_ASSERT_EQUAL(CLI_TASKS, cli_parse("TASKS").id);
+  TEST_ASSERT_EQUAL(CLI_FAULT_QFLOOD, cli_parse("fault qflood").id);
+}
+
 int main(void)
 {
   UNITY_BEGIN();
@@ -119,5 +134,6 @@ int main(void)
   RUN_TEST(test_errors_and_empty);
   RUN_TEST(test_reader_assembles_lines);
   RUN_TEST(test_reader_overflow_flagged);
+  RUN_TEST(test_number_parsing_edges);
   return UNITY_END();
 }

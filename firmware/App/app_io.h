@@ -22,6 +22,10 @@ int app_format(char *buf, size_t size, const char *fmt, ...) APP_PRINTF_FMT(3, 4
 /** printf у консоль; рядок обрізається до 160 символів. */
 void app_print(const app_hw_t *hw, const char *fmt, ...) APP_PRINTF_FMT(2, 3);
 
+/** Відкладений друк (ЛР4): рядок до 96 символів іде в чергу задачі log, задача-відправник не
+ *  чекає UART. Для задач із жорстким періодом (imu). */
+void app_printq(const app_hw_t *hw, const char *fmt, ...) APP_PRINTF_FMT(2, 3);
+
 /** Те саме, але в резервний канал (FT232RL). Повертає статус передачі. */
 dev_status_t app_print_aux(const app_hw_t *hw, const char *fmt, ...) APP_PRINTF_FMT(2, 3);
 

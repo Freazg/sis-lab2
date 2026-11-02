@@ -22,6 +22,13 @@ int fake_probe_edges[4];
 int fake_resets;
 uint32_t fake_rx_dropped;
 int fake_eol_pending;
+app_t *fake_app;
+int fake_lock_fail[APP_LOCK_COUNT];
+int fake_locks_held;
+int fake_crit_depth;
+int fake_os_cmd;
+int fake_mode_posts;
+int fake_log_posts;
 
 static uint32_t pulse[2];
 static void pwm_set(void *ctx, uint32_t us) { pulse[(intptr_t)ctx] = us; }
@@ -105,6 +112,35 @@ static uint32_t stack_used(void) { return 800u; }
 static uint32_t stack_size(void) { return 1024u; }
 static void do_reset(void) { fake_resets++; }
 
+static bool lock(app_lock_t id, uint32_t timeout_ms)
+{
+  (void)timeout_ms;
+  if (fake_lock_fail[id]) {
+    return false;
+  }
+  fake_locks_held++;
+  return true;
+}
+static void unlock(app_lock_t id)
+{
+  (void)id;
+  fake_locks_held--;
+}
+static void crit(bool enter) { fake_crit_depth += enter ? 1 : -1; }
+static void log_post(const char *s, size_t len)
+{
+  fake_log_posts++;
+  con_write(s, len);
+}
+static void mode_post(int m)
+{
+  fake_mode_posts++;
+  app_set_mode(fake_app, (app_mode_t)m);
+}
+static void rec_post(int16_t pan, int16_t tilt) { app_rec_add(fake_app, pan, tilt); }
+static void long_post(app_long_op_t op) { app_long_run(fake_app, op); }
+static void os_cmd(int id) { fake_os_cmd = id; }
+
 void fake_hw_init(fake_hw_t *f)
 {
   static const uint8_t rest[14] = { 0, 0, 0, 0, 0x40, 0x00, 0xEF, 0x5C, 0, 0, 0, 0, 0, 0 };
@@ -126,6 +162,12 @@ void fake_hw_init(fake_hw_t *f)
   fake_resets = 0;
   fake_rx_dropped = 0;
   fake_eol_pending = 0;
+  memset(fake_lock_fail, 0, sizeof fake_lock_fail);
+  fake_locks_held = 0;
+  fake_crit_depth = 0;
+  fake_os_cmd = -1;
+  fake_mode_posts = 0;
+  fake_log_posts = 0;
   fake_time_reset();
 
   fake_i2c_init_mpu6050(&f->i2c_fake);
@@ -145,6 +187,8 @@ void fake_hw_init(fake_hw_t *f)
     .cycles = cycles, .micros = micros, .cal_loop = cal_loop, .probe = probe, .btn_take = btn_take,
     .rx_eol_take = rx_eol_take, .rx_dropped = rx_dropped, .stack_used = stack_used,
     .stack_size = stack_size, .reset = do_reset,
+    .lock = lock, .unlock = unlock, .crit = crit, .log_post = log_post, .mode_post = mode_post,
+    .rec_post = rec_post, .long_post = long_post, .os_cmd = os_cmd,
     .sysclk_hz = 48000000u, .board_name = "FAKE", .fw_version = "test", .fw_git = "deadbeef",
   };
 }

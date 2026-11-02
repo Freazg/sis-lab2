@@ -17,7 +17,8 @@ extern const i2c_bus_t   platform_i2c1;
 extern const spi_bus_t   platform_spi1_flash;
 extern const pwm_out_t   platform_pwm_pan;
 extern const pwm_out_t   platform_pwm_tilt;
-extern const dev_time_t  platform_time;
+extern const dev_time_t  platform_time; /**< HAL_Delay: лише до старту планувальника */
+uint32_t platform_millis(void);
 
 /** Індекс LED збігається з app_led_t (0 = LIVE, 1 = REC). */
 void platform_led_set(int idx, bool on);
@@ -31,15 +32,19 @@ void platform_con_start_rx(void); /**< увімкнути переривання
 void platform_con_rx_isr(void);   /**< викликається з USART2_IRQHandler */
 dev_status_t platform_aux_write(const char *s, size_t len);
 
+void platform_i2c_init(void);  /**< тактування, піни і TIMINGR 400 кГц */
 dev_status_t platform_i2c_mem_read_restart(uint8_t addr7, uint8_t reg, uint8_t *val);
 void platform_i2c_recover(void);
 
 uint32_t platform_sysclk_hz(void);
 
+/** Викликається з TIM14_IRQHandler: база часу HAL (SysTick належить FreeRTOS). */
+void platform_tick_isr(void);
+
 /* ---- Вимірювання (ЛР3) --------------------------------------------------- */
 /**
  * Лічильник тактів ядра 32 біт. На Cortex-M0+ немає DWT CYCCNT (ARMv6-M), тому значення
- * складається з uwTick і поточного SysTick->VAL. Семантика та сама, що в CYCCNT: беззнакова
+ * складається з uwTick і поточного TIM14->CNT. Семантика та сама, що в CYCCNT: беззнакова
  * різниця коректна для інтервалів до 2^32 тактів (89,5 с при 48 МГц).
  */
 uint32_t platform_cycles(void);

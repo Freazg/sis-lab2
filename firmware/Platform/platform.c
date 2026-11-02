@@ -2,37 +2,32 @@
 
 #include "board.h"
 
-/* ---- Переклад HAL -> dev_status_t -------------------------------------- */
-static dev_status_t from_hal(HAL_StatusTypeDef st, uint32_t hal_error)
+/* ---- I2C1 ---------------------------------------------------------------- */
+/*
+ * Обмін на регістрах I2C (RM0490 §25.4.9 «Controller transmitter», §25.4.10 «Controller receiver»).
+ * Запис був регістровим ще з ЛР2: HAL_I2C_Master_Transmit (stm32c0xx_hal_i2c.c:1166) завантажує
+ * перший байт у TXDR ще до START, і модель Wokwi після цього передає лише 1 байт і STOP (аномалія A3,
+ * docs/captures/analysis.md). У ЛР4 на регістри переведено й читання, перевірку адреси та ініціалізацію:
+ * HAL I2C займав 2 КБ флеш, потрібних ядру FreeRTOS. Кадри на шині ті самі (тест порівняння із записом).
+ */
+/** Ті самі записи, що HAL_I2C_Init + ConfigAnalogFilter/ConfigDigitalFilter для полів MX_I2C1_Init (ЛР2). */
+static void i2c_hw_init(void)
 {
-  if (st == HAL_OK) {
-    return DEV_OK;
-  }
-  if (hal_error & HAL_I2C_ERROR_AF) {
-    return DEV_ERR_NACK;
-  }
-  if (st == HAL_TIMEOUT || (hal_error & HAL_I2C_ERROR_TIMEOUT)) {
-    return DEV_ERR_TIMEOUT;
-  }
-  return DEV_ERR_BUS;
+  I2C1->CR1 = 0;
+  I2C1->TIMINGR = I2C_TIMINGR_400K;
+  I2C1->OAR1 = I2C_OAR1_OA1EN; /* власна адреса 0, 7 біт: модель Wokwi без цього ставила ADDR */
+  I2C1->CR2 = I2C_CR2_AUTOEND | I2C_CR2_NACK;
+  I2C1->OAR2 = 0;
+  I2C1->CR1 = I2C_CR1_PE; /* аналоговий фільтр увімкнено (ANFOFF=0), цифровий вимкнено (DNF=0) */
 }
 
-/* ---- I2C1 ---------------------------------------------------------------- */
-#if BOARD_I2C_HAL_TRANSMIT
-static dev_status_t i2c_write(void *ctx, uint8_t addr7, const uint8_t *data, size_t len)
+void platform_i2c_init(void)
 {
-  I2C_HandleTypeDef *h = ctx;
-  HAL_StatusTypeDef st = HAL_I2C_Master_Transmit(h, (uint16_t)(addr7 << 1), (uint8_t *)data,
-                                                 (uint16_t)len, I2C_TIMEOUT_MS);
-  return from_hal(st, HAL_I2C_GetError(h));
+  hi2c1.Instance = I2C1;
+  HAL_I2C_MspInit(&hi2c1); /* піни AF6 open-drain і тактування, Core/Src/stm32c0xx_hal_msp.c */
+  i2c_hw_init();
 }
-#else
-/*
- * Запис на рівні регістрів I2C (RM0490 §25.4.9 «Controller transmitter»): NBYTES, AUTOEND, START,
- * далі по одному байту в TXDR на кожен TXIS, завершення — STOPF.
- * HAL_I2C_Master_Transmit (stm32c0xx_hal_i2c.c:1166) завантажує перший байт у TXDR ще до START;
- * модель Wokwi після цього передає лише 1 байт і STOP (аномалія A3, docs/captures/analysis.md).
- */
+
 static int i2c_wait(I2C_TypeDef *i2c, uint32_t mask, uint32_t t0)
 {
   while ((i2c->ISR & (mask | I2C_ISR_NACKF)) == 0u) {
@@ -43,18 +38,17 @@ static int i2c_wait(I2C_TypeDef *i2c, uint32_t mask, uint32_t t0)
   return (i2c->ISR & I2C_ISR_NACKF) ? 1 : 0;
 }
 
-static dev_status_t i2c_write(void *ctx, uint8_t addr7, const uint8_t *data, size_t len)
+/** Шина вільна; для запису ще й прапорці контролера скинуті. false — BUSY не знявся за timeout. */
+static bool i2c_begin(I2C_TypeDef *i2c, uint32_t t0, bool for_write)
 {
-  I2C_HandleTypeDef *h = ctx;
-  I2C_TypeDef *i2c = h->Instance;
-  uint32_t t0 = HAL_GetTick();
-  if (len == 0u || len > 255u) {
-    return DEV_ERR_PARAM;
-  }
   while (i2c->ISR & I2C_ISR_BUSY) {
     if (HAL_GetTick() - t0 > I2C_TIMEOUT_MS) {
-      return DEV_ERR_BUS;
+      return false;
     }
+  }
+  if (!for_write) {
+    i2c->ICR = I2C_ICR_STOPCF | I2C_ICR_NACKCF; /* як HAL_I2C_Master_Receive: без скидання PE */
+    return true;
   }
   /* Скидання прапорців контролера (PE=0 -> 1, RM0490 §25.4.5 «software reset»):
    * у Wokwi після попереднього читання TXIS лишається встановленим, і без цього
@@ -64,7 +58,27 @@ static dev_status_t i2c_write(void *ctx, uint8_t addr7, const uint8_t *data, siz
   __DSB();
   i2c->CR1 |= I2C_CR1_PE;
   i2c->ICR = I2C_ICR_STOPCF | I2C_ICR_NACKCF;
-  i2c->CR2 = ((uint32_t)addr7 << 1) | ((uint32_t)len << I2C_CR2_NBYTES_Pos) | I2C_CR2_AUTOEND | I2C_CR2_START;
+  return true;
+}
+
+/** Кінець транзакції з AUTOEND: дочекатися STOP (після NACK апаратура генерує його сама). */
+static dev_status_t i2c_end(I2C_TypeDef *i2c, int r, uint32_t t0)
+{
+  if (r == 0) {
+    r = i2c_wait(i2c, I2C_ISR_STOPF, t0);
+  } else if (r == 1) {
+    (void)i2c_wait(i2c, I2C_ISR_STOPF, t0);
+  }
+  i2c->ICR = I2C_ICR_STOPCF | I2C_ICR_NACKCF;
+  i2c->CR2 = 0;
+  return r == 0 ? DEV_OK : (r == 1 ? DEV_ERR_NACK : DEV_ERR_TIMEOUT);
+}
+
+/** Фаза запису len байт; autoend=false — без STOP, далі repeated START (чекає TC). */
+static int i2c_tx(I2C_TypeDef *i2c, uint8_t addr7, const uint8_t *data, size_t len, bool autoend, uint32_t t0)
+{
+  i2c->CR2 = ((uint32_t)addr7 << 1) | ((uint32_t)len << I2C_CR2_NBYTES_Pos) | (autoend ? I2C_CR2_AUTOEND : 0u)
+             | I2C_CR2_START;
   int r = 0;
   for (size_t i = 0; i < len && r == 0; i++) {
     r = i2c_wait(i2c, I2C_ISR_TXIS, t0);
@@ -72,45 +86,88 @@ static dev_status_t i2c_write(void *ctx, uint8_t addr7, const uint8_t *data, siz
       i2c->TXDR = data[i];
     }
   }
-  if (r == 0) {
-    r = i2c_wait(i2c, I2C_ISR_STOPF, t0);
+  if (r == 0 && !autoend) {
+    r = i2c_wait(i2c, I2C_ISR_TC, t0);
   }
-  if (r == 1) {
-    (void)i2c_wait(i2c, I2C_ISR_STOPF, t0); /* після NACK апаратура сама генерує STOP (AUTOEND) */
-  }
-  i2c->ICR = I2C_ICR_STOPCF | I2C_ICR_NACKCF;
-  i2c->CR2 = 0;
-  return r == 0 ? DEV_OK : (r == 1 ? DEV_ERR_NACK : DEV_ERR_TIMEOUT);
+  return r;
 }
-#endif
+
+static int i2c_rx(I2C_TypeDef *i2c, uint8_t addr7, uint8_t *data, size_t len, uint32_t t0)
+{
+  i2c->CR2 = ((uint32_t)addr7 << 1) | I2C_CR2_RD_WRN | ((uint32_t)len << I2C_CR2_NBYTES_Pos) | I2C_CR2_AUTOEND
+             | I2C_CR2_START;
+  int r = 0;
+  for (size_t i = 0; i < len && r == 0; i++) {
+    r = i2c_wait(i2c, I2C_ISR_RXNE, t0);
+    if (r == 0) {
+      data[i] = (uint8_t)i2c->RXDR;
+    }
+  }
+  return r;
+}
+
+static dev_status_t i2c_write(void *ctx, uint8_t addr7, const uint8_t *data, size_t len)
+{
+  I2C_TypeDef *i2c = ((I2C_HandleTypeDef *)ctx)->Instance;
+  uint32_t t0 = HAL_GetTick();
+  if (len == 0u || len > 255u) {
+    return DEV_ERR_PARAM;
+  }
+  if (!i2c_begin(i2c, t0, true)) {
+    return DEV_ERR_BUS;
+  }
+  return i2c_end(i2c, i2c_tx(i2c, addr7, data, len, true, t0), t0);
+}
+
+/** Запис регістра і читання з repeated START (як HAL_I2C_Mem_Read). */
+static dev_status_t i2c_read_restart(I2C_TypeDef *i2c, uint8_t addr7, const uint8_t *wdata, size_t wlen,
+                                     uint8_t *rdata, size_t rlen)
+{
+  uint32_t t0 = HAL_GetTick();
+  if (!i2c_begin(i2c, t0, true)) {
+    return DEV_ERR_BUS;
+  }
+  int r = i2c_tx(i2c, addr7, wdata, wlen, false, t0);
+  if (r == 0) {
+    r = i2c_rx(i2c, addr7, rdata, rlen, t0);
+  }
+  return i2c_end(i2c, r, t0);
+}
 
 static dev_status_t i2c_write_read(void *ctx, uint8_t addr7, const uint8_t *wdata, size_t wlen,
                                    uint8_t *rdata, size_t rlen)
 {
-  I2C_HandleTypeDef *h = ctx;
-  HAL_StatusTypeDef st;
-#if BOARD_I2C_REPEATED_START
-  if (wlen == 1) {
-    st = HAL_I2C_Mem_Read(h, (uint16_t)(addr7 << 1), wdata[0], I2C_MEMADD_SIZE_8BIT, rdata, (uint16_t)rlen,
-                          I2C_TIMEOUT_MS);
-    return from_hal(st, HAL_I2C_GetError(h));
+  I2C_TypeDef *i2c = ((I2C_HandleTypeDef *)ctx)->Instance;
+  if (wlen == 0u || wlen > 255u || rlen == 0u || rlen > 255u) {
+    return DEV_ERR_PARAM;
   }
-#endif
+#if BOARD_I2C_REPEATED_START
+  return i2c_read_restart(i2c, addr7, wdata, wlen, rdata, rlen);
+#else
   /* START addr+W reg STOP, START addr+R data... STOP. MPU-6050 зберігає вказівник регістра
    * між транзакціями, тому результат той самий, що й з repeated START. */
   dev_status_t w = i2c_write(ctx, addr7, wdata, wlen);
   if (w != DEV_OK) {
     return w;
   }
-  st = HAL_I2C_Master_Receive(h, (uint16_t)(addr7 << 1), rdata, (uint16_t)rlen, I2C_TIMEOUT_MS);
-  return from_hal(st, HAL_I2C_GetError(h));
+  uint32_t t0 = HAL_GetTick();
+  if (!i2c_begin(i2c, t0, false)) {
+    return DEV_ERR_BUS;
+  }
+  return i2c_end(i2c, i2c_rx(i2c, addr7, rdata, rlen, t0), t0);
+#endif
 }
 
+/** Адреса без даних (NBYTES=0, AUTOEND): ACK — пристрій є, NACK — немає (як HAL_I2C_IsDeviceReady). */
 static dev_status_t i2c_probe(void *ctx, uint8_t addr7)
 {
-  I2C_HandleTypeDef *h = ctx;
-  HAL_StatusTypeDef st = HAL_I2C_IsDeviceReady(h, (uint16_t)(addr7 << 1), 1, I2C_TIMEOUT_MS);
-  return from_hal(st, HAL_I2C_GetError(h));
+  I2C_TypeDef *i2c = ((I2C_HandleTypeDef *)ctx)->Instance;
+  uint32_t t0 = HAL_GetTick();
+  if (!i2c_begin(i2c, t0, false)) {
+    return DEV_ERR_BUS;
+  }
+  i2c->CR2 = ((uint32_t)addr7 << 1) | I2C_CR2_AUTOEND | I2C_CR2_START;
+  return i2c_end(i2c, 0, t0);
 }
 
 const i2c_bus_t platform_i2c1 = {
@@ -122,9 +179,7 @@ const i2c_bus_t platform_i2c1 = {
 
 dev_status_t platform_i2c_mem_read_restart(uint8_t addr7, uint8_t reg, uint8_t *val)
 {
-  HAL_StatusTypeDef st = HAL_I2C_Mem_Read(&hi2c1, (uint16_t)(addr7 << 1), reg, I2C_MEMADD_SIZE_8BIT, val, 1,
-                                          I2C_TIMEOUT_MS);
-  return from_hal(st, HAL_I2C_GetError(&hi2c1));
+  return i2c_read_restart(I2C1, addr7, &reg, 1, val, 1);
 }
 
 void platform_i2c_recover(void)
@@ -133,25 +188,22 @@ void platform_i2c_recover(void)
    * (сценарій 6.2.4). Повна процедура: відпустити ведений дев'ятьма тактами SCL (UM10204 §3.1.16),
    * STOP, скинути блок через RCC, ініціалізувати заново. */
   GPIO_InitTypeDef g = { 0 };
-  HAL_I2C_DeInit(&hi2c1);
+  I2C1->CR1 = 0;
   g.Mode = GPIO_MODE_OUTPUT_OD;
   g.Pull = GPIO_PULLUP;
   g.Speed = GPIO_SPEED_FREQ_LOW;
   g.Pin = I2C_SCL_PIN | I2C_SDA_PIN;
   HAL_GPIO_WritePin(I2C_SCL_PORT, I2C_SCL_PIN | I2C_SDA_PIN, GPIO_PIN_SET);
-  HAL_GPIO_Init(I2C_SCL_PORT, &g);
+  board_gpio_init(I2C_SCL_PORT, &g);
   for (int i = 0; i < 9; i++) {
     HAL_GPIO_WritePin(I2C_SCL_PORT, I2C_SCL_PIN, GPIO_PIN_RESET);
     HAL_GPIO_WritePin(I2C_SCL_PORT, I2C_SCL_PIN, GPIO_PIN_SET);
   }
   HAL_GPIO_WritePin(I2C_SDA_PORT, I2C_SDA_PIN, GPIO_PIN_RESET); /* STOP: SDA вгору при високому SCL */
   HAL_GPIO_WritePin(I2C_SDA_PORT, I2C_SDA_PIN, GPIO_PIN_SET);
-  HAL_GPIO_DeInit(I2C_SCL_PORT, I2C_SCL_PIN | I2C_SDA_PIN);
   __HAL_RCC_I2C1_FORCE_RESET();
   __HAL_RCC_I2C1_RELEASE_RESET();
-  HAL_I2C_Init(&hi2c1);
-  HAL_I2CEx_ConfigAnalogFilter(&hi2c1, I2C_ANALOGFILTER_ENABLE);
-  HAL_I2CEx_ConfigDigitalFilter(&hi2c1, 0);
+  platform_i2c_init(); /* піни знову AF6 open-drain */
 }
 
 /* ---- SPI1 + CS# PB0 ------------------------------------------------------ */
@@ -161,30 +213,43 @@ static void spi_select(void *ctx, bool active)
   HAL_GPIO_WritePin(FLASH_CS_PORT, FLASH_CS_PIN, active ? GPIO_PIN_RESET : GPIO_PIN_SET);
 }
 
+/*
+ * Обмін на регістрах SPI1 (ЛР4: HAL_SPI_TransmitReceive із супутніми функціями займав 1,5 КБ флеш,
+ * потрібних ядру FreeRTOS). Послідовність та сама, що в HAL для 8 біт із FRXTH: байт у DR, чекати
+ * RXNE, забрати прийнятий байт; наприкінці — BSY=0. Сигнали на шині не змінюються: SCK 3 МГц,
+ * mode 0, CS# керує spi_select. У фазі читання на MOSI йдуть 0xFF (як і раніше, test_probe_matches_capture).
+ */
 static dev_status_t spi_transfer(void *ctx, const uint8_t *tx, uint8_t *rx, size_t len)
 {
-  SPI_HandleTypeDef *h = ctx;
-  HAL_StatusTypeDef st;
-  if (len == 0) {
-    return DEV_OK;
+  SPI_TypeDef *spi = ((SPI_HandleTypeDef *)ctx)->Instance;
+  volatile uint8_t *dr = (volatile uint8_t *)&spi->DR; /* 8-бітний доступ: один кадр у FIFO */
+  uint32_t t0 = HAL_GetTick();
+  if ((spi->CR1 & SPI_CR1_SPE) == 0u) {
+    spi->CR1 |= SPI_CR1_SPE;
   }
-  if (tx != NULL && rx != NULL) {
-    st = HAL_SPI_TransmitReceive(h, (uint8_t *)tx, rx, (uint16_t)len, SPI_TIMEOUT_MS);
-  } else if (tx != NULL) {
-    st = HAL_SPI_Transmit(h, (uint8_t *)tx, (uint16_t)len, SPI_TIMEOUT_MS);
-  } else {
-    /* Фаза читання: на MOSI — визначені dummy-байти 0xFF. HAL_SPI_Receive у режимі
-     * full-duplex master передає вміст буфера rx як TX (0x00 або сміття) — знайдено
-     * тестом test_probe_matches_capture при порівнянні з записом шини. */
-    static const uint8_t ff[16] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-                                    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
-    st = HAL_OK;
-    for (size_t off = 0; off < len && st == HAL_OK; off += sizeof ff) {
-      size_t n = (len - off) < sizeof ff ? (len - off) : sizeof ff;
-      st = HAL_SPI_TransmitReceive(h, (uint8_t *)ff, rx + off, (uint16_t)n, SPI_TIMEOUT_MS);
+  for (size_t i = 0; i < len; i++) {
+    while ((spi->SR & SPI_SR_TXE) == 0u) {
+      if (HAL_GetTick() - t0 > SPI_TIMEOUT_MS) {
+        return DEV_ERR_TIMEOUT;
+      }
+    }
+    *dr = tx != NULL ? tx[i] : 0xFFu;
+    while ((spi->SR & SPI_SR_RXNE) == 0u) {
+      if (HAL_GetTick() - t0 > SPI_TIMEOUT_MS) {
+        return DEV_ERR_TIMEOUT;
+      }
+    }
+    uint8_t b = *dr;
+    if (rx != NULL) {
+      rx[i] = b;
     }
   }
-  return st == HAL_OK ? DEV_OK : (st == HAL_TIMEOUT ? DEV_ERR_TIMEOUT : DEV_ERR_BUS);
+  while (spi->SR & SPI_SR_BSY) {
+    if (HAL_GetTick() - t0 > SPI_TIMEOUT_MS) {
+      return DEV_ERR_TIMEOUT;
+    }
+  }
+  return DEV_OK;
 }
 
 const spi_bus_t platform_spi1_flash = {
@@ -230,10 +295,10 @@ const pwm_out_t platform_pwm_pan = { pwm_set, pwm_get, pwm_period, (void *)&pwm_
 const pwm_out_t platform_pwm_tilt = { pwm_set, pwm_get, pwm_period, (void *)&pwm_tilt_ctx };
 
 /* ---- Час ------------------------------------------------------------------ */
-static uint32_t millis(void) { return HAL_GetTick(); }
+uint32_t platform_millis(void) { return HAL_GetTick(); }
 static void delay_ms(uint32_t ms) { HAL_Delay(ms); }
 
-const dev_time_t platform_time = { millis, delay_ms };
+const dev_time_t platform_time = { platform_millis, delay_ms };
 
 /* ---- GPIO ------------------------------------------------------------------ */
 static GPIO_TypeDef *const led_port[2] = { LED_LIVE_PORT, LED_REC_PORT };
@@ -261,9 +326,30 @@ void platform_mark(bool level)
 }
 
 /* ---- UART ------------------------------------------------------------------ */
+/* Передача байтами через TDR з очікуванням TC наприкінці — те саме, що HAL_UART_Transmit (ЛР4: без
+ * HAL_UART_Init хендл не ініціалізований). Час визначає швидкість лінії: 86,8 мкс на байт. */
+static dev_status_t uart_tx(USART_TypeDef *u, const char *s, size_t len)
+{
+  uint32_t t0 = HAL_GetTick();
+  for (size_t i = 0; i < len; i++) {
+    while ((u->ISR & USART_ISR_TXE_TXFNF) == 0u) {
+      if (HAL_GetTick() - t0 > 100u) {
+        return DEV_ERR_TIMEOUT;
+      }
+    }
+    u->TDR = (uint8_t)s[i];
+  }
+  while ((u->ISR & USART_ISR_TC) == 0u) {
+    if (HAL_GetTick() - t0 > 100u) {
+      return DEV_ERR_TIMEOUT;
+    }
+  }
+  return DEV_OK;
+}
+
 void platform_con_write(const char *s, size_t len)
 {
-  HAL_UART_Transmit(&huart2, (const uint8_t *)s, (uint16_t)len, 100);
+  (void)uart_tx(USART2, s, len);
 }
 
 /* Прийом консолі: переривання RXNE -> кільцевий буфер. Опитування RXNE з головного циклу
@@ -282,14 +368,14 @@ static volatile uint8_t eol_tail;
 
 void platform_con_start_rx(void)
 {
-  __HAL_UART_ENABLE_IT(&huart2, UART_IT_RXNE);
+  USART2->CR1 |= USART_CR1_RXNEIE_RXFNEIE;
   HAL_NVIC_SetPriority(USART2_IRQn, 2, 0);
   HAL_NVIC_EnableIRQ(USART2_IRQn);
 }
 
 void platform_con_rx_isr(void)
 {
-  USART_TypeDef *u = huart2.Instance;
+  USART_TypeDef *u = USART2;
   if (u->ISR & USART_ISR_ORE) {
     u->ICR = USART_ICR_ORECF;
     con_rx_dropped++;
@@ -334,35 +420,72 @@ int platform_con_getc(void)
 
 dev_status_t platform_aux_write(const char *s, size_t len)
 {
-  HAL_StatusTypeDef st = HAL_UART_Transmit(&huart1, (const uint8_t *)s, (uint16_t)len, 100);
-  return st == HAL_OK ? DEV_OK : (st == HAL_TIMEOUT ? DEV_ERR_TIMEOUT : DEV_ERR_BUS);
+  return uart_tx(USART1, s, len);
 }
 
 uint32_t platform_sysclk_hz(void)
 {
-  return HAL_RCC_GetSysClockFreq();
+  return SystemCoreClock; /* оновлює SystemCoreClockUpdate() у SystemClock_Config */
 }
 
-/* ---- Вимірювання (ЛР3) --------------------------------------------------- */
+/* ---- База часу HAL на TIM14 (ЛР4) ---------------------------------------- */
 #define TICK_CYCLES (BOARD_SYSCLK_HZ / 1000u)
 
 /*
- * SysTick рахує вниз від TICK_CYCLES-1 і раз на 1 мс оновлює uwTick у перериванні. Читання
- * пари (tick, VAL) узгоджене, якщо tick не змінився між двома читаннями. SysTick має найвищий
- * пріоритет (TICK_INT_PRIORITY = 0), тому це вірно і всередині EXTI та USART2: переніс не може
- * чекати завершення іншого ISR. Варіант із забороною переривань і перевіркою ICSR.PENDSTSET
- * у Wokwi не працює: модель не показує цей прапорець (журнал проблем, docs/lab3-report.md).
+ * SysTick тепер належить FreeRTOS (тік ОС), тому HAL переходить на TIM14, як «Timebase Source»
+ * у CubeMX (методичка ЛР4 §4.10). TIM14 рахує вгору від 0 до TICK_CYCLES-1 на частоті ядра:
+ * переповнення раз на 1 мс оновлює uwTick, а CNT дає такти всередині мілісекунди. Ця пара
+ * замінює DWT CYCCNT, якого на Cortex-M0+ немає. Перевизначає слабку HAL_InitTick().
+ */
+HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
+{
+  __HAL_RCC_TIM14_CLK_ENABLE();
+  TIM14->CR1 = 0;
+  TIM14->PSC = 0;
+  TIM14->ARR = SystemCoreClock / 1000u - 1u; /* до SystemClock_Config ядро працює на 12 МГц */
+  TIM14->EGR = TIM_EGR_UG;
+  TIM14->SR = 0;
+  TIM14->DIER = TIM_DIER_UIE;
+  HAL_NVIC_SetPriority(TIM14_IRQn, TickPriority, 0);
+  HAL_NVIC_EnableIRQ(TIM14_IRQn);
+  TIM14->CR1 = TIM_CR1_CEN;
+  uwTickPrio = TickPriority;
+  return HAL_OK;
+}
+
+void HAL_SuspendTick(void) { TIM14->DIER &= ~TIM_DIER_UIE; }
+void HAL_ResumeTick(void) { TIM14->DIER |= TIM_DIER_UIE; }
+
+void platform_tick_isr(void)
+{
+  if (TIM14->SR & TIM_SR_UIF) {
+    TIM14->SR = ~TIM_SR_UIF;
+    HAL_IncTick();
+  }
+}
+
+/* ---- Вимірювання (ЛР3) --------------------------------------------------- */
+/*
+ * Пара (uwTick, TIM14->CNT) узгоджена, якщо uwTick не змінився між читаннями. TIM14 має
+ * найвищий пріоритет (TICK_INT_PRIORITY = 0), але критична секція FreeRTOS на Cortex-M0+
+ * (cpsid i) затримує і його. Тоді переповнення вже сталося, а uwTick ще старий: це видно з
+ * прапорця UIF, і до мілісекунд додається одиниця, а CNT читається вже після переносу.
  */
 static void tick_read(uint32_t *ms, uint32_t *elapsed)
 {
   uint32_t t;
-  uint32_t v;
+  uint32_t c;
+  uint32_t pend;
   do {
     t = HAL_GetTick();
-    v = SysTick->VAL;
+    c = TIM14->CNT;
+    pend = TIM14->SR & TIM_SR_UIF;
+    if (pend) {
+      c = TIM14->CNT;
+    }
   } while (t != HAL_GetTick());
-  *ms = t;
-  *elapsed = TICK_CYCLES - 1u - v;
+  *ms = pend ? t + 1u : t;
+  *elapsed = c;
 }
 
 uint32_t platform_cycles(void)

@@ -8,7 +8,9 @@
 #   Drivers/   — CMSIS + HAL від ST (вендорський, не редагується)
 #   Platform/  — адаптація до плати: піни, обгортки шин над HAL
 #   Devices/   — драйвери пристроїв, залежать лише від Devices/bus.h
-#   App/       — прикладна логіка, не знає про HAL
+#   App/       — прикладна логіка, не знає про HAL і ОС
+#   Rtos/      — задачі FreeRTOS, черги, м'ютекси, хуки (ЛР4)
+#   Middlewares/FreeRTOS — ядро FreeRTOS-Kernel V11.3.1 (git submodule), порт GCC/ARM_CM0
 #
 # BOARD_TARGET=wokwi  (за замовчуванням) — I2C без repeated START (обмеження моделі Wokwi)
 # BOARD_TARGET=nucleo — реальна плата, HAL_I2C_Mem_Read з repeated START
@@ -20,6 +22,15 @@ BOARD_TARGET ?= wokwi
 
 DEBUG ?= 1
 OPT   ?= -Os
+# LTO для власного коду і HAL: без нього прошивка з ядром ОС не вміщається у 32 КБ флеш.
+# Ядро FreeRTOS збирається без LTO, щоб map-файл показував внесок tasks.o, queue.o, port.o (§6.5).
+LTO   ?= 1
+ifeq ($(LTO),1)
+LTO_FLAGS = -flto
+endif
+# Варіанти для сценаріїв ОС (методичка ЛР4 §7.2): make RTOS_DEFS="-DRTOS_TICK_HZ=100"
+# Сценарії інверсії, голодування і черги: RTOS_DEFS="-DRTOS_FAULTS=1 -DAPP_CAP=0"
+RTOS_DEFS ?=
 GIT_HASH ?= unknown # git-хеш для банера і логів (методичка ЛР3 §5.2), задає кореневий Makefile
 
 # ---- Джерела -----------------------------------------------------------------
@@ -31,7 +42,17 @@ Core/Src/stm32c0xx_it.c \
 Core/Src/stm32c0xx_hal_msp.c \
 $(wildcard Platform/*.c) \
 $(wildcard Devices/*.c) \
-$(wildcard App/*.c)
+$(wildcard App/*.c) \
+$(wildcard Rtos/*.c)
+
+RTOS_DIR = Middlewares/FreeRTOS
+KERNEL_SOURCES = \
+$(RTOS_DIR)/tasks.c \
+$(RTOS_DIR)/queue.c \
+$(RTOS_DIR)/list.c \
+$(RTOS_DIR)/portable/MemMang/heap_4.c \
+$(RTOS_DIR)/portable/GCC/ARM_CM0/port.c \
+$(RTOS_DIR)/portable/GCC/ARM_CM0/portasm.c
 
 VENDOR_SOURCES = \
 Core/Src/system_stm32c0xx.c \
@@ -70,11 +91,11 @@ BIN  = $(CP) -O binary -S
 # ---- Прапорці ----------------------------------------------------------------
 MCU = -mcpu=cortex-m0plus -mthumb
 
-C_DEFS = -DUSE_HAL_DRIVER -DSTM32C031xx -DFW_GIT_HASH=\"$(strip $(GIT_HASH))\"
+C_DEFS = -DUSE_HAL_DRIVER -DSTM32C031xx -DFW_GIT_HASH=\"$(strip $(GIT_HASH))\" $(RTOS_DEFS)
 ifeq ($(BOARD_TARGET),nucleo)
-C_DEFS += -DBOARD_I2C_REPEATED_START=1 -DBOARD_I2C_HAL_TRANSMIT=1
+C_DEFS += -DBOARD_I2C_REPEATED_START=1
 else ifeq ($(BOARD_TARGET),wokwi)
-C_DEFS += -DBOARD_I2C_REPEATED_START=0 -DBOARD_I2C_HAL_TRANSMIT=0
+C_DEFS += -DBOARD_I2C_REPEATED_START=0
 else
 $(error BOARD_TARGET має бути wokwi або nucleo)
 endif
@@ -84,6 +105,9 @@ C_INCLUDES = \
 -IPlatform \
 -IDevices \
 -IApp \
+-IRtos \
+-I$(RTOS_DIR)/include \
+-I$(RTOS_DIR)/portable/GCC/ARM_CM0 \
 -IDrivers/STM32C0xx_HAL_Driver/Inc \
 -IDrivers/STM32C0xx_HAL_Driver/Inc/Legacy \
 -IDrivers/CMSIS/Device/ST/STM32C0xx/Include \
@@ -93,7 +117,7 @@ ASFLAGS = $(MCU) $(OPT) -Wall -fdata-sections -ffunction-sections
 CFLAGS  = $(MCU) $(C_DEFS) $(C_INCLUDES) $(OPT) -std=gnu11 -fdata-sections -ffunction-sections
 CFLAGS += -ffile-prefix-map=$(CURDIR)=.
 # Статична оцінка стека (методичка ЛР3 §5.4): .su — кадр кожної функції, .ci — граф викликів.
-# LTO вимкнено свідомо: з ним .su не створюються, а build/*.o не містять машинного коду.
+# З LTO=1 .su створюються лише для ядра; стек задач ЛР4 міряє uxTaskGetStackHighWaterMark (§6.3).
 CFLAGS += -fstack-usage -fcallgraph-info=su
 ifeq ($(DEBUG), 1)
 CFLAGS += -g3 -gdwarf-4
@@ -107,7 +131,7 @@ OWN_WARN    = -Wall -Wextra -Werror -Wshadow -Wformat=2 -Wstack-usage=512
 VENDOR_WARN = -Wall -Wextra -Wno-unused-parameter
 
 LIBS    = -lc -lm -lnosys
-LDFLAGS = $(MCU) -specs=nano.specs -specs=nosys.specs -T$(LDSCRIPT) $(LIBS) \
+LDFLAGS = $(MCU) $(OPT) $(LTO_FLAGS) -specs=nano.specs -specs=nosys.specs -T$(LDSCRIPT) $(LIBS) \
           -Wl,-Map=$(BUILD_DIR)/$(TARGET).map,--cref -Wl,--gc-sections -Wl,--print-memory-usage
 
 # ---- Правила -----------------------------------------------------------------
@@ -116,17 +140,23 @@ all: $(BUILD_DIR)/$(TARGET).elf $(BUILD_DIR)/$(TARGET).hex $(BUILD_DIR)/$(TARGET
 
 OWN_OBJECTS    = $(addprefix $(BUILD_DIR)/own/,$(notdir $(OWN_SOURCES:.c=.o)))
 VENDOR_OBJECTS = $(addprefix $(BUILD_DIR)/vendor/,$(notdir $(VENDOR_SOURCES:.c=.o)))
+KERNEL_OBJECTS = $(addprefix $(BUILD_DIR)/kernel/,$(notdir $(KERNEL_SOURCES:.c=.o)))
 ASM_OBJECTS    = $(addprefix $(BUILD_DIR)/vendor/,$(notdir $(ASM_SOURCES:.s=.o)))
-OBJECTS        = $(OWN_OBJECTS) $(VENDOR_OBJECTS) $(ASM_OBJECTS)
+OBJECTS        = $(OWN_OBJECTS) $(VENDOR_OBJECTS) $(KERNEL_OBJECTS) $(ASM_OBJECTS)
 
-vpath %.c $(sort $(dir $(OWN_SOURCES) $(VENDOR_SOURCES)))
+vpath %.c $(sort $(dir $(OWN_SOURCES) $(VENDOR_SOURCES) $(KERNEL_SOURCES)))
 vpath %.s $(sort $(dir $(ASM_SOURCES)))
 
 $(BUILD_DIR)/own/%.o: %.c Makefile | $(BUILD_DIR)/own
-	$(CC) -c $(CFLAGS) $(OWN_WARN) $< -o $@
+	$(CC) -c $(CFLAGS) $(LTO_FLAGS) $(OWN_WARN) $< -o $@
 
 $(BUILD_DIR)/vendor/%.o: %.c Makefile | $(BUILD_DIR)/vendor
-	$(CC) -c $(CFLAGS) $(VENDOR_WARN) $< -o $@
+	$(CC) -c $(CFLAGS) $(LTO_FLAGS) $(VENDOR_WARN) $< -o $@
+
+# Ядро: без LTO; SysTick_Handler порту перейменовано, щоб Core/Src/stm32c0xx_it.c міряв тривалість тіку
+$(BUILD_DIR)/kernel/port.o: KERNEL_DEFS = -DSysTick_Handler=xPortSysTickHandler
+$(BUILD_DIR)/kernel/%.o: %.c Makefile | $(BUILD_DIR)/kernel
+	$(CC) -c $(CFLAGS) $(KERNEL_DEFS) $(VENDOR_WARN) $< -o $@
 
 $(BUILD_DIR)/vendor/%.o: %.s Makefile | $(BUILD_DIR)/vendor
 	$(AS) -c $(ASFLAGS) $< -o $@
@@ -141,7 +171,7 @@ $(BUILD_DIR)/%.hex: $(BUILD_DIR)/%.elf
 $(BUILD_DIR)/%.bin: $(BUILD_DIR)/%.elf
 	$(BIN) $< $@
 
-$(BUILD_DIR)/own $(BUILD_DIR)/vendor:
+$(BUILD_DIR)/own $(BUILD_DIR)/vendor $(BUILD_DIR)/kernel:
 	mkdir -p $@
 
 clean:

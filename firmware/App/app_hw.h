@@ -26,6 +26,19 @@ typedef enum {
   APP_PROBE_REACT = 3 /**< PB1: реакція на подію кнопки */
 } app_probe_t;
 
+/** Спільні ресурси під м'ютексами ОС (ЛР4). До старту планувальника блокування нічого не роблять. */
+typedef enum {
+  APP_LOCK_CON = 0, /**< USART2: рядки різних задач не перемішуються */
+  APP_LOCK_I2C,     /**< I2C1: IMU і команди selftest/cap */
+  APP_LOCK_FLASH,   /**< SPI1 + W25Q64: запис траєкторії, відтворення, dump, erase */
+  APP_LOCK_COUNT
+} app_lock_t;
+
+#define APP_WAIT_FOREVER 0xFFFFFFFFu
+
+/** Довга операція, яку задача cli передає задачі long (ЛР4). */
+typedef enum { APP_LONG_DUMP = 0, APP_LONG_ERASE } app_long_op_t;
+
 typedef struct {
   /* шини (потрібні для демонстраційних транзакцій cap/anomaly) */
   const i2c_bus_t *i2c;
@@ -68,7 +81,18 @@ typedef struct {
   /* сценарії відмов (методичка §6.2) */
   void (*reset)(void);
 
+  /* ОС (ЛР4): App не знає про FreeRTOS, усі механізми — через ці функції (Rtos/rtos_app.c) */
+  bool (*lock)(app_lock_t id, uint32_t timeout_ms); /**< false — не дочекалися */
+  void (*unlock)(app_lock_t id);
+  void (*crit)(bool enter);                         /**< коротка критична секція (скидання лічильників) */
+  void (*log_post)(const char *s, size_t len);      /**< відкладений друк для задач із жорстким періодом */
+  void (*mode_post)(int mode);                      /**< запит зміни режиму: виконує задача traj */
+  void (*rec_post)(int16_t pan, int16_t tilt);      /**< семпл траєкторії в чергу задачі traj */
+  void (*long_post)(app_long_op_t op);              /**< запуск довгої операції в задачі long */
+  void (*os_cmd)(int id);                           /**< команди ОС: tasks, stack, heap, ctxsw, trace, fault */
+
   uint32_t sysclk_hz;
+  uint32_t tick_us;   /**< період тіку ОС: періоди задач кратні йому (0 — без квантування, тести) */
   const char *board_name;
   const char *fw_version;
   const char *fw_git;

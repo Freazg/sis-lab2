@@ -8,7 +8,7 @@ ENTRY(Reset_Handler)
 /* Кінець RAM — вершина стеку */
 _estack = ORIGIN(RAM) + LENGTH(RAM);
 
-_Min_Heap_Size  = 0x200;  /* мінімум під heap (newlib, printf) */
+_Min_Heap_Size  = 0x0;    /* heap newlib не використовується: malloc немає, пам'ять ОС — heap_4 (ЛР4) */
 _Min_Stack_Size = 0x400;  /* мінімум під стек */
 
 MEMORY

@@ -14,7 +14,7 @@
 #include "stm32c0xx_hal.h"
 
 #define BOARD_NAME "NUCLEO-C031C6"
-#define FW_VERSION "lr3-1.0"
+#define FW_VERSION "lr4-1.0"
 
 /* ---- Тактування --------------------------------------------------------- */
 #define BOARD_SYSCLK_HZ  48000000u /* HSI48 / HSIDIV=1; FLASH latency 1 WS (RM0490 Table 14 p.59) */
@@ -49,15 +49,11 @@
  * RM0490 Table 115: tPRESC=125 нс (PRESC=5), SCLL=10, SCLH=4, SDADEL=3, SCLDEL=4 (поля = N-1 для SCL*) */
 #define I2C_TIMINGR_400K 0x50330309u
 #define I2C_TIMEOUT_MS   5u
-/* Repeated START (HAL_I2C_Mem_Read). Модель I2C STM32C0 у Wokwi його не підтримує
- * (docs/captures/analysis.md, аномалія A2), тому для симулятора — STOP між записом
- * номера регістра і читанням. Для реальної плати: make build BOARD_TARGET=nucleo */
+/* Repeated START між записом номера регістра і читанням. Модель I2C STM32C0 у Wokwi його не
+ * підтримує (docs/captures/analysis.md, аномалія A2), тому для симулятора — STOP між ними.
+ * Для реальної плати: make build BOARD_TARGET=nucleo */
 #ifndef BOARD_I2C_REPEATED_START
 #define BOARD_I2C_REPEATED_START 0
-#endif
-/* HAL_I2C_Master_Transmit для запису. У Wokwi замінено регістровою реалізацією (аномалія A3). */
-#ifndef BOARD_I2C_HAL_TRANSMIT
-#define BOARD_I2C_HAL_TRANSMIT 0
 #endif
 
 /* ---- SPI1 -> W25Q64 ---------------------------------------------------- */
@@ -118,5 +114,8 @@ extern UART_HandleTypeDef huart2;
 extern I2C_HandleTypeDef  hi2c1;
 extern SPI_HandleTypeDef  hspi1;
 extern TIM_HandleTypeDef  htim3;
+
+/** Те саме, що HAL_GPIO_Init, на регістрах (ЛР4: флеш під ядро ОС). */
+void board_gpio_init(GPIO_TypeDef *port, const GPIO_InitTypeDef *g);
 
 #endif /* BOARD_H */

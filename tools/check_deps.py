@@ -7,6 +7,7 @@
   App/       -> App/, Devices/, стандартна бібліотека C
   Devices/   -> Devices/, стандартна бібліотека C
   Platform/  -> Platform/, Devices/ (лише інтерфейси шин), HAL/CMSIS, Core/Inc/main.h
+  Rtos/      -> Rtos/, App/, Devices/, заголовки FreeRTOS (ЛР4)
   Core/      -> будь-що (composition root)
 
 Заборонено, зокрема: App -> HAL / Platform / main.h; Devices -> HAL / Platform / App;
@@ -29,7 +30,9 @@ def headers_in(layer):
     return {p.name for p in (FW / layer).glob("*.h")}
 
 
-LAYERS = {name: headers_in(name) for name in ("App", "Devices", "Platform")}
+LAYERS = {name: headers_in(name) for name in ("App", "Devices", "Platform", "Rtos")}
+FREERTOS = {"FreeRTOS.h", "task.h", "queue.h", "semphr.h", "list.h", "portable.h", "stream_buffer.h",
+            "event_groups.h", "timers.h"}
 CORE_INC = {p.name for p in (FW / "Core" / "Inc").glob("*.h")}
 VENDOR = re.compile(r"^(stm32c0xx.*|core_cm0plus|cmsis_.*|system_stm32c0xx)\.h$")
 
@@ -38,12 +41,15 @@ RULES = {
     "Devices": lambda h: h in STD or h in LAYERS["Devices"],
     "Platform": lambda h: (h in STD or h in LAYERS["Platform"] or h in LAYERS["Devices"]
                            or VENDOR.match(h) is not None or h == "main.h"),
+    "Rtos": lambda h: (h in STD or h in LAYERS["Rtos"] or h in LAYERS["App"] or h in LAYERS["Devices"]
+                       or h in FREERTOS),
 }
 
 WHY = {
     "App": "прикладний шар не знає про HAL, плату і Platform/",
     "Devices": "драйвер залежить лише від інтерфейсів шин (Devices/bus.h)",
     "Platform": "адаптер плати не може залежати від прикладної логіки",
+    "Rtos": "шар ОС не знає про HAL і плату: усе залізо — через app_hw_t",
 }
 
 
@@ -62,7 +68,7 @@ def main():
         for e in errors:
             print("  " + e)
         return 1
-    print(f"check_deps: OK ({checked} файлів App/Devices/Platform перевірено)")
+    print(f"check_deps: OK ({checked} файлів App/Devices/Platform/Rtos перевірено)")
     return 0
 
 

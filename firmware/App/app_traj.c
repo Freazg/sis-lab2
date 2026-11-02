@@ -5,21 +5,25 @@
 #define TRAJ_END    (APP_TRAJ_BASE + APP_TRAJ_SECTORS * W25Q_SECTOR_SIZE)
 #define TEAR_BYTES  100u /* скільки байтів сторінки потрапляє у флеш перед «обривом живлення» */
 
-/* Усі операції блокувальні: це база для порівняння в ЛР4, обмеження — docs/limitations.md */
+/* Операції блокувальні для задачі, що їх викликає; інші задачі ОС її витісняють (ЛР4).
+ * Кожна операція бере м'ютекс флеш: її ділять traj (REC), servo (PLAY), long (dump, erase), cli. */
 static dev_status_t flash_read_page(app_t *a, uint32_t addr)
 {
   const app_hw_t *hw = a->hw;
+  (void)hw->lock(APP_LOCK_FLASH, APP_WAIT_FOREVER);
   hw->probe(APP_PROBE_LONG, true);
   uint32_t t0 = hw->cycles();
   dev_status_t st = w25q64_read(hw->flash, addr, a->page, TRAJ_PAGE_SIZE);
   perf_add(&a->st[APP_ST_READ], hw->cycles() - t0);
   hw->probe(APP_PROBE_LONG, false);
+  hw->unlock(APP_LOCK_FLASH);
   return st;
 }
 
 static dev_status_t flash_erase(app_t *a, uint32_t addr)
 {
   const app_hw_t *hw = a->hw;
+  (void)hw->lock(APP_LOCK_FLASH, APP_WAIT_FOREVER);
   hw->probe(APP_PROBE_LONG, true);
   app_evt(a, APP_EV_ERASE_START);
   uint32_t t0 = hw->cycles();
@@ -27,12 +31,14 @@ static dev_status_t flash_erase(app_t *a, uint32_t addr)
   perf_add(&a->st[APP_ST_ERASE], hw->cycles() - t0);
   app_evt(a, APP_EV_ERASE_DONE);
   hw->probe(APP_PROBE_LONG, false);
+  hw->unlock(APP_LOCK_FLASH);
   return st;
 }
 
 static dev_status_t flash_program(app_t *a, uint32_t addr, size_t len)
 {
   const app_hw_t *hw = a->hw;
+  (void)hw->lock(APP_LOCK_FLASH, APP_WAIT_FOREVER);
   hw->probe(APP_PROBE_LONG, true);
   app_evt(a, APP_EV_PROG_START);
   uint32_t t0 = hw->cycles();
@@ -40,6 +46,7 @@ static dev_status_t flash_program(app_t *a, uint32_t addr, size_t len)
   perf_add(&a->st[APP_ST_PROG], hw->cycles() - t0);
   app_evt(a, APP_EV_PROG_DONE);
   hw->probe(APP_PROBE_LONG, false);
+  hw->unlock(APP_LOCK_FLASH);
   return st;
 }
 
@@ -88,7 +95,6 @@ bool app_rec_begin(app_t *a)
   a->traj_t_first = hw->micros();
   a->traj_t_last = a->traj_t_first;
   rec_start_page(a);
-  a->rec_next = hw->cycles();
   return true;
 }
 
@@ -121,10 +127,9 @@ static bool rec_flush(app_t *a)
   return true;
 }
 
-void app_rec_sample(app_t *a)
+void app_rec_sample(app_t *a, traj_sample_t s)
 {
   const app_hw_t *hw = a->hw;
-  traj_sample_t s = { (int16_t)(hw->servo_pan->angle_cdeg / 10), (int16_t)(hw->servo_tilt->angle_cdeg / 10) };
   if (!traj_enc_add(&a->enc, s)) {
     if (!rec_flush(a)) {
       a->enc.n = 0; /* нічого дописувати при виході */
@@ -167,6 +172,7 @@ bool app_play_begin(app_t *a)
     return false;
   }
   a->traj_session = traj_page_session(a->page);
+  a->play_done = 0;
   a->traj_addr = APP_TRAJ_BASE;
   a->traj_seq = 0;
   a->traj_samples = 0;
@@ -175,7 +181,6 @@ bool app_play_begin(app_t *a)
   }
   a->traj_t_first = hw->micros();
   a->traj_t_last = a->traj_t_first;
-  a->rec_next = hw->cycles();
   return true;
 }
 
@@ -212,17 +217,20 @@ void app_traj_dump(app_t *a)
   app_evt(a, APP_EV_DUMP_START);
   hw->probe(APP_PROBE_LONG, true);
   for (uint32_t addr = APP_TRAJ_BASE; addr < TRAJ_END; addr += TRAJ_PAGE_SIZE) {
-    if (w25q64_read(hw->flash, addr, a->page, TRAJ_PAGE_SIZE) != DEV_OK || !traj_page_valid(a->page)) {
+    (void)hw->lock(APP_LOCK_FLASH, APP_WAIT_FOREVER); /* лише на читання сторінки, друк — без м'ютексу флеш */
+    dev_status_t st = w25q64_read(hw->flash, addr, a->dump_page, TRAJ_PAGE_SIZE);
+    hw->unlock(APP_LOCK_FLASH);
+    if (st != DEV_OK || !traj_page_valid(a->dump_page)) {
       break;
     }
     if (addr == APP_TRAJ_BASE) {
-      session = traj_page_session(a->page);
-    } else if (traj_page_session(a->page) != session || traj_page_seq(a->page) != pages) {
+      session = traj_page_session(a->dump_page);
+    } else if (traj_page_session(a->dump_page) != session || traj_page_seq(a->dump_page) != pages) {
       break;
     }
-    traj_dec_begin(&a->dec, a->page);
+    traj_dec_begin(&a->dump_dec, a->dump_page);
     traj_sample_t s;
-    while (traj_dec_next(&a->dec, &s)) {
+    while (traj_dec_next(&a->dump_dec, &s)) {
       app_print(hw, "DUMP,%lu,%d,%d\r\n", (unsigned long)samples, s.pan, s.tilt);
       samples++;
     }

@@ -40,67 +40,41 @@ void app_set_mode(app_t *a, app_mode_t m)
 void app_next_mode(app_t *a)
 {
   static const app_mode_t next[] = { APP_MODE_HOLD, APP_MODE_REC, APP_MODE_PLAY, APP_MODE_LIVE };
-  app_set_mode(a, next[a->mode]);
+  a->hw->mode_post((int)next[a->mode]);
 }
 
-/* ---- Задачі -------------------------------------------------------------- */
-static bool due(uint32_t now, uint32_t next) { return (int32_t)(now - next) >= 0; }
-
-/** Абсолютний розклад: наступний запуск = попередній + період, після пропуску — від поточного часу. */
-static void reschedule(uint32_t *next, uint32_t period, uint32_t now)
-{
-  *next += period;
-  if (due(now, *next)) {
-    *next = now + period;
-  }
-}
-
-static bool cli_task(app_t *a)
+/* ---- Тіла задач ----------------------------------------------------------- */
+void app_cli_step(app_t *a)
 {
   const app_hw_t *hw = a->hw;
-  bool worked = false;
   int c;
   while ((c = hw->con_getc()) >= 0) {
     uint32_t t_eol = 0;
     bool stamped = c == '\n' && hw->rx_eol_take(&t_eol);
-    worked = true;
     if (cli_feed(&a->cli, (char)c)) {
+      uint32_t t0 = hw->cycles();
       cli_cmd_t cmd = a->cli.overflow ? (cli_cmd_t){ CLI_ERROR, 0, 0, 0 } : cli_parse(a->cli.buf);
       app_execute(a, &cmd);
+      uint32_t t1 = hw->cycles();
+      perf_add(&a->st[APP_ST_CLI], t1 - t0);
       if (stamped && cmd.id == CLI_STATUS) {
-        perf_add(&a->st[APP_ST_CMD_LAT], hw->cycles() - t_eol);
+        perf_add(&a->st[APP_ST_CMD_LAT], t1 - t_eol);
       }
     }
   }
-  return worked;
 }
 
-static bool button_task(app_t *a)
+void app_btn_event(app_t *a, uint32_t t_event)
 {
   const app_hw_t *hw = a->hw;
-  uint32_t t_event;
-  if (a->btn_state == APP_BTN_WAIT_RELEASE) {
-    uint32_t now = hw->time->millis();
-    if (hw->button_pressed()) {
-      a->btn_release_ms = now;
-    } else if (now - a->btn_release_ms >= APP_BTN_RELEASE_MS) {
-      (void)hw->btn_take(&t_event); /* спади брязкоту під час відпускання */
-      a->btn_state = APP_BTN_IDLE;
-    }
-    return false;
-  }
-  if (!hw->btn_take(&t_event)) {
-    return false;
-  }
+  uint32_t t0 = hw->cycles();
   hw->probe(APP_PROBE_REACT, true);
-  perf_add(&a->st[APP_ST_BTN_LAT], hw->cycles() - t_event);
+  perf_add(&a->st[APP_ST_BTN_LAT], t0 - t_event);
   a->btn_events++;
   app_evt(a, APP_EV_BTN_PRESS);
-  app_next_mode(a);
+  app_next_mode(a); /* сам перехід (друк, флеш) — у задачі traj */
   hw->probe(APP_PROBE_REACT, false);
-  a->btn_state = APP_BTN_WAIT_RELEASE;
-  a->btn_release_ms = hw->time->millis();
-  return true;
+  perf_add(&a->st[APP_ST_BTN], hw->cycles() - t0);
 }
 
 static void imu_failed(app_t *a)
@@ -115,7 +89,7 @@ static void imu_failed(app_t *a)
     if (!a->imu_lost) {
       a->imu_lost = 1;
       app_evt(a, APP_EV_IMU_LOST);
-      app_print(hw, "ERR,IMU lost,t_ms=%lu\r\n", (unsigned long)now);
+      app_printq(hw, "ERR,IMU lost,t_ms=%lu\r\n", (unsigned long)now);
     }
     a->imu_fail_ms = now - APP_IMU_LOST_MS + IMU_RECOVER_MS; /* наступне скидання через 100 мс */
     hw->i2c_recover(); /* завислий контролер сам не відновиться (затиснутий SDA, сценарій 6.2.4) */
@@ -131,11 +105,11 @@ static void imu_ok(app_t *a)
     (void)mpu6050_init(hw->mpu); /* сенсор міг втратити живлення: регістри скинуті */
     motion_reset(&a->motion);
     app_evt(a, APP_EV_IMU_RESTORED);
-    app_print(hw, "IMU,restored,t_ms=%lu\r\n", (unsigned long)hw->time->millis());
+    app_printq(hw, "IMU,restored,t_ms=%lu\r\n", (unsigned long)hw->time->millis());
   }
   if (!a->boot_reported) {
     a->boot_reported = 1;
-    app_print(hw, "BOOT,first_imu_us=%lu\r\n", (unsigned long)hw->micros());
+    app_printq(hw, "BOOT,first_imu_us=%lu\r\n", (unsigned long)hw->micros());
   }
 }
 
@@ -152,19 +126,15 @@ static void cal_step(app_t *a, const mpu6050_data_t *v)
     orient_from_accel(v->accel_mg, &acc);
     a->motion.zero = acc;
     a->motion.started = 0;
-    app_print(a->hw, "CAL,done,pitch0_cdeg=%ld,roll0_cdeg=%ld,gyro_bias_mdps=%ld/%ld/%ld\r\n",
-              (long)acc.pitch_cdeg, (long)acc.roll_cdeg, (long)a->motion.gyro_bias[0],
-              (long)a->motion.gyro_bias[1], (long)a->motion.gyro_bias[2]);
+    app_printq(a->hw, "CAL,done,pitch0_cdeg=%ld,roll0_cdeg=%ld,gyro_bias_mdps=%ld/%ld/%ld\r\n",
+               (long)acc.pitch_cdeg, (long)acc.roll_cdeg, (long)a->motion.gyro_bias[0],
+               (long)a->motion.gyro_bias[1], (long)a->motion.gyro_bias[2]);
   }
 }
 
-static bool imu_task(app_t *a)
+void app_imu_step(app_t *a, uint32_t now)
 {
   const app_hw_t *hw = a->hw;
-  uint32_t now = hw->cycles();
-  if (!due(now, a->imu_next)) {
-    return false;
-  }
   hw->probe(APP_PROBE_IMU, true);
   uint32_t dt_us = (now - a->imu_prev) / a->cyc_per_us;
   if (a->imu_prev_valid) {
@@ -172,23 +142,30 @@ static bool imu_task(app_t *a)
   }
   a->imu_prev = now;
   a->imu_prev_valid = 1;
-  reschedule(&a->imu_next, a->imu_period_cyc, now);
 
+  if (!hw->lock(APP_LOCK_I2C, APP_I2C_WAIT_MS)) {
+    a->i2c_busy++; /* шину тримає selftest або cap: семпл пропущено, період не зсувається */
+    hw->probe(APP_PROBE_IMU, false);
+    perf_add(&a->st[APP_ST_IMU], hw->cycles() - now);
+    return;
+  }
   mpu6050_raw_t raw;
   uint32_t t0 = hw->cycles();
   dev_status_t st = mpu6050_read_raw(hw->mpu, &raw);
   perf_add(&a->st[APP_ST_I2C], hw->cycles() - t0);
   if (st != DEV_OK) {
     imu_failed(a);
+    hw->unlock(APP_LOCK_I2C);
   } else {
     imu_ok(a);
+    hw->unlock(APP_LOCK_I2C);
     mpu6050_data_t v;
     mpu6050_convert(&raw, &v);
     for (int i = 0; i < 3; i++) {
       int32_t d = v.accel_mg[i] - a->accel_prev[i];
       if (a->motion.started && (d > MOTION_STEP_MG || d < -MOTION_STEP_MG) && !a->motion_pending) {
-        a->motion_pending = 1;
         a->t_motion = now;
+        a->motion_pending = 1;
         hw->mark(true);
       }
       a->accel_prev[i] = v.accel_mg[i];
@@ -199,25 +176,14 @@ static bool imu_task(app_t *a)
     }
   }
   hw->probe(APP_PROBE_IMU, false);
-  return true;
+  perf_add(&a->st[APP_ST_IMU], hw->cycles() - now);
 }
 
-static bool servo_task(app_t *a)
+static void servo_follow(app_t *a)
 {
   const app_hw_t *hw = a->hw;
-  uint32_t now = hw->cycles();
-  if (!due(now, a->servo_next)) {
-    return false;
-  }
-  if (a->servo_prev_valid) {
-    perf_jitter_add(&a->jit_servo, (now - a->servo_prev) / a->cyc_per_us);
-  }
-  a->servo_prev = now;
-  a->servo_prev_valid = 1;
-  reschedule(&a->servo_next, a->servo_period_cyc, now);
-
-  if ((a->mode != APP_MODE_LIVE && a->mode != APP_MODE_REC) || a->imu_lost) {
-    return true; /* HOLD, PLAY або FR-10: серво лишаються в останньому положенні */
+  if (a->imu_lost) {
+    return; /* FR-10: серво лишаються в останньому положенні */
   }
   /* FR-05: за один період 20 мс не більше 300 °/с × 20 мс = 6° */
   int32_t max_step = (int32_t)(((uint64_t)MOTION_MAX_RATE_CDPS * APP_SERVO_PERIOD_US) / 1000000u);
@@ -235,46 +201,57 @@ static bool servo_task(app_t *a)
     a->motion_pending = 0;
     hw->mark(false);
   }
-  return true;
 }
 
-static bool rec_task(app_t *a)
+void app_servo_step(app_t *a, uint32_t now)
+{
+  const app_hw_t *hw = a->hw;
+  if (a->servo_prev_valid) {
+    perf_jitter_add(&a->jit_servo, (now - a->servo_prev) / a->cyc_per_us);
+  }
+  a->servo_prev = now;
+  a->servo_prev_valid = 1;
+
+  app_mode_t m = a->mode;
+  if (m == APP_MODE_LIVE || m == APP_MODE_REC) {
+    servo_follow(a);
+  }
+  perf_add(&a->st[APP_ST_SERVO], hw->cycles() - now);
+  if (m == APP_MODE_REC) {
+    /* FR-07: семпл 50 Гц — кут, щойно виставлений на серво; у флеш його пише задача traj */
+    hw->rec_post((int16_t)(hw->servo_pan->angle_cdeg / 10), (int16_t)(hw->servo_tilt->angle_cdeg / 10));
+  } else if (m == APP_MODE_PLAY) {
+    uint32_t t0 = hw->cycles();
+    if (!a->play_done && !app_play_sample(a)) {
+      a->play_done = 1; /* до виходу з PLAY задача traj може не встигнути: запит лише один */
+      hw->mode_post(APP_MODE_HOLD);
+    }
+    perf_add(&a->st[APP_ST_PLAY], hw->cycles() - t0);
+  }
+}
+
+void app_rec_add(app_t *a, int16_t pan, int16_t tilt)
 {
   if (a->mode != APP_MODE_REC) {
-    return false;
+    return; /* семпли, що лишились у черзі після виходу з REC */
   }
-  uint32_t now = a->hw->cycles();
-  if (!due(now, a->rec_next)) {
-    return false;
-  }
-  reschedule(&a->rec_next, APP_REC_PERIOD_US * a->cyc_per_us, now);
-  app_rec_sample(a);
-  return true;
+  uint32_t t0 = a->hw->cycles();
+  app_rec_sample(a, (traj_sample_t){ pan, tilt });
+  perf_add(&a->st[APP_ST_REC], a->hw->cycles() - t0);
 }
 
-static bool play_task(app_t *a)
+void app_long_run(app_t *a, app_long_op_t op)
 {
-  if (a->mode != APP_MODE_PLAY) {
-    return false;
+  if (op == APP_LONG_DUMP) {
+    app_traj_dump(a);
+  } else {
+    app_traj_erase(a);
   }
-  uint32_t now = a->hw->cycles();
-  if (!due(now, a->rec_next)) {
-    return false;
-  }
-  reschedule(&a->rec_next, APP_REC_PERIOD_US * a->cyc_per_us, now);
-  if (!app_play_sample(a)) {
-    app_set_mode(a, APP_MODE_HOLD);
-  }
-  return true;
+  a->long_busy = 0;
 }
 
-static void load_task(app_t *a)
+void app_load_update(app_t *a, uint8_t pct)
 {
-  uint32_t window = a->hw->cycles() - a->window_start;
-  if (window < a->hw->sysclk_hz) {
-    return;
-  }
-  uint8_t pct = (uint8_t)(((uint64_t)a->busy_cycles * 100u) / window);
   a->load_last = pct;
   if (a->load_min > pct) {
     a->load_min = pct;
@@ -282,61 +259,52 @@ static void load_task(app_t *a)
   if (a->load_max < pct) {
     a->load_max = pct;
   }
-  a->busy_cycles = 0;
-  a->window_start = a->hw->cycles();
-}
-
-/** Час рахується лише для проходів, де задача справді працювала (методичка §5.1, приклад 4). */
-static void run_task(app_t *a, app_stat_t id, bool (*task)(app_t *))
-{
-  uint32_t t0 = a->hw->cycles();
-  if (task(a)) {
-    uint32_t d = a->hw->cycles() - t0;
-    perf_add(&a->st[id], d);
-    a->busy_cycles += d;
-  }
 }
 
 /* ---- Журнал подій і скидання статистики ---------------------------------- */
 void app_evt(app_t *a, app_event_t id)
 {
+  uint32_t t = a->hw->micros();
+  a->hw->crit(true); /* журнал пишуть кілька задач */
   app_evt_t *e = &a->evt[a->evt_n & (APP_EVT_LOG - 1u)];
-  e->t_us = a->hw->micros();
+  e->t_us = t;
   e->id = id;
   a->evt_n++;
+  a->hw->crit(false);
 }
 
 void app_stats_reset(app_t *a)
 {
+  a->hw->crit(true);
   for (unsigned i = 0; i < APP_ST_COUNT; i++) {
     a->st[i] = (perf_stat_t){ 0, 0, 0, 0 };
   }
-  perf_jitter_reset(&a->jit_imu, a->imu_period_cyc / a->cyc_per_us, APP_IMU_TOL_US);
+  perf_jitter_reset(&a->jit_imu, a->imu_period_us, APP_IMU_TOL_US);
   perf_jitter_reset(&a->jit_servo, APP_SERVO_PERIOD_US, APP_IMU_TOL_US);
   a->imu_prev_valid = 0;
   a->servo_prev_valid = 0;
-  a->busy_cycles = 0;
-  a->window_start = a->hw->cycles();
   a->load_last = 0;
   a->load_min = 100;
   a->load_max = 0;
+  a->hw->crit(false);
 }
 
-/* ---- Старт і головний цикл ----------------------------------------------- */
+/* ---- Старт ----------------------------------------------------------------- */
 void app_init(app_t *app, const app_hw_t *hw)
 {
   app->hw = hw;
   app->cyc_per_us = hw->sysclk_hz / 1000000u;
   app->mode = APP_MODE_HOLD;
-  app->btn_state = APP_BTN_IDLE;
   app->btn_events = 0;
   app->imu_lost = 0;
   app->imu_failing = 0;
   app->boot_reported = 0;
   app->imu_err = 0;
+  app->i2c_busy = 0;
   app->cal_left = 0;
   app->motion_pending = 0;
   app->tear_next_page = 0;
+  app->long_busy = 0;
   app->evt_n = 0;
   motion_reset(&app->motion);
   app->cli = (cli_reader_t){ { 0 }, 0, 0, 0 };
@@ -345,7 +313,7 @@ void app_init(app_t *app, const app_hw_t *hw)
   app_evt(app, APP_EV_BOOT);
   selftest_result_t r = selftest_run(hw);
   if (hw->mpu->who_am_i != MPU6050_WHO_AM_I_VALUE) {
-    app->imu_lost = 1; /* сенсор не готовий: imu_task повторює читання, FR-10 відновить роботу */
+    app->imu_lost = 1; /* сенсор не готовий: задача imu повторює читання, FR-10 відновить роботу */
     app->imu_failing = 1;
     app->imu_fail_ms = hw->time->millis();
   }
@@ -360,26 +328,8 @@ void app_init(app_t *app, const app_hw_t *hw)
   app_print(hw, "TRAJ,session=%u,pages=%lu,samples=%lu,torn=%u\r\n", info.session, (unsigned long)info.pages,
             (unsigned long)info.samples, info.torn);
 
-  app->imu_period_cyc = APP_IMU_PERIOD_US * app->cyc_per_us;
-  app->servo_period_cyc = APP_SERVO_PERIOD_US * app->cyc_per_us;
+  app->imu_period_us = APP_IMU_PERIOD_US;
   app_stats_reset(app);
   app_set_mode(app, APP_MODE_LIVE);
   app_print(hw, "READY\r\n");
-  uint32_t now = hw->cycles();
-  app->imu_next = now;
-  app->servo_next = now;
-  app->rec_next = now;
-}
-
-void app_poll(app_t *a)
-{
-  uint32_t t_loop = a->hw->cycles();
-  run_task(a, APP_ST_CLI, cli_task);
-  run_task(a, APP_ST_BTN, button_task);
-  run_task(a, APP_ST_IMU, imu_task);
-  run_task(a, APP_ST_SERVO, servo_task);
-  run_task(a, APP_ST_REC, rec_task);
-  run_task(a, APP_ST_PLAY, play_task);
-  load_task(a);
-  perf_add(&a->st[APP_ST_LOOP], a->hw->cycles() - t_loop);
 }

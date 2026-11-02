@@ -23,7 +23,7 @@ static void af_pin(GPIO_TypeDef *port, uint16_t pin, uint32_t mode, uint32_t pul
   g.Pull = pull;
   g.Speed = speed;
   g.Alternate = af;
-  HAL_GPIO_Init(port, &g);
+  board_gpio_init(port, &g);
 }
 
 void HAL_UART_MspInit(UART_HandleTypeDef *huart)

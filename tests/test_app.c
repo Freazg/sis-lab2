@@ -1,4 +1,5 @@
-/* Тести прикладного шару: самоперевірка (формат і вердикти), режими, команди консолі. */
+/* Тести прикладного шару: самоперевірка (формат і вердикти), режими, команди консолі.
+ * ЛР4: тіла задач FreeRTOS викликає емулятор run_ms() з тими самими періодами і подіями. */
 #include <stdio.h>
 #include <string.h>
 
@@ -13,7 +14,17 @@
 static fake_hw_t f;
 static app_t app;
 
-void setUp(void) { fake_hw_init(&f); }
+static uint32_t sim_ms;
+static int btn_wait;
+static uint32_t btn_quiet;
+
+void setUp(void)
+{
+  fake_hw_init(&f);
+  fake_app = &app;
+  sim_ms = 0;
+  btn_wait = 0;
+}
 void tearDown(void) {}
 
 /* Кожен рядок самоперевірки має вигляд ST,dev=...,res=PASS|FAIL[,k=v]... без пробілів */
@@ -118,13 +129,40 @@ static void test_selftest_wrong_clock(void)
   TEST_ASSERT_EQUAL(1, fake_con_count("dev=MCU,res=FAIL"));
 }
 
-/* Керований час: кожен виклик app_poll — dt мс, millis() сам не зростає. */
+/* Задача btn (Rtos/rtos_app.c): реакція на подію, далі 20 мс стабільно відпущеної кнопки, і лише
+ * тоді наступна подія — спади брязкоту за цей час скидаються. */
+static void btn_task_ms(void)
+{
+  uint32_t t;
+  if (btn_wait) {
+    btn_quiet = fake_button ? 0u : btn_quiet + 1u;
+    if (btn_quiet >= APP_BTN_RELEASE_MS) {
+      btn_wait = 0;
+      (void)f.hw.btn_take(&t);
+    }
+  } else if (f.hw.btn_take(&t)) {
+    app_btn_event(&app, t);
+    btn_wait = 1;
+    btn_quiet = 0;
+  }
+}
+
+/* Керований час: кожен тік — 1 мс; задачі в порядку пріоритету: btn, imu (5 мс), servo (20 мс), cli. */
 static void run_ms(uint32_t ms)
 {
   fake_time_step_ms = 0;
   for (uint32_t t = 0; t < ms; t++) {
     fake_time_now_ms++;
-    app_poll(&app);
+    sim_ms++;
+    uint32_t imu_ms = app.imu_period_us / 1000u;
+    btn_task_ms();
+    if (sim_ms % (imu_ms != 0u ? imu_ms : 1u) == 0u) {
+      app_imu_step(&app, f.hw.cycles());
+    }
+    if (sim_ms % 20u == 0u) {
+      app_servo_step(&app, f.hw.cycles());
+    }
+    app_cli_step(&app);
   }
 }
 
@@ -132,7 +170,7 @@ static void feed(const char *line)
 {
   fake_con_input = line;
   fake_eol_pending = 1;
-  app_poll(&app);
+  app_cli_step(&app);
 }
 
 static void test_init_prints_ready_and_sets_live(void)
@@ -219,7 +257,7 @@ static void test_poll_executes_console_commands(void)
   app_init(&app, &f.hw);
   fake_con_len = 0;
   fake_con_input = "mode hold\r\nservo pan 180\nstatus\nbogus\n";
-  app_poll(&app);
+  app_cli_step(&app);
   TEST_ASSERT_EQUAL(1, fake_con_count("MODE,HOLD"));
   TEST_ASSERT_EQUAL(1, fake_con_count("SERVO,pan,deg=170,pulse_us=2297")); /* FR-04: межа 170° */
   TEST_ASSERT_EQUAL(1, fake_con_count("STATUS,mode=HOLD"));
@@ -340,7 +378,7 @@ static void test_record_survives_reset_and_replays(void)
 static void test_dump_prints_all_samples(void)
 {
   app_init(&app, &f.hw);
-  record_ms(990);
+  record_ms(1000); /* семпл бере задача servo на своєму періоді: перший — до 20 мс після входу в REC */
   fake_con_len = 0;
   fake_con[0] = '\0';
   feed("dump\n");
@@ -416,11 +454,15 @@ static void test_stats_format_matches_methodology(void)
   TEST_ASSERT_EQUAL_UINT32(0, app.st[APP_ST_IMU].count);
 }
 
-static void test_load_excludes_idle_passes(void)
+static void test_load_window_tracks_min_and_max(void)
 {
   app_init(&app, &f.hw);
-  run_ms(2500);
-  TEST_ASSERT_TRUE(app.load_max < 100); /* час не йде: завантаження не 100 %, хоч цикл крутиться */
+  app_load_update(&app, 40); /* вікна по 1 с рахує ОС за часом idle */
+  app_load_update(&app, 75);
+  app_load_update(&app, 52);
+  TEST_ASSERT_EQUAL_UINT8(52, app.load_last);
+  TEST_ASSERT_EQUAL_UINT8(40, app.load_min);
+  TEST_ASSERT_EQUAL_UINT8(75, app.load_max);
 }
 
 static void test_cmd_latency_measured_for_status(void)
@@ -506,7 +548,7 @@ static void test_capture_commands_are_framed(void)
     char b[32];
     fake_con_len = 0;
     fake_con_input = cmds[i];
-    app_poll(&app);
+    app_cli_step(&app);
     snprintf(b, sizeof b, "CAP,%s,BEGIN", names[i]);
     TEST_ASSERT_EQUAL_MESSAGE(1, fake_con_count(b), cmds[i]);
     snprintf(b, sizeof b, "CAP,%s,END", names[i]);
@@ -519,7 +561,7 @@ static void test_capture_i2c_prints_bus_bytes(void)
   app_init(&app, &f.hw);
   fake_con_len = 0;
   fake_con_input = "cap i2c\n";
-  app_poll(&app);
+  app_cli_step(&app);
   TEST_ASSERT_EQUAL(1, fake_con_count("CAP,i2c,who_am_i=0x68,st=OK"));
   TEST_ASSERT_EQUAL(1, fake_con_count("CAP,i2c,burst=000000004000EF5C000000000000,st=OK"));
   TEST_ASSERT_EQUAL(1, fake_con_count("CAP,i2c,acc_mg=0/0/1000,temp_cdeg=2400"));
@@ -530,11 +572,114 @@ static void test_capture_anomaly_reports_and_recovers(void)
   app_init(&app, &f.hw);
   fake_con_len = 0;
   fake_con_input = "cap anomaly\n";
-  app_poll(&app);
+  app_cli_step(&app);
   TEST_ASSERT_EQUAL(1, fake_con_count("step=wrong_addr,addr=0x69,st=NACK"));
   TEST_ASSERT_EQUAL(1, fake_con_count("step=mem_read_restart,val=0x00,st=TIMEOUT"));
   TEST_ASSERT_EQUAL(1, fake_con_count("step=read_after_recover,val=0x68,st=OK"));
   TEST_ASSERT_EQUAL(1, fake_recovered);
+}
+
+/* ---- ЛР4: взаємодія з ОС через app_hw_t --------------------------------- */
+static void test_os_commands_go_to_rtos_layer(void)
+{
+  static const char *const cmds[] = { "tasks\n", "stack\n", "heap\n", "ctxsw\n", "trace\n",
+                                      "fault invmutex\n", "fault invsem\n", "fault starve\n", "fault qflood\n" };
+  static const cli_cmd_id_t ids[] = { CLI_TASKS, CLI_STACK, CLI_HEAP, CLI_CTXSW, CLI_TRACE, CLI_FAULT_INV_MUTEX,
+                                      CLI_FAULT_INV_SEM, CLI_FAULT_STARVE, CLI_FAULT_QFLOOD };
+  app_init(&app, &f.hw);
+  for (unsigned i = 0; i < sizeof ids / sizeof ids[0]; i++) {
+    fake_os_cmd = -1;
+    feed(cmds[i]);
+    TEST_ASSERT_EQUAL_MESSAGE((int)ids[i], fake_os_cmd, cmds[i]);
+  }
+  feed("help\n");
+  TEST_ASSERT_EQUAL(1, fake_con_count("tasks stack heap ctxsw trace"));
+}
+
+static void test_imu_messages_are_deferred_to_log_task(void)
+{
+  f.i2c_fake.dev_addr = 0x50;
+  app_init(&app, &f.hw);
+  int before = fake_log_posts;
+  f.i2c_fake.dev_addr = 0x68;
+  run_ms(20);
+  TEST_ASSERT_EQUAL(before + 2, fake_log_posts); /* IMU,restored і BOOT,first_imu_us — не напряму в UART */
+  TEST_ASSERT_EQUAL(1, fake_con_count("IMU,restored"));
+}
+
+static void test_imu_skips_sample_when_bus_is_taken(void)
+{
+  app_init(&app, &f.hw);
+  run_ms(50);
+  uint32_t reads = app.st[APP_ST_I2C].count;
+  fake_lock_fail[APP_LOCK_I2C] = 1; /* шину тримає selftest або cap довше за 2 мс */
+  run_ms(50);
+  TEST_ASSERT_EQUAL_UINT32(reads, app.st[APP_ST_I2C].count);
+  TEST_ASSERT_EQUAL_UINT32(10, app.i2c_busy);
+  TEST_ASSERT_EQUAL(0, app.imu_lost); /* пропущений семпл — не відмова сенсора */
+  TEST_ASSERT_EQUAL(0, fake_locks_held);
+  fake_lock_fail[APP_LOCK_I2C] = 0;
+  run_ms(10);
+  TEST_ASSERT_EQUAL_UINT32(reads + 2u, app.st[APP_ST_I2C].count);
+}
+
+static void test_locks_are_balanced(void)
+{
+  app_init(&app, &f.hw);
+  record_ms(3000); /* сторінка у флеш: lock FLASH */
+  feed("selftest\n");
+  feed("cap spi\n");
+  feed("cap i2c\n");
+  feed("dump\n");
+  feed("status\n");
+  TEST_ASSERT_EQUAL(0, fake_locks_held);
+  TEST_ASSERT_EQUAL(0, fake_crit_depth);
+}
+
+static void test_long_op_busy_flag_refuses_second_one(void)
+{
+  app_init(&app, &f.hw);
+  app.long_busy = 1; /* dump ще йде в задачі long */
+  feed("erase\n");
+  TEST_ASSERT_EQUAL(1, fake_con_count("ERR,busy"));
+  app.long_busy = 0;
+  feed("erase\n");
+  TEST_ASSERT_EQUAL(1, fake_con_count("ERASE,DONE,sectors=16"));
+  TEST_ASSERT_EQUAL(0, app.long_busy);
+}
+
+static void test_rate_is_rounded_to_os_tick(void)
+{
+  app_init(&app, &f.hw);
+  f.hw.tick_us = 1000u; /* vTaskDelayUntil рахує цілими тіками 1 мс */
+  feed("rate 450\n");
+  TEST_ASSERT_EQUAL(1, fake_con_count("RATE,hz=450,period_us=2000"));
+  feed("rate 2000\n");
+  TEST_ASSERT_EQUAL(1, fake_con_count("RATE,hz=2000,period_us=1000")); /* не менше одного тіку */
+  f.hw.tick_us = 10000u;
+  feed("rate 200\n");
+  TEST_ASSERT_EQUAL(1, fake_con_count("RATE,hz=200,period_us=10000"));
+}
+
+static void test_playback_end_is_requested_once(void)
+{
+  app_init(&app, &f.hw);
+  record_ms(500);
+  feed("mode play\n");
+  int posts = fake_mode_posts;
+  run_ms(1000);
+  TEST_ASSERT_EQUAL(posts + 1, fake_mode_posts);
+  TEST_ASSERT_EQUAL(APP_MODE_HOLD, app.mode);
+  TEST_ASSERT_EQUAL(1, fake_con_count("PLAY,DONE"));
+}
+
+static void test_queued_samples_after_rec_are_ignored(void)
+{
+  app_init(&app, &f.hw);
+  record_ms(200);
+  uint32_t n = app.traj_samples;
+  app_rec_add(&app, 100, 100); /* семпл, що лишився в черзі traj після виходу з REC */
+  TEST_ASSERT_EQUAL_UINT32(n, app.traj_samples);
 }
 
 int main(void)
@@ -568,7 +713,7 @@ int main(void)
   RUN_TEST(test_torn_page_is_detected_and_dropped);
   RUN_TEST(test_recording_stops_when_area_is_full);
   RUN_TEST(test_stats_format_matches_methodology);
-  RUN_TEST(test_load_excludes_idle_passes);
+  RUN_TEST(test_load_window_tracks_min_and_max);
   RUN_TEST(test_cmd_latency_measured_for_status);
   RUN_TEST(test_cal_sets_zero_and_gyro_bias);
   RUN_TEST(test_limits_and_rate_commands);
@@ -578,5 +723,13 @@ int main(void)
   RUN_TEST(test_capture_commands_are_framed);
   RUN_TEST(test_capture_i2c_prints_bus_bytes);
   RUN_TEST(test_capture_anomaly_reports_and_recovers);
+  RUN_TEST(test_os_commands_go_to_rtos_layer);
+  RUN_TEST(test_imu_messages_are_deferred_to_log_task);
+  RUN_TEST(test_imu_skips_sample_when_bus_is_taken);
+  RUN_TEST(test_locks_are_balanced);
+  RUN_TEST(test_long_op_busy_flag_refuses_second_one);
+  RUN_TEST(test_rate_is_rounded_to_os_tick);
+  RUN_TEST(test_playback_end_is_requested_once);
+  RUN_TEST(test_queued_samples_after_rec_are_ignored);
   return UNITY_END();
 }

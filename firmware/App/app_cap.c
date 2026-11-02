@@ -2,11 +2,27 @@
 #include "app_io.h"
 #include "selftest.h"
 
+/* Варіант збірки зі сценаріями ОС (RTOS_FAULTS=1, методичка ЛР4 §7.2) не вміщає ще й транзакції
+ * ЛР2 у 32 КБ флеш: там cap відповідає помилкою, у продуктовій збірці працює як раніше. */
+#ifndef APP_CAP
+#define APP_CAP 1
+#endif
+
+#if APP_CAP
+
 #define CAP_FLASH_ADDR 0x7FF100u /* сторінка в тестовому секторі ST_FLASH_TEST_ADDR */
 #define CAP_FLASH_LEN  16u
 #define CAP_PWM_HOLD_MS 100u     /* 5 періодів ШІМ на кожне значення */
 
 /* ---- Відтворювані транзакції для логічного аналізатора (docs/captures) ---- */
+
+static void hex_str(char *out, const uint8_t *b, unsigned n)
+{
+  for (unsigned i = 0; i < n; i++) {
+    app_format(out + 2u * i, 3u, "%02X", b[i]);
+  }
+  out[2u * n] = '\0';
+}
 
 static void cap_i2c(const app_hw_t *hw)
 {
@@ -29,11 +45,9 @@ static void cap_i2c(const app_hw_t *hw)
   mpu6050_parse(raw_bytes, &raw);
   mpu6050_convert(&raw, &v);
   app_print(hw, "CAP,i2c,who_am_i=0x%02X,st=%s\r\n", who, dev_status_str(st1));
-  app_print(hw, "CAP,i2c,burst=");
-  for (unsigned i = 0; i < sizeof raw_bytes; i++) {
-    app_print(hw, "%02X", raw_bytes[i]);
-  }
-  app_print(hw, ",st=%s\r\n", dev_status_str(st2));
+  char hex[2u * MPU6050_BURST_LEN + 1u];
+  hex_str(hex, raw_bytes, sizeof raw_bytes);
+  app_print(hw, "CAP,i2c,burst=%s,st=%s\r\n", hex, dev_status_str(st2)); /* рядок цілим: друкують і інші задачі */
   app_print(hw, "CAP,i2c,acc_mg=%ld/%ld/%ld,temp_cdeg=%ld,gyro_mdps=%ld/%ld/%ld\r\n", (long)v.accel_mg[0],
             (long)v.accel_mg[1], (long)v.accel_mg[2], (long)v.temp_cdeg, (long)v.gyro_mdps[0],
             (long)v.gyro_mdps[1], (long)v.gyro_mdps[2]);
@@ -60,11 +74,9 @@ static void cap_spi(const app_hw_t *hw)
   hw->mark(true);
   st = w25q64_read(hw->flash, CAP_FLASH_ADDR, rd, sizeof rd);
   hw->mark(false);
-  app_print(hw, "CAP,spi,read=");
-  for (unsigned i = 0; i < sizeof rd; i++) {
-    app_print(hw, "%02X", rd[i]);
-  }
-  app_print(hw, ",st=%s\r\n", dev_status_str(st));
+  char hex[2u * CAP_FLASH_LEN + 1u];
+  hex_str(hex, rd, sizeof rd);
+  app_print(hw, "CAP,spi,read=%s,st=%s\r\n", hex, dev_status_str(st));
 }
 
 static void cap_pwm(const app_hw_t *hw)
@@ -128,6 +140,12 @@ void app_cap(app_t *a, cli_cmd_id_t id)
   const app_hw_t *hw = a->hw;
   const char *name = names[id - CLI_CAP_I2C];
   app_print(hw, "CAP,%s,BEGIN\r\n", name);
+  /* Шина зайнята на весь сценарій: послідовність транзакцій має збігтися із записом аналізатора */
+  app_lock_t bus = id == CLI_CAP_SPI ? APP_LOCK_FLASH : APP_LOCK_I2C;
+  bool locked = id == CLI_CAP_I2C || id == CLI_CAP_SPI || id == CLI_CAP_ANOMALY;
+  if (locked) {
+    (void)hw->lock(bus, APP_WAIT_FOREVER);
+  }
   switch (id) {
     case CLI_CAP_I2C: cap_i2c(hw); break;
     case CLI_CAP_SPI: cap_spi(hw); break;
@@ -135,5 +153,15 @@ void app_cap(app_t *a, cli_cmd_id_t id)
     case CLI_CAP_UART: cap_uart(hw); break;
     default: cap_anomaly(hw); break;
   }
+  if (locked) {
+    hw->unlock(bus);
+  }
   app_print(hw, "CAP,%s,END\r\n", name);
 }
+#else
+void app_cap(app_t *a, cli_cmd_id_t id)
+{
+  (void)id;
+  app_print(a->hw, "ERR,cap_not_in_this_build\r\n");
+}
+#endif /* APP_CAP */

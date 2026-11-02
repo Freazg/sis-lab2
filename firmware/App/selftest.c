@@ -177,8 +177,12 @@ selftest_result_t selftest_run(const app_hw_t *hw)
   hw->mark(true);
   app_print(hw, "ST,dev=BEGIN,fw=%s,board=%s\r\n", hw->fw_version, hw->board_name);
   check_mcu(hw, &r, d, sizeof d);
+  (void)hw->lock(APP_LOCK_I2C, APP_WAIT_FOREVER); /* задача imu на цей час пропускає семпли */
   check_mpu(hw, &r, d, sizeof d);
+  hw->unlock(APP_LOCK_I2C);
+  (void)hw->lock(APP_LOCK_FLASH, APP_WAIT_FOREVER);
   check_flash(hw, &r, d, sizeof d);
+  hw->unlock(APP_LOCK_FLASH);
   check_servo(hw, &r, d, sizeof d, "TIM3_CH1", hw->servo_pan);
   check_servo(hw, &r, d, sizeof d, "TIM3_CH2", hw->servo_tilt);
   check_leds(hw, &r, d, sizeof d);

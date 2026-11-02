@@ -6,6 +6,7 @@
 #ifndef FAKE_HW_H
 #define FAKE_HW_H
 
+#include "app.h"
 #include "app_hw.h"
 #include "fake_i2c.h"
 #include "fake_spiflash.h"
@@ -39,6 +40,15 @@ extern int fake_probe_edges[4];
 extern int fake_resets;
 extern uint32_t fake_rx_dropped;
 extern int fake_eol_pending;
+
+/* ОС (ЛР4): у тестах механізми синхронні — запит режиму, семпл і довга операція виконуються одразу */
+extern app_t *fake_app;              /**< куди передавати mode_post, rec_post, long_post */
+extern int fake_lock_fail[APP_LOCK_COUNT]; /**< 1 — lock() не дочекався ресурсу */
+extern int fake_locks_held;          /**< баланс lock/unlock */
+extern int fake_crit_depth;
+extern int fake_os_cmd;              /**< останній id команди ОС, -1 — не було */
+extern int fake_mode_posts;
+extern int fake_log_posts;
 
 /** Налаштувати стенд «усе справне»: MPU у спокої (1 g по Z, 24 °C), флеш відповідає EF4017. */
 void fake_hw_init(fake_hw_t *f);

@@ -19,6 +19,7 @@ static void print_help(const app_hw_t *hw)
   app_print(hw, "      servo pan|tilt <0..180> cap i2c|spi|pwm|uart|anomaly\r\n");
   app_print(hw, "      stats [reset] hist mem evt perfcal rate <hz> reset\r\n");
   app_print(hw, "      fault powerloss\r\n");
+  app_print(hw, "      tasks stack heap ctxsw trace fault invmutex|invsem|starve|qflood\r\n");
 }
 
 static void print_status(app_t *a)
@@ -127,9 +128,14 @@ static void set_rate(app_t *a, int32_t hz)
     app_print(hw, "ERR,rate\r\n");
     return;
   }
-  a->imu_period_cyc = (hw->sysclk_hz / (uint32_t)hz);
+  uint32_t period = 1000000u / (uint32_t)hz;
+  if (hw->tick_us != 0u) { /* vTaskDelayUntil рахує цілими тіками: період округлюється до тіку */
+    uint32_t ticks = (period + hw->tick_us / 2u) / hw->tick_us;
+    period = (ticks == 0u ? 1u : ticks) * hw->tick_us;
+  }
+  a->imu_period_us = period;
   app_stats_reset(a);
-  app_print(hw, "RATE,hz=%ld,period_us=%lu\r\n", (long)hz, (unsigned long)(a->imu_period_cyc / a->cyc_per_us));
+  app_print(hw, "RATE,hz=%ld,period_us=%lu\r\n", (long)hz, (unsigned long)a->imu_period_us);
 }
 
 void app_execute(app_t *a, const cli_cmd_t *cmd)
@@ -149,8 +155,10 @@ void app_execute(app_t *a, const cli_cmd_t *cmd)
       print_status(a);
       break;
     case CLI_CAL:
-      a->cal_left = APP_CAL_SAMPLES;
+      hw->crit(true); /* поля калібрування читає задача imu */
       a->cal_sum[0] = a->cal_sum[1] = a->cal_sum[2] = 0;
+      a->cal_left = APP_CAL_SAMPLES;
+      hw->crit(false);
       app_print(hw, "CAL,start\r\n");
       break;
     case CLI_MODE_LIVE:
@@ -170,12 +178,11 @@ void app_execute(app_t *a, const cli_cmd_t *cmd)
       break;
     case CLI_DUMP:
     case CLI_ERASE:
-      if (a->mode == APP_MODE_REC || a->mode == APP_MODE_PLAY) {
-        app_print(hw, "ERR,busy\r\n"); /* один буфер сторінки на запис, відтворення і dump */
-      } else if (cmd->id == CLI_DUMP) {
-        app_traj_dump(a);
+      if (a->mode == APP_MODE_REC || a->mode == APP_MODE_PLAY || a->long_busy) {
+        app_print(hw, "ERR,busy\r\n"); /* траєкторія пишеться або читається, чи вже йде dump/erase */
       } else {
-        app_traj_erase(a);
+        a->long_busy = 1; /* скидає задача long після завершення */
+        hw->long_post(cmd->id == CLI_DUMP ? APP_LONG_DUMP : APP_LONG_ERASE);
       }
       break;
     case CLI_SERVO: {
@@ -220,6 +227,17 @@ void app_execute(app_t *a, const cli_cmd_t *cmd)
     case CLI_FAULT_POWERLOSS:
       a->tear_next_page = 1;
       app_print(hw, "FAULT,powerloss_armed\r\n");
+      break;
+    case CLI_TASKS:
+    case CLI_STACK:
+    case CLI_HEAP:
+    case CLI_CTXSW:
+    case CLI_TRACE:
+    case CLI_FAULT_INV_MUTEX:
+    case CLI_FAULT_INV_SEM:
+    case CLI_FAULT_STARVE:
+    case CLI_FAULT_QFLOOD:
+      hw->os_cmd((int)cmd->id); /* метрики і сценарії ОС: Rtos/rtos_app.c */
       break;
     case CLI_ERROR:
     default:
