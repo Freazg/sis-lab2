@@ -317,11 +317,17 @@ static void btn_task(void *arg)
       }
 #endif
       app_btn_event(g_app, t_event);
-      /* Брязкіт: чекати 20 мс стабільно відпущеної кнопки, задача при цьому заблокована */
-      uint32_t quiet_ms = 0;
-      while (quiet_ms < APP_BTN_RELEASE_MS) {
-        vTaskDelay(1);
-        quiet_ms = g_hw->button_pressed() ? 0u : quiet_ms + rtos_tick_us() / 1000u;
+      /* Брязкіт: кнопка має бути відпущена на двох вибірках через 20 мс. Опитування кожен тік будило btn
+       * (пріоритет 6) ~80 разів за натискання; у Wokwi кожне перемикання коштує ≈ 156 мкс з вимкненими
+       * лініями NVIC, і imu губила байти I2C, а консоль — байти команд (журнал проблем ЛР4). */
+      for (;;) {
+        vTaskDelay(ticks_for_ms(APP_BTN_RELEASE_MS));
+        if (!g_hw->button_pressed()) {
+          vTaskDelay(ticks_for_ms(APP_BTN_RELEASE_MS)); /* брязкіт відпускання */
+          if (!g_hw->button_pressed()) {
+            break;
+          }
+        }
       }
       (void)g_hw->btn_take(&t_event);
     }
