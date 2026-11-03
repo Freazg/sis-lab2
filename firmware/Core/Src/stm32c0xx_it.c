@@ -33,42 +33,67 @@ void HardFault_Handler(void)
 #if BOARD_WOKWI
 /*
  * Емуляція PRIMASK для симулятора (Rtos/wokwi/portmacro.h). Модель Cortex-M0+ у Wokwi ставить біт
- * PRIMASK, але переривання ним не блокуються. Під маскою вимикаються лінії NVIC усіх джерел, що
- * викликають ядро або HAL (TIM14, EXTI4_15, USART2); їхні прапорці лишаються, і обробники
- * виконуються одразу після зняття маски. SysTick і PendSV вимкнути в NVIC не можна, тому їхні
- * обгортки нижче відкладають роботу до зняття маски. Справжній cpsid теж виконується.
+ * PRIMASK, але переривання ним не блокуються. На кристалі переривання, що прийшло в критичній секції,
+ * чекає мікросекунди; у Wokwi та сама секція в ≈ 7 разів довша, і вимкнена лінія USART2 губила байти
+ * команд (журнал проблем ЛР4). Тому лінії NVIC не вимикаються: обробники EXTI і USART2 виконуються
+ * одразу й фіксують мітку часу та байт, а під маскою відкладається лише їхній виклик ядра
+ * (xTaskNotifyFromISR). SysTick і PendSV під маскою теж відкладаються. Відкладене виконується в момент
+ * зняття маски, як виконалось би на кристалі після cpsie (подробиці — у wokwi_enable_irq).
  */
-#define WOKWI_IRQS ((1UL << TIM14_IRQn) | (1UL << EXTI4_15_IRQn) | (1UL << USART2_IRQn))
+#define WOKWI_DEFER_BTN 0x1u
+#define WOKWI_DEFER_RX  0x2u
 static volatile uint32_t wokwi_primask;
 static volatile uint32_t wokwi_ticks_pending;
 static volatile uint32_t wokwi_pendsv_deferred;
+static volatile uint32_t wokwi_isr_deferred;
 
 void wokwi_disable_irq(void)
 {
   __disable_irq();
-  NVIC->ICER[0] = WOKWI_IRQS;
   wokwi_primask = 1;
+}
+
+/** Відкладені виклики ядра з ISR; викликається під маскою, тож нові ISR лише додають біти. */
+static void wokwi_flush_isr(void)
+{
+  uint32_t bits;
+  while ((bits = wokwi_isr_deferred) != 0u)
+  {
+    wokwi_isr_deferred = 0;
+    if (bits & WOKWI_DEFER_BTN)
+    {
+      rtos_btn_from_isr();
+    }
+    if (bits & WOKWI_DEFER_RX)
+    {
+      rtos_con_rx_from_isr();
+    }
+  }
 }
 
 void wokwi_enable_irq(void)
 {
-  /* Тік, що прийшов під маскою, на кристалі виконався б одразу після cpsie. Тому в режимі задачі
-   * відкладені тіки обробляються тут, ще під маскою, а перемикання (PENDSVSET) — одразу після її зняття.
-   * Без цього imu прокидалась на тік пізніше: джитер ±1 мс замість мікросекунд (журнал проблем ЛР4).
-   * У режимі обробника відкладені тіки обробляє цикл у SysTick_Handler. */
-  if (__get_IPSR() == 0u && wokwi_ticks_pending != 0u)
+  /* Що прийшло під маскою, на кристалі виконалось би одразу після cpsie, тож виконується тут, ще під
+   * маскою; перемикання (PENDSVSET) — одразу після її зняття. Виклики ядра з EXTI і USART2 — за будь-якого
+   * зняття маски: ці переривання вищі за PendSV і на кристалі витіснили б його одразу після cpsie. Тік —
+   * лише в режимі задачі: SysTick має пріоритет PendSV і виконався б після нього (у режимі обробника
+   * відкладені тіки обробляє SysTick_Handler). Без повтору тіку imu прокидалась на тік пізніше: джитер
+   * ±1 мс (журнал проблем ЛР4). */
+  bool thread = __get_IPSR() == 0u;
+  while (wokwi_isr_deferred != 0u || (thread && wokwi_ticks_pending != 0u))
   {
-    wokwi_disable_irq(); /* обробник тіку виконується під маскою, як у SysTick_Handler */
-  }
-  while (__get_IPSR() == 0u && wokwi_ticks_pending != 0u)
-  {
-    wokwi_ticks_pending--;
-    uint32_t t0 = platform_cycles();
-    xPortSysTickHandler();
-    rtos_tick_cost(platform_cycles() - t0);
+    wokwi_disable_irq();
+    while (thread && wokwi_ticks_pending != 0u)
+    {
+      wokwi_ticks_pending--;
+      uint32_t t0 = platform_cycles();
+      xPortSysTickHandler();
+      rtos_tick_cost(platform_cycles() - t0);
+    }
+    wokwi_flush_isr();
+    wokwi_primask = 0; /* ISR між цим рядком і перевіркою циклу вже не відкладаються */
   }
   wokwi_primask = 0;
-  NVIC->ISER[0] = WOKWI_IRQS;
   if (wokwi_pendsv_deferred)
   {
     wokwi_pendsv_deferred = 0;
@@ -90,6 +115,17 @@ void wokwi_clear_from_isr(uint32_t prev)
   {
     wokwi_enable_irq();
   }
+}
+
+/** true — маска стоїть, виклик ядра відкладено до її зняття. */
+static bool wokwi_defer(uint32_t bit)
+{
+  if (wokwi_primask)
+  {
+    wokwi_isr_deferred |= bit;
+    return true;
+  }
+  return false;
 }
 
 /** PendSV під маскою відкладається: перемикання контексту всередині критичної секції псує списки. */
@@ -141,6 +177,12 @@ void EXTI4_15_IRQHandler(void)
 {
   /* USER CODE BEGIN EXTI4_15_IRQn 0 */
   platform_btn_isr();
+#if BOARD_WOKWI
+  if (wokwi_defer(WOKWI_DEFER_BTN))
+  {
+    return;
+  }
+#endif
   rtos_btn_from_isr(); /* розбудити задачу btn */
   /* USER CODE END EXTI4_15_IRQn 0 */
 }
@@ -150,6 +192,12 @@ void USART2_IRQHandler(void)
 {
   /* USER CODE BEGIN USART2_IRQn 0 */
   platform_con_rx_isr();
+#if BOARD_WOKWI
+  if (wokwi_defer(WOKWI_DEFER_RX))
+  {
+    return;
+  }
+#endif
   rtos_con_rx_from_isr(); /* розбудити задачу cli */
   /* USER CODE END USART2_IRQn 0 */
 }
