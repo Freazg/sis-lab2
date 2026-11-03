@@ -22,8 +22,9 @@ def load(fw):
 
 
 def log(fw, name):
-    p = MET / f"runs-{fw}" / f"{name}.log"
-    return p.read_text(encoding="utf-8", errors="replace") if p.exists() else ""
+    """Лог сценарію; якщо його розбито на сесії через ліміт CI (s3-p1…p3) — частини підряд."""
+    ps = sorted((MET / f"runs-{fw}").glob(f"{name}-p[0-9].log")) or [MET / f"runs-{fw}" / f"{name}.log"]
+    return "".join(p.read_text(encoding="utf-8", errors="replace") for p in ps if p.exists())
 
 
 def blk(r, name, i=-1):
@@ -138,11 +139,16 @@ def os_tasks(text):
         snaps.append((t_us, rows, int(sw[1]) if sw else None))
     if len(snaps) < 2:
         return None
-    (t0, a, s0), (t1, b, s1) = snaps[0], snaps[-1]
-    span = t1 - t0
-    share = {k: round(100 * (b[k] - a.get(k, 0)) / span, 1) for k in b}
+    # знімки йдуть парами «до вікна / після вікна», по парі на сесію: частки — за сумою вікон
+    span, sw, busy = 0, 0, {}
+    for (t0, a, s0), (t1, b, s1) in zip(snaps[0::2], snaps[1::2]):
+        span += t1 - t0
+        for k in b:
+            busy[k] = busy.get(k, 0) + b[k] - a.get(k, 0)
+        sw = None if sw is None or s0 is None or s1 is None else sw + s1 - s0
+    share = {k: round(100 * v / span, 1) for k, v in busy.items()}
     return {"span_s": round(span / 1e6, 1), "share": share,
-            "switches_per_s": round((s1 - s0) / (span / 1e6), 1) if s0 is not None and s1 is not None else None}
+            "switches_per_s": round(sw / (span / 1e6), 1) if sw is not None else None}
 
 
 def os_stack(text):
@@ -285,10 +291,12 @@ def main():
             o.append(f"| {title}, такти | {mn} | {av} | {mx} |")
         for title, (mn, av, mx) in zip(("обробник тіку, HOLD", "обробник тіку, під час dump"), tick_):
             o.append(f"| {title}, такти | {mn} | {av} | {mx} |")
-        if ts and ts["switches_per_s"] and tick_:
-            ov = (ts["switches_per_s"] * sw_[0][1] + 1000 * tick_[0][1]) / 48e6 * 100
-            o += ["", f"Накладні витрати ядра в S3 ≈ ({ts['switches_per_s']} × {sw_[0][1]} + 1000 × {tick_[0][1]}) / 48·10⁶ = "
-                  f"**{ov:.1f} %** процесорного часу (такти моделі Wokwi)."]
+        for scen in ("s1", "s2", "s3"):
+            tsx = os_tasks(log("lr4", scen))
+            if tsx and tsx["switches_per_s"] and tick_:
+                ov = (tsx["switches_per_s"] * sw_[0][1] + 1000 * tick_[0][1]) / 48e6 * 100
+                o += ["", f"Накладні витрати ядра в {scen.upper()} ≈ ({tsx['switches_per_s']} перемикань/с × {sw_[0][1]} + "
+                      f"1000 тіків/с × {tick_[0][1]}) / 48·10⁶ = **{ov:.1f} %** процесорного часу (такти моделі Wokwi)."]
 
     # ---- сценарії 7.2 ----
     o += ["", "## Сценарії, специфічні для ОС (§7.2)", ""]
@@ -320,18 +328,14 @@ def main():
         o += ["", "### 7.2.4 Вичерпання черги", "", "| Timeout відправника | Глибина | Відправлено | Втрачено | Час відправника |",
               "|---:|---:|---:|---:|---:|"]
         o += [f"| {t} мс | {d} | {s} | {l} | {fmt_us(int(p))} |" for t, d, s, l, p in qf]
-    t100 = log("lr4", "s3-tick100")
-    if t100:
-        r100 = re.findall(r"JITTER name=imu period_us=(\d+) n=(\d+) min_us=(-?\d+) max_us=(-?\d+) p99_us=(\d+) "
-                          r"missed=(\d+) viol=(\d+)", t100)
-        load100 = re.findall(r"LOAD pct=(\d+) min=(\d+) max=(\d+)", t100)
-        if r100:
-            p, n, mn, mx, p99, missed, viol = r100[-1]
-            o += ["", "### 7.2.6 Частота тіку 100 Гц (S3)", "",
-                  "| Тік | Джитер IMU, max | Запусків | Пропуски | Порушення | Завантаження, max |", "|---|---:|---:|---:|---:|---:|",
-                  f"| 1000 Гц | {fmt_us(jit(r4, 's3', 'max'))} | {jit(r4, 's3', 'n')} | {jit(r4, 's3', 'missed')} | "
-                  f"{jit(r4, 's3', 'viol')} | {load_max(r4, 's3')} % |",
-                  f"| 100 Гц | {fmt_us(int(mx))} | {n} | {missed} | {viol} | {load100[-1][2] if load100 else '—'} % |"]
+    if jit(r4, "s3-tick100", "n"):
+        o += ["", "### 7.2.6 Частота тіку 100 Гц (S3)", "",
+              "| Тік | Джитер IMU, max | Запусків | Пропуски | Порушення | Завантаження, max | Перемикань/с |",
+              "|---|---:|---:|---:|---:|---:|---:|"]
+        for hz, name in (("1000 Гц", "s3"), ("100 Гц", "s3-tick100")):
+            tsx = os_tasks(log("lr4", name))
+            o.append(f"| {hz} | {fmt_us(jit(r4, name, 'max'))} | {jit(r4, name, 'n')} | {jit(r4, name, 'missed')} | "
+                     f"{jit(r4, name, 'viol')} | {load_max(r4, name)} % | {tsx['switches_per_s'] if tsx else '—'} |")
     OUT.write_text("\n".join(o) + "\n", encoding="utf-8")
     print(f"written {OUT}: {len(rows)} rows")
 

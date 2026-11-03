@@ -3,13 +3,16 @@
 #include "board.h"
 
 /*
- * Очікування прапорця периферії з timeout (ЛР4). Після спливання часу прапорець перевіряється
- * ще раз: задачу могли витіснити на довше за timeout, а апаратура тим часом давно закінчила.
- * Без повторної перевірки витіснення давало хибний timeout посеред обміну SPI, у FIFO лишався
- * байт, і всі наступні читання флеш зсувались на один байт (журнал проблем ЛР4).
+ * Очікування прапорця периферії з timeout (ЛР4). Timeout рахується від початку цього очікування,
+ * тобто це «немає прогресу N мс», а не дедлайн усього обміну: під ОС задачу можуть витіснити, і рядок
+ * UART чи сторінка SPI передаються довше за свій timeout без жодної помилки апаратури. Після спливання
+ * часу прапорець перевіряється ще раз з тієї самої причини: апаратура могла давно закінчити, поки задача
+ * стояла в Ready. Обидві помилки давали обрив обміну посередині: зсув SPI на байт і обрізані рядки UART
+ * (журнал проблем ЛР4).
  */
-static bool wait_set(volatile uint32_t *reg, uint32_t mask, uint32_t t0, uint32_t timeout_ms)
+static bool wait_set(volatile uint32_t *reg, uint32_t mask, uint32_t timeout_ms)
 {
+  uint32_t t0 = HAL_GetTick();
   while ((*reg & mask) == 0u) {
     if (HAL_GetTick() - t0 > timeout_ms) {
       return (*reg & mask) != 0u;
@@ -18,8 +21,9 @@ static bool wait_set(volatile uint32_t *reg, uint32_t mask, uint32_t t0, uint32_
   return true;
 }
 
-static bool wait_clear(volatile uint32_t *reg, uint32_t mask, uint32_t t0, uint32_t timeout_ms)
+static bool wait_clear(volatile uint32_t *reg, uint32_t mask, uint32_t timeout_ms)
 {
+  uint32_t t0 = HAL_GetTick();
   while ((*reg & mask) != 0u) {
     if (HAL_GetTick() - t0 > timeout_ms) {
       return (*reg & mask) == 0u;
@@ -54,18 +58,18 @@ void platform_i2c_init(void)
   i2c_hw_init();
 }
 
-static int i2c_wait(I2C_TypeDef *i2c, uint32_t mask, uint32_t t0)
+static int i2c_wait(I2C_TypeDef *i2c, uint32_t mask)
 {
-  if (!wait_set(&i2c->ISR, mask | I2C_ISR_NACKF, t0, I2C_TIMEOUT_MS)) {
+  if (!wait_set(&i2c->ISR, mask | I2C_ISR_NACKF, I2C_TIMEOUT_MS)) {
     return -1;
   }
   return (i2c->ISR & I2C_ISR_NACKF) ? 1 : 0;
 }
 
 /** Шина вільна; для запису ще й прапорці контролера скинуті. false — BUSY не знявся за timeout. */
-static bool i2c_begin(I2C_TypeDef *i2c, uint32_t t0, bool for_write)
+static bool i2c_begin(I2C_TypeDef *i2c, bool for_write)
 {
-  if (!wait_clear(&i2c->ISR, I2C_ISR_BUSY, t0, I2C_TIMEOUT_MS)) {
+  if (!wait_clear(&i2c->ISR, I2C_ISR_BUSY, I2C_TIMEOUT_MS)) {
     return false;
   }
   if (!for_write) {
@@ -84,12 +88,12 @@ static bool i2c_begin(I2C_TypeDef *i2c, uint32_t t0, bool for_write)
 }
 
 /** Кінець транзакції з AUTOEND: дочекатися STOP (після NACK апаратура генерує його сама). */
-static dev_status_t i2c_end(I2C_TypeDef *i2c, int r, uint32_t t0)
+static dev_status_t i2c_end(I2C_TypeDef *i2c, int r)
 {
   if (r == 0) {
-    r = i2c_wait(i2c, I2C_ISR_STOPF, t0);
+    r = i2c_wait(i2c, I2C_ISR_STOPF);
   } else if (r == 1) {
-    (void)i2c_wait(i2c, I2C_ISR_STOPF, t0);
+    (void)i2c_wait(i2c, I2C_ISR_STOPF);
   }
   i2c->ICR = I2C_ICR_STOPCF | I2C_ICR_NACKCF;
   i2c->CR2 = 0;
@@ -97,30 +101,30 @@ static dev_status_t i2c_end(I2C_TypeDef *i2c, int r, uint32_t t0)
 }
 
 /** Фаза запису len байт; autoend=false — без STOP, далі repeated START (чекає TC). */
-static int i2c_tx(I2C_TypeDef *i2c, uint8_t addr7, const uint8_t *data, size_t len, bool autoend, uint32_t t0)
+static int i2c_tx(I2C_TypeDef *i2c, uint8_t addr7, const uint8_t *data, size_t len, bool autoend)
 {
   i2c->CR2 = ((uint32_t)addr7 << 1) | ((uint32_t)len << I2C_CR2_NBYTES_Pos) | (autoend ? I2C_CR2_AUTOEND : 0u)
              | I2C_CR2_START;
   int r = 0;
   for (size_t i = 0; i < len && r == 0; i++) {
-    r = i2c_wait(i2c, I2C_ISR_TXIS, t0);
+    r = i2c_wait(i2c, I2C_ISR_TXIS);
     if (r == 0) {
       i2c->TXDR = data[i];
     }
   }
   if (r == 0 && !autoend) {
-    r = i2c_wait(i2c, I2C_ISR_TC, t0);
+    r = i2c_wait(i2c, I2C_ISR_TC);
   }
   return r;
 }
 
-static int i2c_rx(I2C_TypeDef *i2c, uint8_t addr7, uint8_t *data, size_t len, uint32_t t0)
+static int i2c_rx(I2C_TypeDef *i2c, uint8_t addr7, uint8_t *data, size_t len)
 {
   i2c->CR2 = ((uint32_t)addr7 << 1) | I2C_CR2_RD_WRN | ((uint32_t)len << I2C_CR2_NBYTES_Pos) | I2C_CR2_AUTOEND
              | I2C_CR2_START;
   int r = 0;
   for (size_t i = 0; i < len && r == 0; i++) {
-    r = i2c_wait(i2c, I2C_ISR_RXNE, t0);
+    r = i2c_wait(i2c, I2C_ISR_RXNE);
     if (r == 0) {
       data[i] = (uint8_t)i2c->RXDR;
     }
@@ -131,29 +135,27 @@ static int i2c_rx(I2C_TypeDef *i2c, uint8_t addr7, uint8_t *data, size_t len, ui
 static dev_status_t i2c_write(void *ctx, uint8_t addr7, const uint8_t *data, size_t len)
 {
   I2C_TypeDef *i2c = ((I2C_HandleTypeDef *)ctx)->Instance;
-  uint32_t t0 = HAL_GetTick();
   if (len == 0u || len > 255u) {
     return DEV_ERR_PARAM;
   }
-  if (!i2c_begin(i2c, t0, true)) {
+  if (!i2c_begin(i2c, true)) {
     return DEV_ERR_BUS;
   }
-  return i2c_end(i2c, i2c_tx(i2c, addr7, data, len, true, t0), t0);
+  return i2c_end(i2c, i2c_tx(i2c, addr7, data, len, true));
 }
 
 /** Запис регістра і читання з repeated START (як HAL_I2C_Mem_Read). */
 static dev_status_t i2c_read_restart(I2C_TypeDef *i2c, uint8_t addr7, const uint8_t *wdata, size_t wlen,
                                      uint8_t *rdata, size_t rlen)
 {
-  uint32_t t0 = HAL_GetTick();
-  if (!i2c_begin(i2c, t0, true)) {
+  if (!i2c_begin(i2c, true)) {
     return DEV_ERR_BUS;
   }
-  int r = i2c_tx(i2c, addr7, wdata, wlen, false, t0);
+  int r = i2c_tx(i2c, addr7, wdata, wlen, false);
   if (r == 0) {
-    r = i2c_rx(i2c, addr7, rdata, rlen, t0);
+    r = i2c_rx(i2c, addr7, rdata, rlen);
   }
-  return i2c_end(i2c, r, t0);
+  return i2c_end(i2c, r);
 }
 
 static dev_status_t i2c_write_read(void *ctx, uint8_t addr7, const uint8_t *wdata, size_t wlen,
@@ -172,11 +174,10 @@ static dev_status_t i2c_write_read(void *ctx, uint8_t addr7, const uint8_t *wdat
   if (w != DEV_OK) {
     return w;
   }
-  uint32_t t0 = HAL_GetTick();
-  if (!i2c_begin(i2c, t0, false)) {
+  if (!i2c_begin(i2c, false)) {
     return DEV_ERR_BUS;
   }
-  return i2c_end(i2c, i2c_rx(i2c, addr7, rdata, rlen, t0), t0);
+  return i2c_end(i2c, i2c_rx(i2c, addr7, rdata, rlen));
 #endif
 }
 
@@ -184,12 +185,11 @@ static dev_status_t i2c_write_read(void *ctx, uint8_t addr7, const uint8_t *wdat
 static dev_status_t i2c_probe(void *ctx, uint8_t addr7)
 {
   I2C_TypeDef *i2c = ((I2C_HandleTypeDef *)ctx)->Instance;
-  uint32_t t0 = HAL_GetTick();
-  if (!i2c_begin(i2c, t0, false)) {
+  if (!i2c_begin(i2c, false)) {
     return DEV_ERR_BUS;
   }
   i2c->CR2 = ((uint32_t)addr7 << 1) | I2C_CR2_AUTOEND | I2C_CR2_START;
-  return i2c_end(i2c, 0, t0);
+  return i2c_end(i2c, 0);
 }
 
 const i2c_bus_t platform_i2c1 = {
@@ -245,16 +245,15 @@ static dev_status_t spi_transfer(void *ctx, const uint8_t *tx, uint8_t *rx, size
 {
   SPI_TypeDef *spi = ((SPI_HandleTypeDef *)ctx)->Instance;
   volatile uint8_t *dr = (volatile uint8_t *)&spi->DR; /* 8-бітний доступ: один кадр у FIFO */
-  uint32_t t0 = HAL_GetTick();
   if ((spi->CR1 & SPI_CR1_SPE) == 0u) {
     spi->CR1 |= SPI_CR1_SPE;
   }
   for (size_t i = 0; i < len; i++) {
-    if (!wait_set(&spi->SR, SPI_SR_TXE, t0, SPI_TIMEOUT_MS)) {
+    if (!wait_set(&spi->SR, SPI_SR_TXE, SPI_TIMEOUT_MS)) {
       break;
     }
     *dr = tx != NULL ? tx[i] : 0xFFu;
-    if (!wait_set(&spi->SR, SPI_SR_RXNE, t0, SPI_TIMEOUT_MS)) {
+    if (!wait_set(&spi->SR, SPI_SR_RXNE, SPI_TIMEOUT_MS)) {
       break;
     }
     uint8_t b = *dr;
@@ -262,11 +261,11 @@ static dev_status_t spi_transfer(void *ctx, const uint8_t *tx, uint8_t *rx, size
       rx[i] = b;
     }
     if (i + 1u == len) {
-      return wait_clear(&spi->SR, SPI_SR_BSY, t0, SPI_TIMEOUT_MS) ? DEV_OK : DEV_ERR_TIMEOUT;
+      return wait_clear(&spi->SR, SPI_SR_BSY, SPI_TIMEOUT_MS) ? DEV_OK : DEV_ERR_TIMEOUT;
     }
   }
   /* Обмін обірвано: дочекатися кінця кадру і спорожнити RX FIFO, щоб наступний обмін не зсунувся */
-  (void)wait_clear(&spi->SR, SPI_SR_BSY, HAL_GetTick(), SPI_TIMEOUT_MS);
+  (void)wait_clear(&spi->SR, SPI_SR_BSY, SPI_TIMEOUT_MS);
   while (spi->SR & SPI_SR_FRLVL) {
     (void)*dr;
   }
@@ -351,14 +350,13 @@ void platform_mark(bool level)
  * HAL_UART_Init хендл не ініціалізований). Час визначає швидкість лінії: 86,8 мкс на байт. */
 static dev_status_t uart_tx(USART_TypeDef *u, const char *s, size_t len)
 {
-  uint32_t t0 = HAL_GetTick();
   for (size_t i = 0; i < len; i++) {
-    if (!wait_set(&u->ISR, USART_ISR_TXE_TXFNF, t0, 100u)) {
+    if (!wait_set(&u->ISR, USART_ISR_TXE_TXFNF, 100u)) {
       return DEV_ERR_TIMEOUT;
     }
     u->TDR = (uint8_t)s[i];
   }
-  return wait_set(&u->ISR, USART_ISR_TC, t0, 100u) ? DEV_OK : DEV_ERR_TIMEOUT;
+  return wait_set(&u->ISR, USART_ISR_TC, 100u) ? DEV_OK : DEV_ERR_TIMEOUT;
 }
 
 void platform_con_write(const char *s, size_t len)

@@ -124,18 +124,25 @@ def presses(sig, quiet_ns=20_000_000):
     return out
 
 
+def parts(name):
+    """Сценарій, розбитий на сесії через ліміт CI (s3-p1…p3, run_scenarios.S3_PARTS), або він сам."""
+    found = sorted(q.stem for q in RUNS.glob(f"{name}-p[0-9].log"))
+    return found or [name]
+
+
 def wire_button(name):
     """Перший спад BTN (PC13) -> фронт P_REACT: повна затримка реакції на дроті, мкс."""
-    sig = load_vcd(name)
-    if not sig:
-        return None
-    react = edges(sig["P_REACT"], 1)
     out = []
-    j = 0
-    for t in presses(sig["BTN"][1:]):
-        r, j = next_after(react, t, j)
-        if r is not None:
-            out.append((r - t) / 1000)
+    for part in parts(name):
+        sig = load_vcd(part)
+        if not sig:
+            return None
+        react = edges(sig["P_REACT"], 1)
+        j = 0
+        for t in presses(sig["BTN"][1:]):
+            r, j = next_after(react, t, j)
+            if r is not None:
+                out.append((r - t) / 1000)
     return spread(out)
 
 
@@ -149,13 +156,40 @@ def trimmed_pulses(sig, skip=40, gap_ns=80_000_000):
 
 
 def wire_imu(name):
-    sig = load_vcd(name)
-    if not sig:
-        return None
-    p = trimmed_pulses(sig["P_IMU"])
-    width = [w / 1000 for _, w in p]
-    per = [(b[0] - a[0]) / 1000 for a, b in zip(p, p[1:])]
+    width, per = [], []
+    for part in parts(name):
+        sig = load_vcd(part)
+        if not sig:
+            return None
+        p = trimmed_pulses(sig["P_IMU"])
+        width += [w / 1000 for _, w in p]
+        per += [(b[0] - a[0]) / 1000 for a, b in zip(p, p[1:])]  # періоди лише всередині сесії
     return {"width": spread(width), "period": spread(per)}
+
+
+def merge_blocks(bs):
+    """Вимірювальні вікна кількох сесій як одне: n — сума, min/max — крайні, avg — зважене за n; для джитера
+    p99 — найбільший із частин (оцінка зверху), пропуски й порушення — сума; LOAD — крайні; CNT — сума."""
+    out = {"stat": {}, "jit": {}}
+    for key in bs[0]["stat"]:
+        xs = [b["stat"][key] for b in bs if key in b["stat"]]
+        n = sum(x["n"] for x in xs)
+        live = [x for x in xs if x["n"]]
+        out["stat"][key] = {"n": n, "min": min((x["min"] for x in live), default=0),
+                            "avg": round(sum(x["avg"] * x["n"] for x in live) / n) if n else 0,
+                            "max": max((x["max"] for x in live), default=0)}
+    for key in bs[0]["jit"]:
+        xs = [b["jit"][key] for b in bs if key in b["jit"]]
+        out["jit"][key] = {"period": xs[0]["period"], "n": sum(x["n"] for x in xs), "min": min(x["min"] for x in xs),
+                           "max": max(x["max"] for x in xs), "p99": max(x["p99"] for x in xs),
+                           "missed": sum(x["missed"] for x in xs), "viol": sum(x["viol"] for x in xs)}
+    loads = [b["load"] for b in bs if "load" in b]
+    if loads:
+        out["load"] = {"last": loads[-1]["last"], "min": min(x["min"] for x in loads), "max": max(x["max"] for x in loads)}
+    cnts = [b["cnt"] for b in bs if "cnt" in b]
+    if cnts:
+        out["cnt"] = {k: sum(c[k] for c in cnts) for k in cnts[0]}
+    return out
 
 
 def wire_e2e(name):
@@ -245,8 +279,9 @@ def methods_button():
 
 
 def fr08(name):
-    """Порівняння траєкторії запису і відтворення: тривалості з логу і вирівнювання за ШІМ."""
-    text = read_log(name)
+    """Порівняння траєкторії запису і відтворення: тривалості з логу і вирівнювання за ШІМ.
+    Якщо сценарій розбито на сесії (fr07-08-a: запис і відтворення, -b: запис і dump), береться A, потім B."""
+    text = read_log(f"{name}-a") + read_log(f"{name}-b") or read_log(name)
     rec = re.search(r"REC,DONE,session=\d+,samples=(\d+),pages=(\d+),dur_us=(\d+)", text)
     play = re.search(r"PLAY,DONE,session=\d+,samples=(\d+),dur_us=(\d+)", text)
     dump = re.search(r"DUMP,END,session=\d+,samples=(\d+),pages=(\d+),crc=(\w+)", text)
@@ -469,6 +504,13 @@ def main_fw(fw):
     VCD_PREFIX = f"cmp/{fw}-"
     names = sorted(p.stem for p in RUNS.glob("*.log"))
     r = {"fw": fw, "runs": {n: summary(n) for n in names}}
+    for base in ("s3", "s3-tick100"):  # сесії через ліміт CI зливаються в один сценарій
+        ps = parts(base)
+        if ps != [base]:
+            sums = [r["runs"][q] for q in ps]
+            r["runs"][base] = {"git": sums[0]["git"], "parts": ps,
+                               "blocks": [merge_blocks([q["blocks"][-1] for q in sums])],
+                               "stack_used": max((q["stack_used"] or 0 for q in sums), default=None)}
     r["wire"] = {
         "button_idle": safe(wire_button, "sc2-btn-idle"), "button_long": safe(wire_button, "sc2-btn-long"),
         "button_s3": safe(wire_button, "s3"), "imu_s1": safe(wire_imu, "s1"), "imu_s2": safe(wire_imu, "s2"),

@@ -13,6 +13,8 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: true  # ядро FreeRTOS (ЛР4)
 
       - name: Docker image (toolchain)
         run: make image
@@ -48,6 +50,8 @@ jobs:
       WOKWI_CLI_TOKEN: ${{ secrets.WOKWI_CLI_TOKEN }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: true  # ядро FreeRTOS (ЛР4)
       - name: Skip without Wokwi token
         if: env.WOKWI_CLI_TOKEN == ''
         run: echo "Секрет WOKWI_CLI_TOKEN не задано — симуляцію пропущено"

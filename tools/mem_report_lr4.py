@@ -10,7 +10,7 @@
   * внесок ядра з map-файла: tasks.o, queue.o, list.o, heap_4.o, port.o, portasm.o (ядро збирається без
     LTO саме для цього; власний код і HAL — з LTO, їх розкладено за символами ELF, nm -l);
   * склад heap ОС: стеки задач, TCB, черги, м'ютекси (з розмірів у Rtos/rtos_app.c і sizeof з DWARF);
-    виміряне «використано» = total - min_ever_free береться з логу S3 (docs/metrics/runs-lr4/s3.log);
+    виміряне «використано» = total - min_ever_free береться з логу S3 (docs/metrics/runs-lr4/s3-p*.log, остання сесія);
   * та сама прошивка ЛР3 (тег lab3, worktree build-lr3/) у двох збірках: як у тегу і з LTO.
 """
 import collections
@@ -25,7 +25,7 @@ ELF = FW / BUILD / "firmware.elf"
 MAP = FW / BUILD / "firmware.map"
 OUT = ROOT / "docs" / "metrics" / "memory-lr4.md"
 LR3 = ROOT / "build-lr3"
-S3_LOG = ROOT / "docs" / "metrics" / "runs-lr4" / "s3.log"
+S3_LOG = max((ROOT / "docs" / "metrics" / "runs-lr4").glob("s3-p[0-9].log"), default=ROOT / "docs" / "metrics" / "runs-lr4" / "s3.log")
 
 
 def sh(*cmd, cwd=ROOT):

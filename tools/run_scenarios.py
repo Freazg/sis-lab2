@@ -138,15 +138,27 @@ def record_first(seconds):
     return set_mode("rec") + delay(seconds * 1000) + set_mode("hold")
 
 
-def s3():
+def s3(cycles=range(40)):
     """Найгірший: dump на хост + періодичні задачі + команди + рух + кнопка, 40 циклів."""
     rnd = random.Random(SEED)
+    gaps = [rnd.randint(50, 500) for _ in range(40)]  # та сама послідовність, хоч би як цикли ділились на сесії
     steps = start() + record_first(10) + set_mode("live") + begin_measure()
-    for i in range(40):
-        steps += tilt(roll=30 if i % 2 else -30) + cmd("dump") + delay(rnd.randint(50, 500)) + press(60)
+    for i in cycles:
+        steps += tilt(roll=30 if i % 2 else -30) + cmd("dump") + delay(gaps[i]) + press(60)
         steps += cmd("status") + cmd("status") + cmd("status")
         steps += wait("DUMP,END") + delay(50) + cmd("mode live") + wait("MODE,LIVE") + delay(100)
     return steps + report()
+
+
+# Безкоштовний Wokwi CI обриває сесію через 5 хв реального часу («Connection timed out after 5 minutes»).
+# S3 на FreeRTOS — ≈ 140 с симуляції, ≈ 9 хв сесії (dump ділить процесор з IMU і триває 2,5 с замість 1,05 с),
+# тому S3 іде трьома сесіями по 14, 13 і 13 циклів тієї самої послідовності, для обох прошивок однаково.
+# Кожна сесія починається так само (запис 10 с), метрики зливає tools/analyze_metrics.py: максимум по частинах.
+S3_PARTS = (range(0, 14), range(14, 27), range(27, 40))
+
+
+def s3_part(k):
+    return lambda: s3(S3_PARTS[k])
 
 
 def sc1_erase():
@@ -286,16 +298,29 @@ def fr06():
     return steps + delay(300) + report() + cmd("evt") + delay(100)
 
 
-def fr07_08():
-    """FR-07, FR-08: 60 с запису, скидання, відтворення, dump; маркер PWM на аналізаторі."""
+def fr07_rec():
+    """60 с запису з рухом сенсора (спільна частина обох сесій FR-07/08)."""
     steps = start() + set_mode("rec") + begin_measure()
     for i in range(30):
         steps += tilt(pitch=25 * math.sin(i / 2), roll=35 * math.cos(i / 3)) + delay(2000)
-    steps += set_mode("hold") + cmd("stats") + wait("STATS,END") + delay(20) + cmd("reset") + wait("BOOT,fw=")
+    return steps + set_mode("hold") + cmd("stats") + wait("STATS,END") + delay(20)
+
+
+def fr07_08():
+    """FR-07, FR-08: 60 с запису, скидання, відтворення, dump; маркер PWM на аналізаторі."""
+    return fr07_08_a() + cmd("dump") + wait("DUMP,END") + delay(50)
+
+
+def fr07_08_a():
+    """Сесія A (ліміт 5 хв CI): запис, скидання, відтворення — FR-08, тривалість відтворення проти запису."""
+    steps = fr07_rec() + cmd("reset") + wait("BOOT,fw=")
     steps += wait("READY") + delay(100) + set_mode("hold") + cmd("stats reset") + wait("STATS,RESET")
-    steps += set_mode("play") + wait("PLAY,DONE") + delay(50) + cmd("stats") + wait("STATS,END") + delay(20)
-    steps += cmd("dump") + wait("DUMP,END") + delay(50)
-    return steps
+    return steps + set_mode("play") + wait("PLAY,DONE") + delay(50) + cmd("stats") + wait("STATS,END") + delay(20)
+
+
+def fr07_08_b():
+    """Сесія B: той самий запис і dump — FR-07, усі семпли читаються з правильною CRC."""
+    return fr07_rec() + cmd("dump") + wait("DUMP,END") + delay(50)
 
 
 def fr09():
@@ -382,6 +407,9 @@ SCENARIOS = {
     "s1": (s1, BASE_CHANNELS, 15000),
     "s2": (s2, BASE_CHANNELS, 55000),
     "s3": (s3, BASE_CHANNELS, 90000),
+    "s3-p1": (s3_part(0), BASE_CHANNELS, 90000),
+    "s3-p2": (s3_part(1), BASE_CHANNELS, 90000),
+    "s3-p3": (s3_part(2), BASE_CHANNELS, 90000),
     "sc1-erase": (sc1_erase, BASE_CHANNELS, 12000),
     "sc1-dump": (sc1_dump, BASE_CHANNELS, 30000),
     "sc2-btn-idle": (sc2_btn_idle, BASE_CHANNELS, 25000),
@@ -397,6 +425,8 @@ SCENARIOS = {
     "fr05": (fr05, ["PWM_PAN", "PWM_TILT", "P_PWM", "VCP_RX", "MARK", "P_IMU", "P_LONG", "BTN"], 10000),
     "fr06": (fr06, BASE_CHANNELS, 10000),
     "fr07-08": (fr07_08, ["PWM_PAN", "PWM_TILT", "P_PWM", "P_LONG", "VCP_RX", "MARK", "P_IMU", "BTN"], 170000),
+    "fr07-08-a": (fr07_08_a, ["PWM_PAN", "PWM_TILT", "P_PWM", "P_LONG", "VCP_RX", "MARK", "P_IMU", "BTN"], 170000),
+    "fr07-08-b": (fr07_08_b, ["PWM_PAN", "PWM_TILT", "P_PWM", "P_LONG", "VCP_RX", "MARK", "P_IMU", "BTN"], 170000),
     "fr09": (fr09, None, 8000),
     "wrap": (s_wrap, None, 210000),
     "long": (long_run, None, 4200000),
@@ -410,8 +440,12 @@ SCENARIOS = {
     "os-trace": (os_trace, BASE_CHANNELS, 30000, "faults"),
     "os-ctxsw": (os_ctxsw, None, 30000),
     "s3-tick100": (s3, BASE_CHANNELS, 90000, "tick100"),
+    "s3-tick100-p1": (s3_part(0), BASE_CHANNELS, 90000, "tick100"),
+    "s3-tick100-p2": (s3_part(1), BASE_CHANNELS, 90000, "tick100"),
+    "s3-tick100-p3": (s3_part(2), BASE_CHANNELS, 90000, "tick100"),
 }
-OS_ONLY = [n for n in SCENARIOS if n.startswith("os-") or n == "s3-tick100"]
+OS_ONLY = [n for n in SCENARIOS if n.startswith(("os-", "s3-tick100"))]
+WHOLE = ("s3", "fr07-08", "s3-tick100")  # цілі версії: на безкоштовному CI не вміщаються в сесію, лише частини
 FIXTURE = ("sc4-fault", "sc7-boot")  # схеми з тестовим оснащенням відмов
 
 
@@ -434,7 +468,11 @@ def fault_fixture(path):
     return path
 
 
-DEFAULT = [n for n in SCENARIOS if n not in ("long", "wrap") and n not in OS_ONLY]
+DEFAULT = [n for n in SCENARIOS if n not in ("long", "wrap") and n not in OS_ONLY and n not in WHOLE]
+OS_DEFAULT = [n for n in OS_ONLY if n not in WHOLE]
+
+
+BUILT = set()  # (прошивка, варіант), зібрані в цьому запуску
 
 
 def elf_for(variant):
@@ -450,12 +488,16 @@ def elf_for(variant):
         defs, cwd = VARIANTS.get(variant, ""), ROOT
         git = subprocess.run(["git", "rev-parse", "--short=8", "HEAD"], cwd=ROOT, capture_output=True,
                              text=True).stdout.strip() + (f"-{variant}" if variant else "")
-    if FW == "lr3" or variant:
-        uid = f"{subprocess.check_output(['id', '-u']).decode().strip()}:{subprocess.check_output(['id', '-g']).decode().strip()}"
-        subprocess.run(["docker", "run", "--rm", "-v", f"{cwd}:/workspace", "-w", "/workspace", "--user", uid,
-                        "stm32-build", "make", "-s", "-C", "firmware", "all", "BOARD_TARGET=wokwi",
-                        f"BUILD_DIR={build.name}", f"GIT_HASH={git}", f"RTOS_DEFS={defs}"], check=True,
-                       capture_output=True)
+    if (FW, variant) in BUILT:
+        return build / "firmware.elf"
+    BUILT.add((FW, variant))
+    if FW == "lr4":
+        shutil.rmtree(build, ignore_errors=True)  # make не стежить за GIT_HASH: лише чиста збірка дає правильний хеш у логах
+    uid = f"{subprocess.check_output(['id', '-u']).decode().strip()}:{subprocess.check_output(['id', '-g']).decode().strip()}"
+    subprocess.run(["docker", "run", "--rm", "-v", f"{cwd}:/workspace", "-w", "/workspace", "--user", uid,
+                    "stm32-build", "make", "-s", "-C", "firmware", "all", "BOARD_TARGET=wokwi",
+                    f"BUILD_DIR={build.name}", f"GIT_HASH={git}", f"RTOS_DEFS={defs}"], check=True,
+                   capture_output=True)
     return build / "firmware.elf"
 
 

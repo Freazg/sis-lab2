@@ -52,6 +52,21 @@ void wokwi_disable_irq(void)
 
 void wokwi_enable_irq(void)
 {
+  /* Тік, що прийшов під маскою, на кристалі виконався б одразу після cpsie. Тому в режимі задачі
+   * відкладені тіки обробляються тут, ще під маскою, а перемикання (PENDSVSET) — одразу після її зняття.
+   * Без цього imu прокидалась на тік пізніше: джитер ±1 мс замість мікросекунд (журнал проблем ЛР4).
+   * У режимі обробника відкладені тіки обробляє цикл у SysTick_Handler. */
+  if (__get_IPSR() == 0u && wokwi_ticks_pending != 0u)
+  {
+    wokwi_disable_irq(); /* обробник тіку виконується під маскою, як у SysTick_Handler */
+  }
+  while (__get_IPSR() == 0u && wokwi_ticks_pending != 0u)
+  {
+    wokwi_ticks_pending--;
+    uint32_t t0 = platform_cycles();
+    xPortSysTickHandler();
+    rtos_tick_cost(platform_cycles() - t0);
+  }
   wokwi_primask = 0;
   NVIC->ISER[0] = WOKWI_IRQS;
   if (wokwi_pendsv_deferred)

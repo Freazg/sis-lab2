@@ -119,7 +119,7 @@ USART2 RX ---notify---> [cli] --notify(op)--> [long] --м'ютекс FLASH--> W2
 | `stack` | `STACK task=<ім'я> free_min_words=<N> size_words=<N>` для кожної задачі і `STACK task=MSP used= reserved=` | §6.3 |
 | `heap` | `HEAP free= min_ever_free= total=` | §6.4 |
 | `ctxsw` | `CTXSW n=1000 min_cyc= avg_cyc= max_cyc=` і `OSTICK hz= n= min_cyc= avg_cyc= max_cyc=` | §6.5 |
-| `trace` | перший виклик: `TRACE,armed`, запис починається з наступного натискання B1; другий — 64 записи `TRACE t_us= task=` | §6.5, звіт |
+| `trace` | перший виклик: `TRACE,armed`, запис починається з наступного натискання B1; другий — 32 записи `TRACE t_us= task=` (запис — одне слово: номер задачі в 4 старших бітах, мкс — у 28 молодших) | §6.5, звіт |
 | `fault invmutex`, `fault invsem`, `fault starve`, `fault qflood` | `INV,…`, `STARVE,…`, `QFLOOD,…` | §7.2.1, 7.2.3, 7.2.4 |
 
 ## 6. Що змінилось у коді ЛР3 і чому

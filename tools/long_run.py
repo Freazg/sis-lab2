@@ -6,17 +6,23 @@ Wokwi CI на безкоштовному плані обмежений 5 хв н
 тому годинний прогін іде через симулятор у VS Code: wokwi.toml відкриває серійний порт на TCP 4000.
 Кроки: F1 -> Wokwi: Start Simulator, потім  python3 tools/long_run.py [секунд]
 
+ЛР4 (§7.1, обидві прошивки в один день):  python3 tools/long_run.py --fw lr3|lr4 [--port N] [секунд]
+лог — docs/metrics/runs-<fw>/long.log; для lr4 після кожного етапу ще tasks, stack і heap (стабільність стеків
+і heap ОС). Прошивку ЛР3 запускає другий екземпляр VS Code у worktree build-lr3/ з іншим портом.
+
 Цикл: запис 5 хв, відтворення 5 хв; після кожного етапу stats і mem. Наприкінці програмне скидання
 і dump: журнал у флеш має читатись із правильною CRC. Рух сенсора тут задати нема чим (автоматизація
 Wokwi працює лише в CLI), тому траєкторія статична; вимірюються час, пам'ять і лічильники.
 """
+import argparse
 import pathlib
 import socket
-import sys
 import time
 
-LOG = pathlib.Path(__file__).resolve().parent.parent / "docs" / "metrics" / "runs" / "long.log"
+MET = pathlib.Path(__file__).resolve().parent.parent / "docs" / "metrics"
+LOG = MET / "runs" / "long.log"
 HOST, PORT = "localhost", 4000
+FW = None
 
 
 class Link:
@@ -46,8 +52,23 @@ class Link:
         self.pump(settle)
 
 
+def os_report(link):
+    if FW == "lr4":
+        link.cmd("tasks", 2)
+        link.cmd("stack", 2)
+        link.cmd("heap")
+
+
 def main():
-    total = int(sys.argv[1]) if len(sys.argv) > 1 else 3700
+    global LOG, PORT, FW
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--fw", choices=("lr3", "lr4"))
+    ap.add_argument("--port", type=int, default=PORT)
+    ap.add_argument("total", nargs="?", type=int, default=3700)
+    a = ap.parse_args()
+    total, PORT, FW = a.total, a.port, a.fw
+    if FW:
+        LOG = MET / f"runs-{FW}" / "long.log"
     LOG.parent.mkdir(parents=True, exist_ok=True)
     LOG.write_text(f"# long_run: {time.ctime()}\n", encoding="utf-8")
     link = Link()
@@ -62,11 +83,13 @@ def main():
         link.cmd("mode hold")
         link.cmd("stats", 3)
         link.cmd("mem")
+        os_report(link)
         link.cmd("stats reset")
         link.cmd("mode play")
         link.pump(300)
         link.cmd("stats", 3)
         link.cmd("mem")
+        os_report(link)
         link.cmd("status")
         print(f"цикл {cycle}: {time.time() - t0:.0f} с", flush=True)
     link.cmd("reset", 3.0)
