@@ -334,16 +334,26 @@ static void btn_task(void *arg)
   }
 }
 
+/* Розклад як у ЛР3: наступний запуск = попередній дедлайн + період. Пропущені періоди не наздоганяються
+ * (пропускаються цілими періодами), але фаза сітки зберігається. Скидання відліку на поточний тік після
+ * кожного запізнення накопичувало зсув: у PLAY відтворення 60 с подовжувалось на 245 мс (FR-08). */
+static void next_period(TickType_t *last, TickType_t period)
+{
+  if (xTaskDelayUntil(last, period) == pdFALSE) {
+    TickType_t now = xTaskGetTickCount();
+    while ((TickType_t)(now - *last) >= period) {
+      *last += period;
+    }
+  }
+}
+
 static void imu_task(void *arg)
 {
   (void)arg;
   portENABLE_INTERRUPTS();
   TickType_t last = xTaskGetTickCount();
   for (;;) {
-    /* Пропущені періоди не наздоганяються, як і в ЛР3: після запізнення відлік — від поточного тіку */
-    if (xTaskDelayUntil(&last, ticks_for_us(g_app->imu_period_us)) == pdFALSE) {
-      last = xTaskGetTickCount();
-    }
+    next_period(&last, ticks_for_us(g_app->imu_period_us));
     app_imu_step(g_app, g_hw->cycles()); /* джитер — одразу після vTaskDelayUntil (§6.1) */
   }
 }
@@ -354,9 +364,7 @@ static void servo_task(void *arg)
   portENABLE_INTERRUPTS();
   TickType_t last = xTaskGetTickCount();
   for (;;) {
-    if (xTaskDelayUntil(&last, ticks_for_us(APP_SERVO_PERIOD_US)) == pdFALSE) {
-      last = xTaskGetTickCount();
-    }
+    next_period(&last, ticks_for_us(APP_SERVO_PERIOD_US));
     app_servo_step(g_app, g_hw->cycles());
   }
 }
