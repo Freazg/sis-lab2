@@ -176,7 +176,12 @@ void TIM14_IRQHandler(void)
 void EXTI4_15_IRQHandler(void)
 {
   /* USER CODE BEGIN EXTI4_15_IRQn 0 */
-  platform_btn_isr();
+  /* Будити btn лише на нову подію: кнопка Wokwi дає понад 100 фронтів брязкоту на натискання, і виклик
+   * ядра на кожен (≈ 100 мкс у симуляторі) не давав USART2 забрати байт — команди злипались (журнал ЛР4) */
+  if (!platform_btn_isr())
+  {
+    return;
+  }
 #if BOARD_WOKWI
   if (wokwi_defer(WOKWI_DEFER_BTN))
   {

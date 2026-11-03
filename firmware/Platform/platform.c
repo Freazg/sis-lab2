@@ -528,15 +528,17 @@ void platform_probe(unsigned n, bool level)
 static volatile uint32_t btn_stamp;
 static volatile uint8_t btn_pending;
 
-void platform_btn_isr(void)
+bool platform_btn_isr(void)
 {
   if (__HAL_GPIO_EXTI_GET_FALLING_IT(BTN_PIN)) {
     __HAL_GPIO_EXTI_CLEAR_FALLING_IT(BTN_PIN);
     if (!btn_pending) { /* наступні спади до обробки — брязкіт або нове натискання: втрачаються */
       btn_stamp = platform_cycles();
       btn_pending = 1;
+      return true;
     }
   }
+  return false;
 }
 
 bool platform_btn_take(uint32_t *t_cycles)

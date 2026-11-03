@@ -53,7 +53,7 @@ uint32_t platform_micros(void);    /**< час від скидання, мкс (
 void platform_probe(unsigned n, bool level);
 
 /** Викликається з EXTI4_15_IRQHandler: мітка часу першого спаду B1 до обробки. */
-void platform_btn_isr(void);
+bool platform_btn_isr(void); /**< true — нова подія; спади брязкоту до її обробки — false */
 /** Забрати подію кнопки. Повертає true і мітку часу, якщо вона була. */
 bool platform_btn_take(uint32_t *t_cycles);
 
