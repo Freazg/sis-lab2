@@ -3,7 +3,7 @@
 Рисунки звіту ЛР4 (SVG без зовнішніх бібліотек), стиль як у tools/plot_lr3.py:
   docs/lab_4/img/tasks.svg            — задачі, пріоритети, механізми взаємодії (звіт §10);
   docs/lab_4/img/button_dump_cmp.svg  — кнопка під час dump: ЛР3 і ЛР4 на тій самій шкалі (sc2-btn-long);
-  docs/lab_4/img/s3_chronology.svg    — фрагмент S3 на аналізаторі: IMU і кнопка посеред dump (витіснення);
+  docs/lab_4/img/s3_chronology.svg    — фрагмент S3 (сесія 1) на аналізаторі: IMU і кнопка посеред dump (витіснення);
   docs/lab_4/img/trace.svg            — хронологія задач із буфера traceTASK_SWITCHED_IN (os-trace).
 """
 import pathlib
@@ -38,7 +38,8 @@ def panel(o, sig, names, t0, t1, top, notes, title):
             o.append(f'<line x1="{x(v):.1f}" y1="{top + 20}" x2="{x(v):.1f}" y2="{bottom}" stroke="#b91c1c" '
                      'stroke-dasharray="4 3"/>')
         o.append(f'<line x1="{x(a):.1f}" y1="{y}" x2="{x(b):.1f}" y2="{y}" stroke="#b91c1c" stroke-width="2"/>')
-        o.append(f'<text x="{min(x(a) + 6, W - 260):.1f}" y="{y + 15}" fill="#b91c1c">{text}</text>')
+        # підпис — у проміжку над сигналом: під лінією він налазив на наступний рядок
+        o.append(f'<text x="{min(x(a) + 6, W - 260):.1f}" y="{rows[row] - 28}" fill="#b91c1c">{text}</text>')
     return bottom + 16
 
 
@@ -76,7 +77,7 @@ def button_dump_cmp():
 
 def s3_chronology():
     """Фрагмент S3 (ЛР4): натискання B1 посеред dump, вікно 60 мс — видно, як btn і imu витісняють long."""
-    sig = ac.load_vcd(CMP / "lr4-s3.vcd")
+    sig = ac.load_vcd(CMP / "lr4-s3-p1.vcd")  # S3 іде трьома сесіями (ліміт CI), фрагмент — з першої
     press = am.presses(sig["BTN"][1:])
     react = am.edges(sig["P_REACT"], 1)
     longs = am.pulses(sig["P_LONG"])

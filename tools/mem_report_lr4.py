@@ -108,9 +108,9 @@ def task_stacks():
 
 
 def measured_heap():
-    if not S3_LOG.exists():
-        return None
-    m = re.findall(r"HEAP free=(\d+) min_ever_free=(\d+) total=(\d+)", S3_LOG.read_text(errors="replace"))
+    logs = sorted(S3_LOG.parent.glob("s3-p[0-9].log")) or [S3_LOG]
+    text = "".join(q.read_text(errors="replace") for q in logs if q.exists())
+    m = re.findall(r"HEAP free=(\d+) min_ever_free=(\d+) total=(\d+)\r?\n", text)  # лише цілі рядки: останній у логу буває обрізаний
     return tuple(map(int, m[-1])) if m else None
 
 

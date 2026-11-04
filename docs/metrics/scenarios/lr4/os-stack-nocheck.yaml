@@ -1,0 +1,11 @@
+name: 'os-stack-nocheck'
+version: 1
+author: 'tools/run_scenarios.py'
+steps:
+  - delay: 3000ms
+  - write-serial: "status\n"
+  - delay: 500ms
+  - write-serial: "stack\n"
+  - delay: 1000ms
+  - write-serial: "stats\n"
+  - delay: 1500ms

@@ -1,0 +1,81 @@
+name: 'sc5-break'
+version: 1
+author: 'tools/run_scenarios.py'
+steps:
+  - wait-serial: 'READY'
+  - delay: 100ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 30ms
+  - write-serial: "rate 200\n"
+  - wait-serial: 'RATE,'
+  - delay: 3000ms
+  - write-serial: "stats\n"
+  - wait-serial: 'STATS,END'
+  - delay: 30ms
+  - write-serial: "rate 250\n"
+  - wait-serial: 'RATE,'
+  - delay: 3000ms
+  - write-serial: "stats\n"
+  - wait-serial: 'STATS,END'
+  - delay: 30ms
+  - write-serial: "rate 300\n"
+  - wait-serial: 'RATE,'
+  - delay: 3000ms
+  - write-serial: "stats\n"
+  - wait-serial: 'STATS,END'
+  - delay: 30ms
+  - write-serial: "rate 350\n"
+  - wait-serial: 'RATE,'
+  - delay: 3000ms
+  - write-serial: "stats\n"
+  - wait-serial: 'STATS,END'
+  - delay: 30ms
+  - write-serial: "rate 400\n"
+  - wait-serial: 'RATE,'
+  - delay: 3000ms
+  - write-serial: "stats\n"
+  - wait-serial: 'STATS,END'
+  - delay: 30ms
+  - write-serial: "rate 450\n"
+  - wait-serial: 'RATE,'
+  - delay: 3000ms
+  - write-serial: "stats\n"
+  - wait-serial: 'STATS,END'
+  - delay: 30ms
+  - write-serial: "rate 500\n"
+  - wait-serial: 'RATE,'
+  - delay: 3000ms
+  - write-serial: "stats\n"
+  - wait-serial: 'STATS,END'
+  - delay: 30ms
+  - write-serial: "rate 550\n"
+  - wait-serial: 'RATE,'
+  - delay: 3000ms
+  - write-serial: "stats\n"
+  - wait-serial: 'STATS,END'
+  - delay: 30ms
+  - write-serial: "rate 600\n"
+  - wait-serial: 'RATE,'
+  - delay: 3000ms
+  - write-serial: "stats\n"
+  - wait-serial: 'STATS,END'
+  - delay: 30ms
+  - write-serial: "rate 700\n"
+  - wait-serial: 'RATE,'
+  - delay: 3000ms
+  - write-serial: "stats\n"
+  - wait-serial: 'STATS,END'
+  - delay: 30ms
+  - write-serial: "rate 800\n"
+  - wait-serial: 'RATE,'
+  - delay: 3000ms
+  - write-serial: "stats\n"
+  - wait-serial: 'STATS,END'
+  - delay: 30ms
+  - write-serial: "rate 1000\n"
+  - wait-serial: 'RATE,'
+  - delay: 3000ms
+  - write-serial: "stats\n"
+  - wait-serial: 'STATS,END'
+  - delay: 30ms

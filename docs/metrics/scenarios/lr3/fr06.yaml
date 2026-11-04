@@ -1,0 +1,260 @@
+name: 'fr06'
+version: 1
+author: 'tools/run_scenarios.py'
+steps:
+  - wait-serial: 'READY'
+  - delay: 100ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 80ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - delay: 200ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 80ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - delay: 200ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 80ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - delay: 200ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 80ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - delay: 200ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 50ms
+  - write-serial: "stats reset\n"
+  - wait-serial: 'STATS,RESET'
+  - delay: 10ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 45ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - delay: 45ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 45ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - delay: 45ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 45ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - delay: 45ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 45ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - delay: 45ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 45ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - delay: 45ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 45ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - delay: 45ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 45ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - delay: 45ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 45ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - delay: 45ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 45ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - delay: 45ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 45ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - delay: 45ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 45ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - delay: 45ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 45ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - delay: 45ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 45ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - delay: 45ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 45ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - delay: 45ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 45ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - delay: 45ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 45ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - delay: 45ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 45ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - delay: 45ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 45ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - delay: 45ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 45ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - delay: 45ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 45ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - delay: 45ms
+  - delay: 300ms
+  - write-serial: "stats\n"
+  - wait-serial: 'STATS,END'
+  - delay: 20ms
+  - write-serial: "mem\n"
+  - delay: 30ms
+  - write-serial: "evt\n"
+  - delay: 100ms

@@ -1,0 +1,24 @@
+name: 'os-inv'
+version: 1
+author: 'tools/run_scenarios.py'
+steps:
+  - wait-serial: 'READY'
+  - delay: 100ms
+  - write-serial: "fault invmutex\n"
+  - wait-serial: 'INV,kind='
+  - delay: 300ms
+  - write-serial: "fault invsem\n"
+  - wait-serial: 'INV,kind='
+  - delay: 300ms
+  - write-serial: "fault invmutex\n"
+  - wait-serial: 'INV,kind='
+  - delay: 300ms
+  - write-serial: "fault invsem\n"
+  - wait-serial: 'INV,kind='
+  - delay: 300ms
+  - write-serial: "fault invmutex\n"
+  - wait-serial: 'INV,kind='
+  - delay: 300ms
+  - write-serial: "fault invsem\n"
+  - wait-serial: 'INV,kind='
+  - delay: 300ms

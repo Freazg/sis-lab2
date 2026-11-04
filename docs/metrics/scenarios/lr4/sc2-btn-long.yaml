@@ -1,0 +1,836 @@
+name: 'sc2-btn-long'
+version: 1
+author: 'tools/run_scenarios.py'
+steps:
+  - wait-serial: 'READY'
+  - delay: 100ms
+  - write-serial: "mode rec\n"
+  - wait-serial: 'MODE,REC'
+  - delay: 30ms
+  - delay: 4000ms
+  - write-serial: "mode hold\n"
+  - wait-serial: 'MODE,HOLD'
+  - delay: 30ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 30ms
+  - write-serial: "tasks\n"
+  - wait-serial: 'TASKS,END'
+  - delay: 10ms
+  - write-serial: "stats reset\n"
+  - wait-serial: 'STATS,RESET'
+  - delay: 10ms
+  - write-serial: "dump\n"
+  - delay: 131ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - wait-serial: 'DUMP,END'
+  - delay: 40ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 30ms
+  - write-serial: "dump\n"
+  - delay: 76ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - wait-serial: 'DUMP,END'
+  - delay: 40ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 30ms
+  - write-serial: "dump\n"
+  - delay: 199ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - wait-serial: 'DUMP,END'
+  - delay: 40ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 30ms
+  - write-serial: "dump\n"
+  - delay: 252ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - wait-serial: 'DUMP,END'
+  - delay: 40ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 30ms
+  - write-serial: "dump\n"
+  - delay: 43ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - wait-serial: 'DUMP,END'
+  - delay: 40ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 30ms
+  - write-serial: "dump\n"
+  - delay: 16ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - wait-serial: 'DUMP,END'
+  - delay: 40ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 30ms
+  - write-serial: "dump\n"
+  - delay: 250ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - wait-serial: 'DUMP,END'
+  - delay: 40ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 30ms
+  - write-serial: "dump\n"
+  - delay: 142ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - wait-serial: 'DUMP,END'
+  - delay: 40ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 30ms
+  - write-serial: "dump\n"
+  - delay: 129ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - wait-serial: 'DUMP,END'
+  - delay: 40ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 30ms
+  - write-serial: "dump\n"
+  - delay: 108ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - wait-serial: 'DUMP,END'
+  - delay: 40ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 30ms
+  - write-serial: "dump\n"
+  - delay: 250ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - wait-serial: 'DUMP,END'
+  - delay: 40ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 30ms
+  - write-serial: "dump\n"
+  - delay: 253ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - wait-serial: 'DUMP,END'
+  - delay: 40ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 30ms
+  - write-serial: "dump\n"
+  - delay: 213ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - wait-serial: 'DUMP,END'
+  - delay: 40ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 30ms
+  - write-serial: "dump\n"
+  - delay: 87ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - wait-serial: 'DUMP,END'
+  - delay: 40ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 30ms
+  - write-serial: "dump\n"
+  - delay: 128ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - wait-serial: 'DUMP,END'
+  - delay: 40ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 30ms
+  - write-serial: "dump\n"
+  - delay: 87ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - wait-serial: 'DUMP,END'
+  - delay: 40ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 30ms
+  - write-serial: "dump\n"
+  - delay: 277ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - wait-serial: 'DUMP,END'
+  - delay: 40ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 30ms
+  - write-serial: "dump\n"
+  - delay: 209ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - wait-serial: 'DUMP,END'
+  - delay: 40ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 30ms
+  - write-serial: "dump\n"
+  - delay: 17ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - wait-serial: 'DUMP,END'
+  - delay: 40ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 30ms
+  - write-serial: "dump\n"
+  - delay: 42ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - wait-serial: 'DUMP,END'
+  - delay: 40ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 30ms
+  - write-serial: "dump\n"
+  - delay: 91ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - wait-serial: 'DUMP,END'
+  - delay: 40ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 30ms
+  - write-serial: "dump\n"
+  - delay: 31ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - wait-serial: 'DUMP,END'
+  - delay: 40ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 30ms
+  - write-serial: "dump\n"
+  - delay: 164ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - wait-serial: 'DUMP,END'
+  - delay: 40ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 30ms
+  - write-serial: "dump\n"
+  - delay: 25ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - wait-serial: 'DUMP,END'
+  - delay: 40ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 30ms
+  - write-serial: "dump\n"
+  - delay: 147ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - wait-serial: 'DUMP,END'
+  - delay: 40ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 30ms
+  - write-serial: "dump\n"
+  - delay: 252ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - wait-serial: 'DUMP,END'
+  - delay: 40ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 30ms
+  - write-serial: "dump\n"
+  - delay: 208ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - wait-serial: 'DUMP,END'
+  - delay: 40ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 30ms
+  - write-serial: "dump\n"
+  - delay: 228ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - wait-serial: 'DUMP,END'
+  - delay: 40ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 30ms
+  - write-serial: "dump\n"
+  - delay: 212ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - wait-serial: 'DUMP,END'
+  - delay: 40ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 30ms
+  - write-serial: "dump\n"
+  - delay: 237ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - wait-serial: 'DUMP,END'
+  - delay: 40ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 30ms
+  - write-serial: "dump\n"
+  - delay: 78ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - wait-serial: 'DUMP,END'
+  - delay: 40ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 30ms
+  - write-serial: "dump\n"
+  - delay: 197ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - wait-serial: 'DUMP,END'
+  - delay: 40ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 30ms
+  - write-serial: "dump\n"
+  - delay: 59ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - wait-serial: 'DUMP,END'
+  - delay: 40ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 30ms
+  - write-serial: "dump\n"
+  - delay: 28ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - wait-serial: 'DUMP,END'
+  - delay: 40ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 30ms
+  - write-serial: "dump\n"
+  - delay: 79ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - wait-serial: 'DUMP,END'
+  - delay: 40ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 30ms
+  - write-serial: "dump\n"
+  - delay: 263ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - wait-serial: 'DUMP,END'
+  - delay: 40ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 30ms
+  - write-serial: "dump\n"
+  - delay: 121ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - wait-serial: 'DUMP,END'
+  - delay: 40ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 30ms
+  - write-serial: "dump\n"
+  - delay: 142ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - wait-serial: 'DUMP,END'
+  - delay: 40ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 30ms
+  - write-serial: "dump\n"
+  - delay: 233ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - wait-serial: 'DUMP,END'
+  - delay: 40ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 30ms
+  - write-serial: "dump\n"
+  - delay: 164ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - wait-serial: 'DUMP,END'
+  - delay: 40ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 30ms
+  - write-serial: "dump\n"
+  - delay: 225ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - wait-serial: 'DUMP,END'
+  - delay: 40ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 30ms
+  - write-serial: "dump\n"
+  - delay: 269ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - wait-serial: 'DUMP,END'
+  - delay: 40ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 30ms
+  - write-serial: "dump\n"
+  - delay: 207ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - wait-serial: 'DUMP,END'
+  - delay: 40ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 30ms
+  - write-serial: "dump\n"
+  - delay: 189ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - wait-serial: 'DUMP,END'
+  - delay: 40ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 30ms
+  - write-serial: "dump\n"
+  - delay: 218ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - wait-serial: 'DUMP,END'
+  - delay: 40ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 30ms
+  - write-serial: "dump\n"
+  - delay: 128ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - wait-serial: 'DUMP,END'
+  - delay: 40ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 30ms
+  - write-serial: "dump\n"
+  - delay: 182ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - wait-serial: 'DUMP,END'
+  - delay: 40ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 30ms
+  - write-serial: "dump\n"
+  - delay: 24ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - wait-serial: 'DUMP,END'
+  - delay: 40ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 30ms
+  - write-serial: "dump\n"
+  - delay: 153ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - wait-serial: 'DUMP,END'
+  - delay: 40ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 30ms
+  - write-serial: "dump\n"
+  - delay: 93ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - wait-serial: 'DUMP,END'
+  - delay: 40ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 30ms
+  - write-serial: "stats\n"
+  - wait-serial: 'STATS,END'
+  - delay: 20ms
+  - write-serial: "mem\n"
+  - delay: 30ms
+  - write-serial: "tasks\n"
+  - wait-serial: 'TASKS,END'
+  - delay: 10ms
+  - write-serial: "stack\n"
+  - wait-serial: 'task=MSP'
+  - delay: 10ms
+  - write-serial: "heap\n"
+  - wait-serial: 'HEAP'
+  - delay: 10ms

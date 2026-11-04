@@ -1,0 +1,117 @@
+
+BOOT,fw=lr4-1.0,git=dd8c0d9f,board=NUCLEO-C031C6
+ST,dev=BEGIN,fw=lr4-1.0,board=NUCLEO-C031C6
+ST,dev=MCU,res=PASS,board=NUCLEO-C031C6,sysclk_hz=48000000
+ST,dev=MPU6050,res=PASS,bus=I2C1,addr=0x68,who=0x68,acc_mg=0/0/1000,norm_mg=1000,dev_mg=0,gyro_mdps=0/0/0,temp_cdeg=2400,chk=AGT
+ST,dev=W25Q64,res=PASS,bus=SPI1,jedec=EF4017,test_addr=0x7FF000,len=32,erase_ms=45,mismatch=0,stage=readback,err=OK
+ST,dev=SERVO_PAN,res=PASS,pwm=TIM3_CH1,period_us=20000,pulse_us_0deg=544,pulse_us_180deg=2400,pulse_us_90deg=1472
+ST,dev=SERVO_TILT,res=PASS,pwm=TIM3_CH2,period_us=20000,pulse_us_0deg=544,pulse_us_180deg=2400,pulse_us_90deg=1472
+ST,dev=LED_LIVE,res=PASS,readback_on=1,readback_off=1
+ST,dev=LED_REC,res=PASS,readback_on=1,readback_off=1
+ST,dev=BTN_B1,res=PASS,pin=PC13,idle=released
+ST,dev=FT232RL,res=PASS,uart=USART1,baud=115200,tx=OK
+ST,dev=SUMMARY,res=PASS,pass=9,fail=0
+TRAJ,session=0,pages=0,samples=0,torn=0
+MODE,LIVE
+READYBOOT,first_imu_us=268943
+MODE,LIVETASKS,BEGIN,t_us=411108
+cli    	3046		<1%
+IDLE   	53679		13%
+imu    	70877		17%
+servo  	2358		<1%
+btn    	262137		65%
+traj   	247		<1%
+long   	151		<1%
+log    	3050		<1%
+OSCNT log_lost=0 rec_lost=0 mode_lost=0 i2c_busy=0 sw=93
+TASKS,ENDSTATS,RESETMODE,HOLD
+MODE,LIVEMODE,HOLD
+MODE,LIVEMODE,HOLD
+MODE,LIVEMODE,HOLD
+MODE,LIVEMODE,HOLD
+MODE,LIVEMODE,HOLD
+MODE,LIVEMODE,HOLD
+MODE,LIVEMODE,HOLD
+MODE,LIVEMODE,HOLD
+MODE,LIVEMODE,HOLD
+MODE,LIVEMODE,HOLD
+MODE,LIVEMODE,HOLD
+MODE,LIVEMODE,HOLD
+MODE,LIVEMODE,HOLD
+MODE,LIVEMODE,HOLD
+MODE,LIVEMODE,HOLD
+MODE,LIVEMODE,HOLD
+MODE,LIVEMODE,HOLD
+MODE,LIVEMODE,HOLD
+MODE,LIVEMODE,HOLD
+MODE,LIVEMODE,HOLD
+MODE,LIVEMODE,HOLD
+MODE,LIVEMODE,HOLD
+MODE,LIVEMODE,HOLD
+MODE,LIVEMODE,HOLD
+MODE,LIVEMODE,HOLD
+MODE,LIVEMODE,HOLD
+MODE,LIVEMODE,HOLD
+MODE,LIVEMODE,HOLD
+MODE,LIVEMODE,HOLD
+MODE,LIVEMODE,HOLD
+MODE,LIVEMODE,HOLD
+MODE,LIVEMODE,HOLD
+MODE,LIVEMODE,HOLD
+MODE,LIVEMODE,HOLD
+MODE,LIVEMODE,HOLD
+MODE,LIVEMODE,HOLD
+MODE,LIVEMODE,HOLD
+MODE,LIVEMODE,HOLD
+MODE,LIVEMODE,HOLD
+MODE,LIVEMODE,HOLD
+MODE,LIVEMODE,HOLD
+MODE,LIVEMODE,HOLD
+MODE,LIVEMODE,HOLD
+MODE,LIVEMODE,HOLD
+MODE,LIVEMODE,HOLD
+MODE,LIVEMODE,HOLD
+MODE,LIVEMODE,HOLD
+MODE,LIVEMODE,HOLD
+MODE,LIVEMODE,HOLD
+MODE,LIVESTATS,BEGIN
+STAT name=cli n=51 min_us=1393 avg_us=2570 max_us=4639
+STAT name=btn n=50 min_us=138 avg_us=208 max_us=303
+STAT name=imu n=2103 min_us=2490 avg_us=2636 max_us=8064
+STAT name=servo n=527 min_us=48 avg_us=197 max_us=3144
+STAT name=rec n=0 min_us=0 avg_us=0 max_us=0
+STAT name=play n=0 min_us=0 avg_us=0 max_us=0
+STAT name=loop n=0 min_us=0 avg_us=0 max_us=0
+STAT name=i2c_read n=2116 min_us=1628 avg_us=1733 max_us=7904
+STAT name=flash_prog n=0 min_us=0 avg_us=0 max_us=0
+STAT name=flash_erase n=0 min_us=0 avg_us=0 max_us=0
+STAT name=flash_read n=0 min_us=0 avg_us=0 max_us=0
+STAT name=btn_latency n=50 min_us=167 avg_us=236 max_us=1057
+STAT name=cmd_latency n=0 min_us=0 avg_us=0 max_us=0
+STAT name=e2e_latency n=0 min_us=0 avg_us=0 max_us=0
+JITTER name=imu period_us=5000 n=2134 min_us=-2300 max_us=3206 p99_us=1600 missed=0 viol=86
+JITTER name=servo period_us=20000 n=534 min_us=-10062 max_us=10027 p99_us=1600 missed=0 viol=17
+LOAD pct=62 min=59 max=64
+CNT rx_dropped=0 imu_err=40 btn=50
+HIST name=imu bin_us=100 1946 90 19 3 3 0 0 1 4 1 0 0 0 0 0 80
+STATS,ENDSTACK used=864 reserved=1024
+TASKS,BEGIN,t_us=11305529
+cli    	271081		2%
+IDLE   	4293110		38%
+imu    	6146989		54%
+servo  	179688		1%
+long   	151		<1%
+log    	3050		<1%
+traj   	78258		<1%
+btn    	317830		2%
+OSCNT log_lost=0 rec_lost=0 mode_lost=0 i2c_busy=0 sw=5622
+TASKS,ENDSTACK task=cli free_min_words=156 size_words=320
+STACK task=IDLE free_min_words=43 size_words=64
+STACK task=imu free_min_words=42 size_words=160
+STACK task=servo free_min_words=104 size_words=160
+STACK task=long free_min_words=135 size_words=176
+STACK task=log free_min_words=24 size_words=96
+STACK task=traj free_min_words=76 size_words=192
+STACK task=btn free_min_words=56 size_words=112
+STACK task=MSP used=864 reserved=1024
+HEAP free=792 min_ever_free=496 total=7680

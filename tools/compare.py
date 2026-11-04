@@ -161,7 +161,7 @@ def os_stack(text):
 
 
 def os_heap(text):
-    m = re.findall(r"HEAP free=(\d+) min_ever_free=(\d+) total=(\d+)", text)
+    m = re.findall(r"HEAP free=(\d+) min_ever_free=(\d+) total=(\d+)\r?\n", text)  # лише цілі рядки: останній у логу буває обрізаний
     return tuple(map(int, m[-1])) if m else None
 
 
@@ -224,8 +224,9 @@ def main():
     add("Джитер IMU під час стирання 16 секторів", "6.2.1", jit(r3, "sc1-erase", "max"), jit(r4, "sc1-erase", "max"),
         "us", "≤ 0,5 мс", "лічильник МК")
     f8 = [(r.get("fr08") or {}).get("diff_ms") for r in (r3, r4)]
-    add("FR-08: тривалість відтворення − запису", "fr07-08", f8[0] and round(f8[0] * 1000),
-        f8[1] and round(f8[1] * 1000), "us", "≤ 20 мс (FR-08)", "мітки МК REC/PLAY,DONE")
+    add("FR-08: модуль різниці тривалостей відтворення і запису, 60 с", "fr07-08", f8[0] and round(abs(f8[0]) * 1000),
+        f8[1] and round(abs(f8[1]) * 1000), "us", "≤ 20 мс (FR-08)",
+        f"мітки МК REC/PLAY,DONE; знак: ЛР3 {f8[0]:+.1f} мс, ЛР4 {f8[1]:+.1f} мс" if None not in f8 else "мітки МК")
     for s in ("s1", "s2", "s3"):
         add("Завантаження CPU, max", s.upper(), load_max(r3, s), load_max(r4, s), "pct", "—",
             "ЛР3: зайнятість циклу; ЛР4: 100 % − idle", lower=True)

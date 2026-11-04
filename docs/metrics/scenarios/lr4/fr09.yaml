@@ -1,0 +1,25 @@
+name: 'fr09'
+version: 1
+author: 'tools/run_scenarios.py'
+steps:
+  - wait-serial: 'READY'
+  - delay: 100ms
+  - write-serial: "status\n"
+  - delay: 120ms
+  - write-serial: "cal\n"
+  - delay: 120ms
+  - write-serial: "limits 20 160\n"
+  - delay: 120ms
+  - write-serial: "limits 160 20\n"
+  - delay: 120ms
+  - write-serial: "mode hold\n"
+  - delay: 120ms
+  - write-serial: "bogus\n"
+  - delay: 120ms
+  - write-serial: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n"
+  - delay: 120ms
+  - write-serial: "help\n"
+  - delay: 120ms
+  - delay: 1100ms
+  - write-serial: "status\n"
+  - delay: 50ms

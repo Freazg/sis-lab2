@@ -1,0 +1,118 @@
+
+BOOT,fw=lr4-1.0,git=dd8c0d9f,board=NUCLEO-C031C6
+ST,dev=BEGIN,fw=lr4-1.0,board=NUCLEO-C031C6
+ST,dev=MCU,res=PASS,board=NUCLEO-C031C6,sysclk_hz=48000000
+ST,dev=MPU6050,res=PASS,bus=I2C1,addr=0x68,who=0x68,acc_mg=0/0/1000,norm_mg=1000,dev_mg=0,gyro_mdps=0/0/0,temp_cdeg=2400,chk=AGT
+ST,dev=W25Q64,res=PASS,bus=SPI1,jedec=EF4017,test_addr=0x7FF000,len=32,erase_ms=45,mismatch=0,stage=readback,err=OK
+ST,dev=SERVO_PAN,res=PASS,pwm=TIM3_CH1,period_us=20000,pulse_us_0deg=544,pulse_us_180deg=2400,pulse_us_90deg=1472
+ST,dev=SERVO_TILT,res=PASS,pwm=TIM3_CH2,period_us=20000,pulse_us_0deg=544,pulse_us_180deg=2400,pulse_us_90deg=1472
+ST,dev=LED_LIVE,res=PASS,readback_on=1,readback_off=1
+ST,dev=LED_REC,res=PASS,readback_on=1,readback_off=1
+ST,dev=BTN_B1,res=PASS,pin=PC13,idle=released
+ST,dev=FT232RL,res=PASS,uart=USART1,baud=115200,tx=OK
+ST,dev=SUMMARY,res=PASS,pass=9,fail=0
+TRAJ,session=0,pages=0,samples=0,torn=0
+MODE,LIVE
+READYBOOT,first_imu_us=268943
+MODE,HOLD
+MODE,REC
+REC,DONE,session=1,samples=11,pages=1,dur_us=209162
+MODE,PLAY
+PLAY,DONE,session=1,samples=9,dur_us=178901
+MODE,LIVE
+MODE,LIVETASKS,BEGIN,t_us=1550747
+cli    	3083		<1%
+IDLE   	471433		30%
+imu    	691168		44%
+servo  	23240		1%
+long   	151		<1%
+log    	3050		<1%
+traj   	76302		4%
+btn    	267095		17%
+OSCNT log_lost=0 rec_lost=0 mode_lost=0 i2c_busy=0 sw=677
+TASKS,ENDSTATS,RESETMODE,HOLD
+MODE,REC
+REC,DONE,session=2,samples=1,pages=1,dur_us=13721
+MODE,PLAY
+PLAY,DONE,session=2,samples=1,dur_us=8497
+MODE,LIVE
+MODE,HOLD
+MODE,REC
+REC,DONE,session=3,samples=1,pages=1,dur_us=13763
+MODE,PLAY
+PLAY,DONE,session=3,samples=1,dur_us=8597
+MODE,LIVE
+MODE,HOLD
+MODE,REC
+REC,DONE,session=4,samples=1,pages=1,dur_us=13689
+MODE,PLAY
+PLAY,DONE,session=4,samples=1,dur_us=8487
+MODE,LIVE
+MODE,HOLD
+MODE,REC
+REC,DONE,session=5,samples=1,pages=1,dur_us=13702
+MODE,PLAY
+PLAY,DONE,session=5,samples=1,dur_us=5431
+MODE,LIVE
+MODE,HOLD
+MODE,REC
+REC,DONE,session=6,samples=1,pages=1,dur_us=13703
+MODE,PLAY
+PLAY,DONE,session=6,samples=0,dur_us=0
+ERR,no_trajectory
+MODE,LIVE
+MODE,HOLD
+STATS,BEGIN
+STAT name=cli n=1 min_us=1650 avg_us=1650 max_us=1650
+STAT name=btn n=20 min_us=144 avg_us=268 max_us=384
+STAT name=imu n=429 min_us=2493 avg_us=2547 max_us=6974
+STAT name=servo n=108 min_us=48 avg_us=102 max_us=215
+STAT name=rec n=5 min_us=46 avg_us=47 max_us=48
+STAT name=play n=6 min_us=148 avg_us=1787 max_us=9963
+STAT name=loop n=0 min_us=0 avg_us=0 max_us=0
+STAT name=i2c_read n=442 min_us=1629 avg_us=1649 max_us=6814
+STAT name=flash_prog n=5 min_us=10478 avg_us=11068 max_us=13373
+STAT name=flash_erase n=5 min_us=45230 avg_us=45252 max_us=45282
+STAT name=flash_read n=17 min_us=9746 avg_us=10008 max_us=10315
+STAT name=btn_latency n=20 min_us=177 avg_us=202 max_us=247
+STAT name=cmd_latency n=0 min_us=0 avg_us=0 max_us=0
+STAT name=e2e_latency n=0 min_us=0 avg_us=0 max_us=0
+JITTER name=imu period_us=5000 n=462 min_us=-1993 max_us=2117 p99_us=300 missed=0 viol=2
+JITTER name=servo period_us=20000 n=116 min_us=-226 max_us=361 p99_us=300 missed=0 viol=0
+LOAD pct=77 min=76 max=77
+CNT rx_dropped=0 imu_err=1 btn=24
+HIST name=imu bin_us=100 272 128 71 2 0 0 0 0 0 0 0 0 0 0 0 2
+STATS,ENDSTACK used=864 reserved=1024
+TASKS,BEGIN,t_us=4080533
+cli    	168618		4%
+IDLE   	1000000		24%
+imu    	2060433		50%
+servo  	67123		1%
+long   	151		<1%
+log    	3050		<1%
+traj   	477971		11%
+btn    	288383		7%
+OSCNT log_lost=0 rec_lost=0 mode_lost=0 i2c_busy=0 sw=1947
+TASKS,ENDSTACK task=cli free_min_words=147 size_words=320
+STACK task=IDLE free_min_words=43 size_words=64
+STACK task=imu free_min_words=42 size_words=160
+STACK task=servo free_min_words=89 size_words=160
+STACK task=long free_min_words=135 size_words=176
+STACK task=log free_min_words=24 size_words=96
+STACK task=traj free_min_words=74 size_words=192
+STACK task=btn free_min_words=58 size_words=112
+STACK task=MSP used=864 reserved=1024
+HEAP free=792 min_ever_free=496 total=7680
+EVT t_us=2511981 name=mode
+EVT t_us=2531990 name=btn_press
+EVT t_us=2546431 name=prog_start
+EVT t_us=2556996 name=prog_done
+EVT t_us=2616908 name=mode
+EVT t_us=2621993 name=btn_press
+EVT t_us=2635564 name=mode
+EVT t_us=2711979 name=btn_press
+EVT t_us=2715172 name=mode
+EVT t_us=2802108 name=btn_press
+EVT t_us=2826468 name=erase_start
+EVT t_us=2871770 name=erase_done
+EVT t_us=2871962 name

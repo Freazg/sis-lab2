@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 516" font-family="Arial" font-size="12">
+<rect width="980" height="516" fill="white"/>
+<defs><marker id="a" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#333"/></marker></defs>
+<text x="10" y="20" font-size="14" font-weight="bold">Задачі FreeRTOS, пріоритети і механізми взаємодії</text>
+<rect x="380" y="50" width="190" height="40" rx="6" fill="#ecfdf5" stroke="#047857"/>
+<text x="475.0" y="67" text-anchor="middle" font-weight="bold">btn — пріоритет 6</text>
+<text x="475.0" y="83" text-anchor="middle">сповіщення EXTI13</text>
+<rect x="380" y="102" width="190" height="40" rx="6" fill="#ecfdf5" stroke="#047857"/>
+<text x="475.0" y="119" text-anchor="middle" font-weight="bold">imu — пріоритет 5</text>
+<text x="475.0" y="135" text-anchor="middle">DelayUntil 5 мс</text>
+<rect x="380" y="154" width="190" height="40" rx="6" fill="#ecfdf5" stroke="#047857"/>
+<text x="475.0" y="171" text-anchor="middle" font-weight="bold">servo — пріоритет 4</text>
+<text x="475.0" y="187" text-anchor="middle">DelayUntil 20 мс</text>
+<rect x="380" y="206" width="190" height="40" rx="6" fill="#ecfdf5" stroke="#047857"/>
+<text x="475.0" y="223" text-anchor="middle" font-weight="bold">cli — пріоритет 3</text>
+<text x="475.0" y="239" text-anchor="middle">сповіщення USART2</text>
+<rect x="380" y="258" width="190" height="40" rx="6" fill="#ecfdf5" stroke="#047857"/>
+<text x="475.0" y="275" text-anchor="middle" font-weight="bold">traj — пріоритет 2</text>
+<text x="475.0" y="291" text-anchor="middle">черга q_traj</text>
+<rect x="380" y="310" width="190" height="40" rx="6" fill="#ecfdf5" stroke="#047857"/>
+<text x="475.0" y="327" text-anchor="middle" font-weight="bold">log — пріоритет 2</text>
+<text x="475.0" y="343" text-anchor="middle">черга q_log</text>
+<rect x="380" y="362" width="190" height="40" rx="6" fill="#ecfdf5" stroke="#047857"/>
+<text x="475.0" y="379" text-anchor="middle" font-weight="bold">long — пріоритет 1</text>
+<text x="475.0" y="395" text-anchor="middle">сповіщення від cli</text>
+<rect x="380" y="414" width="190" height="40" rx="6" fill="#ecfdf5" stroke="#047857"/>
+<text x="475.0" y="431" text-anchor="middle" font-weight="bold">IDLE — пріоритет 0</text>
+<text x="475.0" y="447" text-anchor="middle">ядро</text>
+<rect x="20" y="52" width="190" height="36" rx="6" fill="#fef3c7" stroke="#b45309"/>
+<text x="115" y="74" text-anchor="middle">EXTI4_15 (B1), NVIC 1</text>
+<line x1="210" y1="70" x2="380" y2="70" stroke="#333" marker-end="url(#a)"/>
+<text x="295" y="66.0" text-anchor="middle" font-size="11">xTaskNotifyFromISR</text>
+<rect x="20" y="208" width="190" height="36" rx="6" fill="#fef3c7" stroke="#b45309"/>
+<text x="115" y="230" text-anchor="middle">USART2 RX, NVIC 2</text>
+<line x1="210" y1="226" x2="380" y2="226" stroke="#333" marker-end="url(#a)"/>
+<text x="295" y="222.0" text-anchor="middle" font-size="11">xTaskNotifyFromISR</text>
+<rect x="20" y="104" width="190" height="62" rx="6" fill="#fef3c7" stroke="#b45309"/>
+<text x="115" y="124" text-anchor="middle">SysTick, NVIC 3: тік ОС</text>
+<text x="115" y="142" text-anchor="middle">будить imu і servo</text>
+<line x1="210" y1="122" x2="380" y2="122" stroke="#333" marker-end="url(#a)"/>
+<text x="295" y="118.0" text-anchor="middle" font-size="11">DelayUntil</text>
+<line x1="210" y1="142" x2="380" y2="174" stroke="#333" stroke-dasharray="5 3" marker-end="url(#a)"/>
+<polyline points="380,78 350,78 350,278 378,278" fill="none" stroke="#2563eb" marker-end="url(#a)"/>
+<polyline points="380,234 350,234 350,278 378,278" fill="none" stroke="#2563eb" marker-end="url(#a)"/>
+<polyline points="380,182 350,182 350,278 378,278" fill="none" stroke="#2563eb" marker-end="url(#a)"/>
+<text x="314" y="282" text-anchor="end" fill="#2563eb" font-size="11">q_traj 16 × 6 Б: режим (btn, cli), семпл (servo)</text>
+<polyline points="380,134 336,134 336,330 378,330" fill="none" stroke="#0891b2" marker-end="url(#a)"/>
+<text x="314" y="334" text-anchor="end" fill="#0891b2" font-size="11">q_log 4 × 97 Б: рядки imu</text>
+<polyline points="380,238 322,238 322,382 378,382" fill="none" stroke="#7c3aed" marker-end="url(#a)"/>
+<text x="314" y="386" text-anchor="end" fill="#7c3aed" font-size="11">сповіщення зі значенням: dump, erase</text>
+<rect x="720" y="70" width="230" height="44" rx="6" fill="#ede9fe" stroke="#6d28d9"/>
+<text x="835" y="88" text-anchor="middle" font-weight="bold">М'ютекс I2C → MPU-6050</text>
+<text x="835" y="105" text-anchor="middle">imu чекає ≤ 2 мс</text>
+<line x1="570" y1="112" x2="720" y2="80" stroke="#a78bfa" stroke-width="0.8"/>
+<line x1="570" y1="216" x2="720" y2="84" stroke="#a78bfa" stroke-width="0.8"/>
+<rect x="720" y="200" width="230" height="44" rx="6" fill="#ede9fe" stroke="#6d28d9"/>
+<text x="835" y="218" text-anchor="middle" font-weight="bold">М'ютекс FLASH → W25Q64</text>
+<text x="835" y="235" text-anchor="middle">одна операція</text>
+<line x1="570" y1="168" x2="720" y2="210" stroke="#a78bfa" stroke-width="0.8"/>
+<line x1="570" y1="220" x2="720" y2="214" stroke="#a78bfa" stroke-width="0.8"/>
+<line x1="570" y1="272" x2="720" y2="218" stroke="#a78bfa" stroke-width="0.8"/>
+<line x1="570" y1="376" x2="720" y2="222" stroke="#a78bfa" stroke-width="0.8"/>
+<rect x="720" y="330" width="230" height="44" rx="6" fill="#ede9fe" stroke="#6d28d9"/>
+<text x="835" y="348" text-anchor="middle" font-weight="bold">М'ютекс CON → USART2 TX</text>
+<text x="835" y="365" text-anchor="middle">рядок цілком</text>
+<line x1="570" y1="68" x2="720" y2="340" stroke="#a78bfa" stroke-width="0.8"/>
+<line x1="570" y1="120" x2="720" y2="344" stroke="#a78bfa" stroke-width="0.8"/>
+<line x1="570" y1="172" x2="720" y2="348" stroke="#a78bfa" stroke-width="0.8"/>
+<line x1="570" y1="224" x2="720" y2="352" stroke="#a78bfa" stroke-width="0.8"/>
+<line x1="570" y1="276" x2="720" y2="356" stroke="#a78bfa" stroke-width="0.8"/>
+<line x1="570" y1="328" x2="720" y2="360" stroke="#a78bfa" stroke-width="0.8"/>
+<line x1="570" y1="380" x2="720" y2="364" stroke="#a78bfa" stroke-width="0.8"/>
+<text x="720" y="460" font-size="11" fill="#555">порядок захоплення: шина (I2C або FLASH),</text>
+<text x="720" y="476" font-size="11" fill="#555">потім CON; з CON шину не беруть</text>
+<text x="10" y="504" fill="#555">Пріоритет — за жорсткістю дедлайну (§5.1). ISR лише фіксує подію й будить задачу; дані між задачами — копією в черзі.</text></svg>

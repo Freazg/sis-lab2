@@ -1,0 +1,61 @@
+
+BOOT,fw=lr3-1.0,git=lab3,board=NUCLEO-C031C6
+ST,dev=BEGIN,fw=lr3-1.0,board=NUCLEO-C031C6
+ST,dev=MCU,res=PASS,board=NUCLEO-C031C6,sysclk_hz=48000000
+ST,dev=MPU6050,res=PASS,bus=I2C1,addr=0x68,who=0x68,acc_mg=0/0/1000,norm_mg=1000,dev_mg=0,gyro_mdps=0/0/0,temp_cdeg=2400,chk=AGT
+ST,dev=W25Q64,res=PASS,bus=SPI1,jedec=EF4017,test_addr=0x7FF000,len=32,erase_ms=46,mismatch=0,stage=readback,err=OK
+ST,dev=SERVO_PAN,res=PASS,pwm=TIM3_CH1,period_us=20000,pulse_us_0deg=544,pulse_us_180deg=2400,pulse_us_90deg=1472
+ST,dev=SERVO_TILT,res=PASS,pwm=TIM3_CH2,period_us=20000,pulse_us_0deg=544,pulse_us_180deg=2400,pulse_us_90deg=1472
+ST,dev=LED_LIVE,res=PASS,readback_on=1,readback_off=1
+ST,dev=LED_REC,res=PASS,readback_on=1,readback_off=1
+ST,dev=BTN_B1,res=PASS,pin=PC13,idle=released
+ST,dev=FT232RL,res=PASS,uart=USART1,baud=115200,tx=OK
+ST,dev=SUMMARY,res=PASS,pass=9,fail=0
+TRAJ,session=0,pages=0,samples=0,torn=0
+MODE,LIVE
+READYBOOT,first_imu_us=271087
+MODE,RECSTATS,RESETSTATUS,mode=REC,t_ms=1471,pitch_cdeg=0,roll_cdeg=2900,pan_cdeg=11847,tilt_cdeg=9000,imu=OK,rec=53
+STATUS,mode=REC,t_ms=3471,pitch_cdeg=626,roll_cdeg=2890,pan_cdeg=11847,tilt_cdeg=9498,imu=OK,rec=153
+STATUS,mode=REC,t_ms=5472,pitch_cdeg=1205,roll_cdeg=2618,pan_cdeg=11691,tilt_cdeg=10133,imu=OK,rec=253
+STATUS,mode=REC,t_ms=7472,pitch_cdeg=1639,roll_cdeg=2190,pan_cdeg=11217,tilt_cdeg=10607,imu=OK,rec=353
+STATUS,mode=REC,t_ms=9472,pitch_cdeg=1899,roll_cdeg=1630,pan_cdeg=10716,tilt_cdeg=10758,imu=OK,rec=453
+STATUS,mode=REC,t_ms=11473,pitch_cdeg=1941,roll_cdeg=964,pan_cdeg=10048,tilt_cdeg=10911,imu=OK,rec=553
+STATUS,mode=REC,t_ms=13471,pitch_cdeg=1825,roll_cdeg=221,pan_cdeg=9367,tilt_cdeg=10911,imu=OK,rec=653
+STATUS,mode=REC,t_ms=15472,pitch_cdeg=1462,roll_cdeg=-503,pan_cdeg=8521,tilt_cdeg=10586,imu=OK,rec=753
+STATUS,mode=REC,t_ms=17471,pitch_cdeg=936,roll_cdeg=-1214,pan_cdeg=7870,tilt_cdeg=9941,imu=OK,rec=853
+STATUS,mode=REC,t_ms=19472,pitch_cdeg=294,roll_cdeg=-1841,pan_cdeg=7231,tilt_cdeg=9441,imu=OK,rec=953
+STATUS,mode=REC,t_ms=21473,pitch_cdeg=-345,roll_cdeg=-2343,pan_cdeg=6755,tilt_cdeg=8741,imu=OK,rec=1053
+STATUS,mode=REC,t_ms=23474,pitch_cdeg=-974,roll_cdeg=-2704,pan_cdeg=6443,tilt_cdeg=8097,imu=OK,rec=1153
+STATUS,mode=REC,t_ms=25471,pitch_cdeg=-1478,roll_cdeg=-2901,pan_cdeg=6127,tilt_cdeg=7598,imu=OK,rec=1253
+STATUS,mode=REC,t_ms=27472,pitch_cdeg=-1816,roll_cdeg=-2912,pan_cdeg=6127,tilt_cdeg=7286,imu=OK,rec=1353
+STATUS,mode=REC,t_ms=29472,pitch_cdeg=-1952,roll_cdeg=-2794,pan_cdeg=6127,tilt_cdeg=7134,imu=OK,rec=1453
+STATUS,mode=REC,t_ms=31473,pitch_cdeg=-1918,roll_cdeg=-2447,pan_cdeg=6447,tilt_cdeg=7134,imu=OK,rec=1553
+STATUS,mode=REC,t_ms=33471,pitch_cdeg=-1637,roll_cdeg=-1961,pan_cdeg=6953,tilt_cdeg=7287,imu=OK,rec=1653
+STATUS,mode=REC,t_ms=35472,pitch_cdeg=-1173,roll_cdeg=-1356,pan_cdeg=7607,tilt_cdeg=7779,imu=OK,rec=1753
+STATUS,mode=REC,t_ms=37473,pitch_cdeg=-576,roll_cdeg=-655,pan_cdeg=8261,tilt_cdeg=8276,imu=OK,rec=1853
+STATUS,mode=REC,t_ms=39519,pitch_cdeg=53,roll_cdeg=71,pan_cdeg=8969,tilt_cdeg=8959,imu=OK,rec=1953
+STATUS,mode=REC,t_ms=41473,pitch_cdeg=719,roll_cdeg=824,pan_cdeg=9752,tilt_cdeg=9635,imu=OK,rec=2051
+STATUS,mode=REC,t_ms=43475,pitch_cdeg=1280,roll_cdeg=1499,pan_cdeg=10415,tilt_cdeg=10135,imu=OK,rec=2151
+STATUS,mode=REC,t_ms=45471,pitch_cdeg=1694,roll_cdeg=2074,pan_cdeg=11074,tilt_cdeg=10622,imu=OK,rec=2250
+REC,DONE,session=1,samples=2300,pages=19,dur_us=46028455
+MODE,HOLDSTATS,BEGIN
+STAT name=cli n=41 min_us=26 avg_us=6840 max_us=15851
+STAT name=btn n=0 min_us=0 avg_us=0 max_us=0
+STAT name=imu n=9131 min_us=2420 avg_us=2931 max_us=3000
+STAT name=servo n=2300 min_us=59 avg_us=172 max_us=202
+STAT name=rec n=2298 min_us=91 avg_us=182 max_us=53935
+STAT name=play n=0 min_us=0 avg_us=0 max_us=0
+STAT name=loop n=149123 min_us=98 avg_us=294 max_us=54136
+STAT name=i2c_read n=9131 min_us=1629 avg_us=1639 max_us=1652
+STAT name=flash_prog n=19 min_us=3062 avg_us=3067 max_us=3093
+STAT name=flash_erase n=1 min_us=45630 avg_us=45630 max_us=45630
+STAT name=flash_read n=0 min_us=0 avg_us=0 max_us=0
+STAT name=btn_latency n=0 min_us=0 avg_us=0 max_us=0
+STAT name=cmd_latency n=23 min_us=10796 avg_us=14592 max_us=58200
+STAT name=e2e_latency n=13 min_us=13388 avg_us=31943 max_us=78134
+JITTER name=imu period_us=5000 n=9130 min_us=-352 max_us=64933 p99_us=300 missed=41 viol=41
+JITTER name=servo period_us=20000 n=2299 min_us=-17971 max_us=64413 p99_us=1600 missed=1 viol=42
+LOAD pct=60 min=55 max=61
+CNT rx_dropped=0 imu_err=0 btn=0
+HIST name=imu bin_us=100 8316 658 110 5 0 0 0 0 0 0 0 0 0 0 0 41
+STATS,ENDSTACK used=912 reserved=1024

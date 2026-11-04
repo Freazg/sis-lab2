@@ -1,0 +1,34 @@
+name: 'os-trace'
+version: 1
+author: 'tools/run_scenarios.py'
+steps:
+  - wait-serial: 'READY'
+  - delay: 100ms
+  - write-serial: "mode rec\n"
+  - wait-serial: 'MODE,REC'
+  - delay: 30ms
+  - delay: 4000ms
+  - write-serial: "mode hold\n"
+  - wait-serial: 'MODE,HOLD'
+  - delay: 30ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 30ms
+  - write-serial: "trace\n"
+  - wait-serial: 'TRACE,armed'
+  - write-serial: "dump\n"
+  - delay: 150ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - wait-serial: 'DUMP,END'
+  - delay: 50ms
+  - write-serial: "trace\n"
+  - wait-serial: 'TRACE,END'
+  - delay: 20ms

@@ -1,0 +1,68 @@
+
+BOOT,fw=lr4-1.0,git=dd8c0d9f-faults,board=NUCLEO-C031C6
+ST,dev=BEGIN,fw=lr4-1.0,board=NUCLEO-C031C6
+ST,dev=MCU,res=PASS,board=NUCLEO-C031C6,sysclk_hz=48000000
+ST,dev=MPU6050,res=PASS,bus=I2C1,addr=0x68,who=0x68,acc_mg=0/0/1000,norm_mg=1000,dev_mg=0,gyro_mdps=0/0/0,temp_cdeg=2400,chk=AGT
+ST,dev=W25Q64,res=PASS,bus=SPI1,jedec=EF4017,test_addr=0x7FF000,len=32,erase_ms=45,mismatch=0,stage=readback,err=OK
+ST,dev=SERVO_PAN,res=PASS,pwm=TIM3_CH1,period_us=20000,pulse_us_0deg=544,pulse_us_180deg=2400,pulse_us_90deg=1472
+ST,dev=SERVO_TILT,res=PASS,pwm=TIM3_CH2,period_us=20000,pulse_us_0deg=544,pulse_us_180deg=2400,pulse_us_90deg=1472
+ST,dev=LED_LIVE,res=PASS,readback_on=1,readback_off=1
+ST,dev=LED_REC,res=PASS,readback_on=1,readback_off=1
+ST,dev=BTN_B1,res=PASS,pin=PC13,idle=released
+ST,dev=FT232RL,res=PASS,uart=USART1,baud=115200,tx=OK
+ST,dev=SUMMARY,res=PASS,pass=9,fail=0
+TRAJ,session=0,pages=0,samples=0,torn=0
+MODE,LIVE
+READYBOOT,first_imu_us=270150
+MODE,LIVETASKS,BEGIN,t_us=412301
+cli    	2831		<1%
+IDLE   	53554		13%
+imu    	71310		17%
+servo  	2273		<1%
+btn    	263330		65%
+traj   	251		<1%
+long   	162		<1%
+log    	3018		<1%
+OSCNT log_lost=0 rec_lost=0 mode_lost=0 i2c_busy=0 sw=93
+TASKS,ENDSTATS,RESETSTARVE,flag_seen=0,waited_ms=3000
+STATS,BEGIN
+STAT name=cli n=2 min_us=1654 avg_us=1505892 max_us=3010130
+STAT name=btn n=0 min_us=0 avg_us=0 max_us=0
+STAT name=imu n=614 min_us=2524 avg_us=2536 max_us=2587
+STAT name=servo n=155 min_us=168 avg_us=205 max_us=208
+STAT name=rec n=0 min_us=0 avg_us=0 max_us=0
+STAT name=play n=0 min_us=0 avg_us=0 max_us=0
+STAT name=loop n=0 min_us=0 avg_us=0 max_us=0
+STAT name=i2c_read n=626 min_us=1629 avg_us=1630 max_us=1674
+STAT name=flash_prog n=0 min_us=0 avg_us=0 max_us=0
+STAT name=flash_erase n=0 min_us=0 avg_us=0 max_us=0
+STAT name=flash_read n=0 min_us=0 avg_us=0 max_us=0
+STAT name=btn_latency n=0 min_us=0 avg_us=0 max_us=0
+STAT name=cmd_latency n=0 min_us=0 avg_us=0 max_us=0
+STAT name=e2e_latency n=0 min_us=0 avg_us=0 max_us=0
+JITTER name=imu period_us=5000 n=644 min_us=-106 max_us=121 p99_us=100 missed=0 viol=0
+JITTER name=servo period_us=20000 n=162 min_us=-69 max_us=70 p99_us=100 missed=0 viol=0
+LOAD pct=100 min=100 max=100
+CNT rx_dropped=0 imu_err=0 btn=0
+HIST name=imu bin_us=100 655 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+STATS,ENDSTACK used=856 reserved=1024
+TASKS,BEGIN,t_us=3851946
+cli    	1485688		38%
+IDLE   	85931		2%
+imu    	1933346		50%
+servo  	64406		1%
+btn    	263330		6%
+traj   	251		<1%
+log    	3018		<1%
+long   	346		<1%
+OSCNT log_lost=0 rec_lost=0 mode_lost=0 i2c_busy=0 sw=1650
+TASKS,ENDSTACK task=cli free_min_words=155 size_words=320
+STACK task=IDLE free_min_words=43 size_words=64
+STACK task=servo free_min_words=121 size_words=160
+STACK task=imu free_min_words=42 size_words=160
+STACK task=btn free_min_words=73 size_words=112
+STACK task=traj free_min_words=147 size_words=192
+STACK task=log free_min_words=34 size_words=96
+STACK task=long free_min_words=135 size_words=176
+STACK task=MSP used=856 reserved=1024
+HEAP free=616 min_ever_free=320 total=7680

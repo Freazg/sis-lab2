@@ -1,0 +1,129 @@
+name: 'fr02'
+version: 1
+author: 'tools/run_scenarios.py'
+steps:
+  - wait-serial: 'READY'
+  - delay: 100ms
+  - write-serial: "mode hold\n"
+  - wait-serial: 'MODE,HOLD'
+  - delay: 30ms
+  - set-control:
+      part-id: imu
+      control: accelX
+      value: -0.0
+  - set-control:
+      part-id: imu
+      control: accelY
+      value: 0.0
+  - set-control:
+      part-id: imu
+      control: accelZ
+      value: 1.0
+  - delay: 1500ms
+  - write-serial: "status\n"
+  - delay: 30ms
+  - set-control:
+      part-id: imu
+      control: accelX
+      value: -0.0
+  - set-control:
+      part-id: imu
+      control: accelY
+      value: 0.0
+  - set-control:
+      part-id: imu
+      control: accelZ
+      value: 1.0
+  - delay: 1500ms
+  - write-serial: "status\n"
+  - delay: 30ms
+  - set-control:
+      part-id: imu
+      control: accelX
+      value: -0.2588
+  - set-control:
+      part-id: imu
+      control: accelY
+      value: 0.0
+  - set-control:
+      part-id: imu
+      control: accelZ
+      value: 0.9659
+  - delay: 1500ms
+  - write-serial: "status\n"
+  - delay: 30ms
+  - set-control:
+      part-id: imu
+      control: accelX
+      value: -0.0
+  - set-control:
+      part-id: imu
+      control: accelY
+      value: 0.2588
+  - set-control:
+      part-id: imu
+      control: accelZ
+      value: 0.9659
+  - delay: 1500ms
+  - write-serial: "status\n"
+  - delay: 30ms
+  - set-control:
+      part-id: imu
+      control: accelX
+      value: -0.5
+  - set-control:
+      part-id: imu
+      control: accelY
+      value: 0.0
+  - set-control:
+      part-id: imu
+      control: accelZ
+      value: 0.866
+  - delay: 1500ms
+  - write-serial: "status\n"
+  - delay: 30ms
+  - set-control:
+      part-id: imu
+      control: accelX
+      value: -0.0
+  - set-control:
+      part-id: imu
+      control: accelY
+      value: 0.5
+  - set-control:
+      part-id: imu
+      control: accelZ
+      value: 0.866
+  - delay: 1500ms
+  - write-serial: "status\n"
+  - delay: 30ms
+  - set-control:
+      part-id: imu
+      control: accelX
+      value: -0.7071
+  - set-control:
+      part-id: imu
+      control: accelY
+      value: 0.0
+  - set-control:
+      part-id: imu
+      control: accelZ
+      value: 0.7071
+  - delay: 1500ms
+  - write-serial: "status\n"
+  - delay: 30ms
+  - set-control:
+      part-id: imu
+      control: accelX
+      value: -0.0
+  - set-control:
+      part-id: imu
+      control: accelY
+      value: 0.7071
+  - set-control:
+      part-id: imu
+      control: accelZ
+      value: 0.7071
+  - delay: 1500ms
+  - write-serial: "status\n"
+  - delay: 30ms

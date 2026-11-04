@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 298" font-family="Arial" font-size="12">
+<rect width="980" height="298" fill="white"/>
+<text x="10" y="20" font-size="14" font-weight="bold">Хронологія задач (traceTASK_SWITCHED_IN) з натискання B1 під час dump</text>
+<text x="10" y="55">btn</text>
+<line x1="110" y1="60" x2="960" y2="60" stroke="#eee"/>
+<text x="10" y="81">imu</text>
+<line x1="110" y1="86" x2="960" y2="86" stroke="#eee"/>
+<text x="10" y="107">servo</text>
+<line x1="110" y1="112" x2="960" y2="112" stroke="#eee"/>
+<text x="10" y="133">cli</text>
+<line x1="110" y1="138" x2="960" y2="138" stroke="#eee"/>
+<text x="10" y="159">traj</text>
+<line x1="110" y1="164" x2="960" y2="164" stroke="#eee"/>
+<text x="10" y="185">log</text>
+<line x1="110" y1="190" x2="960" y2="190" stroke="#eee"/>
+<text x="10" y="211">long</text>
+<line x1="110" y1="216" x2="960" y2="216" stroke="#eee"/>
+<text x="10" y="237">IDLE</text>
+<line x1="110" y1="242" x2="960" y2="242" stroke="#eee"/>
+<rect x="110.0" y="70" width="40.1" height="16" fill="#2563eb"/>
+<rect x="150.1" y="148" width="7.4" height="16" fill="#d97706"/>
+<rect x="157.5" y="200" width="15.8" height="16" fill="#4b5563"/>
+<rect x="173.3" y="148" width="9.5" height="16" fill="#d97706"/>
+<rect x="182.8" y="70" width="40.0" height="16" fill="#2563eb"/>
+<rect x="222.8" y="148" width="9.7" height="16" fill="#d97706"/>
+<rect x="232.5" y="200" width="24.2" height="16" fill="#4b5563"/>
+<rect x="256.8" y="70" width="40.0" height="16" fill="#2563eb"/>
+<rect x="296.8" y="96" width="4.0" height="16" fill="#7c3aed"/>
+<rect x="300.8" y="200" width="29.4" height="16" fill="#4b5563"/>
+<rect x="330.2" y="70" width="40.1" height="16" fill="#2563eb"/>
+<rect x="370.3" y="200" width="33.9" height="16" fill="#4b5563"/>
+<rect x="404.2" y="44" width="2.2" height="16" fill="#dc2626"/>
+<rect x="406.3" y="70" width="39.8" height="16" fill="#2563eb"/>
+<rect x="446.1" y="200" width="31.5" height="16" fill="#4b5563"/>
+<rect x="477.7" y="70" width="40.1" height="16" fill="#2563eb"/>
+<rect x="517.8" y="200" width="33.8" height="16" fill="#4b5563"/>
+<rect x="551.6" y="70" width="40.0" height="16" fill="#2563eb"/>
+<rect x="591.6" y="96" width="4.0" height="16" fill="#7c3aed"/>
+<rect x="595.6" y="200" width="29.5" height="16" fill="#4b5563"/>
+<rect x="625.1" y="70" width="40.1" height="16" fill="#2563eb"/>
+<rect x="665.2" y="200" width="33.8" height="16" fill="#4b5563"/>
+<rect x="699.0" y="44" width="2.2" height="16" fill="#dc2626"/>
+<rect x="701.2" y="70" width="39.8" height="16" fill="#2563eb"/>
+<rect x="741.0" y="200" width="31.5" height="16" fill="#4b5563"/>
+<rect x="772.5" y="70" width="40.1" height="16" fill="#2563eb"/>
+<rect x="812.6" y="200" width="33.8" height="16" fill="#4b5563"/>
+<rect x="846.4" y="70" width="40.0" height="16" fill="#2563eb"/>
+<rect x="886.4" y="96" width="4.0" height="16" fill="#7c3aed"/>
+<rect x="890.4" y="200" width="29.4" height="16" fill="#4b5563"/>
+<rect x="919.9" y="70" width="40.1" height="16" fill="#2563eb"/>
+<text x="110" y="288" fill="#555">32 перемикань за 57.7 мс; мітки — platform_micros() у traceTASK_SWITCHED_IN, docs/metrics/runs-lr4/os-trace.log</text></svg>

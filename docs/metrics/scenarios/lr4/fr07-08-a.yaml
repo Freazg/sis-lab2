@@ -1,0 +1,428 @@
+name: 'fr07-08-a'
+version: 1
+author: 'tools/run_scenarios.py'
+steps:
+  - wait-serial: 'READY'
+  - delay: 100ms
+  - write-serial: "mode rec\n"
+  - wait-serial: 'MODE,REC'
+  - delay: 30ms
+  - write-serial: "tasks\n"
+  - wait-serial: 'TASKS,END'
+  - delay: 10ms
+  - write-serial: "stats reset\n"
+  - wait-serial: 'STATS,RESET'
+  - delay: 10ms
+  - set-control:
+      part-id: imu
+      control: accelX
+      value: -0.0
+  - set-control:
+      part-id: imu
+      control: accelY
+      value: 0.5736
+  - set-control:
+      part-id: imu
+      control: accelZ
+      value: 0.8192
+  - delay: 2000ms
+  - set-control:
+      part-id: imu
+      control: accelX
+      value: -0.2077
+  - set-control:
+      part-id: imu
+      control: accelY
+      value: 0.5338
+  - set-control:
+      part-id: imu
+      control: accelZ
+      value: 0.8197
+  - delay: 2000ms
+  - set-control:
+      part-id: imu
+      control: accelX
+      value: -0.359
+  - set-control:
+      part-id: imu
+      control: accelY
+      value: 0.4311
+  - set-control:
+      part-id: imu
+      control: accelZ
+      value: 0.8278
+  - delay: 2000ms
+  - set-control:
+      part-id: imu
+      control: accelX
+      value: -0.4216
+  - set-control:
+      part-id: imu
+      control: accelY
+      value: 0.2939
+  - set-control:
+      part-id: imu
+      control: accelZ
+      value: 0.8578
+  - delay: 2000ms
+  - set-control:
+      part-id: imu
+      control: accelX
+      value: -0.3864
+  - set-control:
+      part-id: imu
+      control: accelY
+      value: 0.1321
+  - set-control:
+      part-id: imu
+      control: accelZ
+      value: 0.9128
+  - delay: 2000ms
+  - set-control:
+      part-id: imu
+      control: accelX
+      value: -0.2582
+  - set-control:
+      part-id: imu
+      control: accelY
+      value: -0.0565
+  - set-control:
+      part-id: imu
+      control: accelZ
+      value: 0.9644
+  - delay: 2000ms
+  - set-control:
+      part-id: imu
+      control: accelX
+      value: -0.0615
+  - set-control:
+      part-id: imu
+      control: accelY
+      value: -0.251
+  - set-control:
+      part-id: imu
+      control: accelZ
+      value: 0.966
+  - delay: 2000ms
+  - set-control:
+      part-id: imu
+      control: accelX
+      value: 0.1525
+  - set-control:
+      part-id: imu
+      control: accelY
+      value: -0.4048
+  - set-control:
+      part-id: imu
+      control: accelZ
+      value: 0.9016
+  - delay: 2000ms
+  - set-control:
+      part-id: imu
+      control: accelX
+      value: 0.3242
+  - set-control:
+      part-id: imu
+      control: accelY
+      value: -0.489
+  - set-control:
+      part-id: imu
+      control: accelZ
+      value: 0.8098
+  - delay: 2000ms
+  - set-control:
+      part-id: imu
+      control: accelX
+      value: 0.4137
+  - set-control:
+      part-id: imu
+      control: accelY
+      value: -0.5176
+  - set-control:
+      part-id: imu
+      control: accelZ
+      value: 0.7489
+  - delay: 2000ms
+  - set-control:
+      part-id: imu
+      control: accelX
+      value: 0.4063
+  - set-control:
+      part-id: imu
+      control: accelY
+      value: -0.5157
+  - set-control:
+      part-id: imu
+      control: accelZ
+      value: 0.7543
+  - delay: 2000ms
+  - set-control:
+      part-id: imu
+      control: accelX
+      value: 0.303
+  - set-control:
+      part-id: imu
+      control: accelY
+      value: -0.4806
+  - set-control:
+      part-id: imu
+      control: accelZ
+      value: 0.8229
+  - delay: 2000ms
+  - set-control:
+      part-id: imu
+      control: accelX
+      value: 0.1216
+  - set-control:
+      part-id: imu
+      control: accelY
+      value: -0.3859
+  - set-control:
+      part-id: imu
+      control: accelZ
+      value: 0.9145
+  - delay: 2000ms
+  - set-control:
+      part-id: imu
+      control: accelX
+      value: -0.0937
+  - set-control:
+      part-id: imu
+      control: accelY
+      value: -0.2231
+  - set-control:
+      part-id: imu
+      control: accelZ
+      value: 0.9703
+  - delay: 2000ms
+  - set-control:
+      part-id: imu
+      control: accelX
+      value: -0.2828
+  - set-control:
+      part-id: imu
+      control: accelY
+      value: -0.0268
+  - set-control:
+      part-id: imu
+      control: accelZ
+      value: 0.9588
+  - delay: 2000ms
+  - set-control:
+      part-id: imu
+      control: accelX
+      value: -0.3979
+  - set-control:
+      part-id: imu
+      control: accelY
+      value: 0.1582
+  - set-control:
+      part-id: imu
+      control: accelZ
+      value: 0.9037
+  - delay: 2000ms
+  - set-control:
+      part-id: imu
+      control: accelX
+      value: -0.4184
+  - set-control:
+      part-id: imu
+      control: accelY
+      value: 0.316
+  - set-control:
+      part-id: imu
+      control: accelZ
+      value: 0.8515
+  - delay: 2000ms
+  - set-control:
+      part-id: imu
+      control: accelX
+      value: -0.3414
+  - set-control:
+      part-id: imu
+      control: accelY
+      value: 0.4493
+  - set-control:
+      part-id: imu
+      control: accelZ
+      value: 0.8256
+  - delay: 2000ms
+  - set-control:
+      part-id: imu
+      control: accelX
+      value: -0.1789
+  - set-control:
+      part-id: imu
+      control: accelY
+      value: 0.5446
+  - set-control:
+      part-id: imu
+      control: accelZ
+      value: 0.8194
+  - delay: 2000ms
+  - set-control:
+      part-id: imu
+      control: accelX
+      value: 0.0328
+  - set-control:
+      part-id: imu
+      control: accelY
+      value: 0.5726
+  - set-control:
+      part-id: imu
+      control: accelZ
+      value: 0.8192
+  - delay: 2000ms
+  - set-control:
+      part-id: imu
+      control: accelX
+      value: 0.2352
+  - set-control:
+      part-id: imu
+      control: accelY
+      value: 0.5216
+  - set-control:
+      part-id: imu
+      control: accelZ
+      value: 0.8201
+  - delay: 2000ms
+  - set-control:
+      part-id: imu
+      control: accelX
+      value: 0.3745
+  - set-control:
+      part-id: imu
+      control: accelY
+      value: 0.4121
+  - set-control:
+      part-id: imu
+      control: accelZ
+      value: 0.8306
+  - delay: 2000ms
+  - set-control:
+      part-id: imu
+      control: accelX
+      value: 0.4226
+  - set-control:
+      part-id: imu
+      control: accelY
+      value: 0.2712
+  - set-control:
+      part-id: imu
+      control: accelZ
+      value: 0.8648
+  - delay: 2000ms
+  - set-control:
+      part-id: imu
+      control: accelX
+      value: 0.3728
+  - set-control:
+      part-id: imu
+      control: accelY
+      value: 0.1053
+  - set-control:
+      part-id: imu
+      control: accelZ
+      value: 0.9219
+  - delay: 2000ms
+  - set-control:
+      part-id: imu
+      control: accelX
+      value: 0.232
+  - set-control:
+      part-id: imu
+      control: accelY
+      value: -0.0863
+  - set-control:
+      part-id: imu
+      control: accelZ
+      value: 0.9689
+  - delay: 2000ms
+  - set-control:
+      part-id: imu
+      control: accelX
+      value: 0.0289
+  - set-control:
+      part-id: imu
+      control: accelY
+      value: -0.2779
+  - set-control:
+      part-id: imu
+      control: accelZ
+      value: 0.9602
+  - delay: 2000ms
+  - set-control:
+      part-id: imu
+      control: accelX
+      value: -0.1823
+  - set-control:
+      part-id: imu
+      control: accelY
+      value: -0.422
+  - set-control:
+      part-id: imu
+      control: accelZ
+      value: 0.8881
+  - delay: 2000ms
+  - set-control:
+      part-id: imu
+      control: accelX
+      value: -0.3436
+  - set-control:
+      part-id: imu
+      control: accelY
+      value: -0.4961
+  - set-control:
+      part-id: imu
+      control: accelZ
+      value: 0.7974
+  - delay: 2000ms
+  - set-control:
+      part-id: imu
+      control: accelX
+      value: -0.4189
+  - set-control:
+      part-id: imu
+      control: accelY
+      value: -0.5189
+  - set-control:
+      part-id: imu
+      control: accelZ
+      value: 0.7451
+  - delay: 2000ms
+  - set-control:
+      part-id: imu
+      control: accelX
+      value: -0.3967
+  - set-control:
+      part-id: imu
+      control: accelY
+      value: -0.5131
+  - set-control:
+      part-id: imu
+      control: accelZ
+      value: 0.7612
+  - delay: 2000ms
+  - write-serial: "mode hold\n"
+  - wait-serial: 'MODE,HOLD'
+  - delay: 30ms
+  - write-serial: "stats\n"
+  - wait-serial: 'STATS,END'
+  - delay: 20ms
+  - write-serial: "reset\n"
+  - wait-serial: 'BOOT,fw='
+  - wait-serial: 'READY'
+  - delay: 100ms
+  - write-serial: "mode hold\n"
+  - wait-serial: 'MODE,HOLD'
+  - delay: 30ms
+  - write-serial: "stats reset\n"
+  - wait-serial: 'STATS,RESET'
+  - write-serial: "mode play\n"
+  - wait-serial: 'MODE,PLAY'
+  - delay: 30ms
+  - wait-serial: 'PLAY,DONE'
+  - delay: 50ms
+  - write-serial: "stats\n"
+  - wait-serial: 'STATS,END'
+  - delay: 20ms

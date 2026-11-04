@@ -1,0 +1,427 @@
+name: 's3-p3'
+version: 1
+author: 'tools/run_scenarios.py'
+steps:
+  - wait-serial: 'READY'
+  - delay: 100ms
+  - write-serial: "mode rec\n"
+  - wait-serial: 'MODE,REC'
+  - delay: 30ms
+  - delay: 10000ms
+  - write-serial: "mode hold\n"
+  - wait-serial: 'MODE,HOLD'
+  - delay: 30ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 30ms
+  - write-serial: "stats reset\n"
+  - wait-serial: 'STATS,RESET'
+  - delay: 10ms
+  - set-control:
+      part-id: imu
+      control: accelX
+      value: -0.0
+  - set-control:
+      part-id: imu
+      control: accelY
+      value: 0.5
+  - set-control:
+      part-id: imu
+      control: accelZ
+      value: 0.866
+  - write-serial: "dump\n"
+  - delay: 127ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - write-serial: "status\n"
+  - write-serial: "status\n"
+  - write-serial: "status\n"
+  - wait-serial: 'DUMP,END'
+  - delay: 50ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 100ms
+  - set-control:
+      part-id: imu
+      control: accelX
+      value: -0.0
+  - set-control:
+      part-id: imu
+      control: accelY
+      value: -0.5
+  - set-control:
+      part-id: imu
+      control: accelZ
+      value: 0.866
+  - write-serial: "dump\n"
+  - delay: 168ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - write-serial: "status\n"
+  - write-serial: "status\n"
+  - write-serial: "status\n"
+  - wait-serial: 'DUMP,END'
+  - delay: 50ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 100ms
+  - set-control:
+      part-id: imu
+      control: accelX
+      value: -0.0
+  - set-control:
+      part-id: imu
+      control: accelY
+      value: 0.5
+  - set-control:
+      part-id: imu
+      control: accelZ
+      value: 0.866
+  - write-serial: "dump\n"
+  - delay: 375ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - write-serial: "status\n"
+  - write-serial: "status\n"
+  - write-serial: "status\n"
+  - wait-serial: 'DUMP,END'
+  - delay: 50ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 100ms
+  - set-control:
+      part-id: imu
+      control: accelX
+      value: -0.0
+  - set-control:
+      part-id: imu
+      control: accelY
+      value: -0.5
+  - set-control:
+      part-id: imu
+      control: accelZ
+      value: 0.866
+  - write-serial: "dump\n"
+  - delay: 127ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - write-serial: "status\n"
+  - write-serial: "status\n"
+  - write-serial: "status\n"
+  - wait-serial: 'DUMP,END'
+  - delay: 50ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 100ms
+  - set-control:
+      part-id: imu
+      control: accelX
+      value: -0.0
+  - set-control:
+      part-id: imu
+      control: accelY
+      value: 0.5
+  - set-control:
+      part-id: imu
+      control: accelZ
+      value: 0.866
+  - write-serial: "dump\n"
+  - delay: 494ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - write-serial: "status\n"
+  - write-serial: "status\n"
+  - write-serial: "status\n"
+  - wait-serial: 'DUMP,END'
+  - delay: 50ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 100ms
+  - set-control:
+      part-id: imu
+      control: accelX
+      value: -0.0
+  - set-control:
+      part-id: imu
+      control: accelY
+      value: -0.5
+  - set-control:
+      part-id: imu
+      control: accelZ
+      value: 0.866
+  - write-serial: "dump\n"
+  - delay: 317ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - write-serial: "status\n"
+  - write-serial: "status\n"
+  - write-serial: "status\n"
+  - wait-serial: 'DUMP,END'
+  - delay: 50ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 100ms
+  - set-control:
+      part-id: imu
+      control: accelX
+      value: -0.0
+  - set-control:
+      part-id: imu
+      control: accelY
+      value: 0.5
+  - set-control:
+      part-id: imu
+      control: accelZ
+      value: 0.866
+  - write-serial: "dump\n"
+  - delay: 249ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - write-serial: "status\n"
+  - write-serial: "status\n"
+  - write-serial: "status\n"
+  - wait-serial: 'DUMP,END'
+  - delay: 50ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 100ms
+  - set-control:
+      part-id: imu
+      control: accelX
+      value: -0.0
+  - set-control:
+      part-id: imu
+      control: accelY
+      value: -0.5
+  - set-control:
+      part-id: imu
+      control: accelZ
+      value: 0.866
+  - write-serial: "dump\n"
+  - delay: 429ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - write-serial: "status\n"
+  - write-serial: "status\n"
+  - write-serial: "status\n"
+  - wait-serial: 'DUMP,END'
+  - delay: 50ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 100ms
+  - set-control:
+      part-id: imu
+      control: accelX
+      value: -0.0
+  - set-control:
+      part-id: imu
+      control: accelY
+      value: 0.5
+  - set-control:
+      part-id: imu
+      control: accelZ
+      value: 0.866
+  - write-serial: "dump\n"
+  - delay: 57ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - write-serial: "status\n"
+  - write-serial: "status\n"
+  - write-serial: "status\n"
+  - wait-serial: 'DUMP,END'
+  - delay: 50ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 100ms
+  - set-control:
+      part-id: imu
+      control: accelX
+      value: -0.0
+  - set-control:
+      part-id: imu
+      control: accelY
+      value: -0.5
+  - set-control:
+      part-id: imu
+      control: accelZ
+      value: 0.866
+  - write-serial: "dump\n"
+  - delay: 393ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - write-serial: "status\n"
+  - write-serial: "status\n"
+  - write-serial: "status\n"
+  - wait-serial: 'DUMP,END'
+  - delay: 50ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 100ms
+  - set-control:
+      part-id: imu
+      control: accelX
+      value: -0.0
+  - set-control:
+      part-id: imu
+      control: accelY
+      value: 0.5
+  - set-control:
+      part-id: imu
+      control: accelZ
+      value: 0.866
+  - write-serial: "dump\n"
+  - delay: 447ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - write-serial: "status\n"
+  - write-serial: "status\n"
+  - write-serial: "status\n"
+  - wait-serial: 'DUMP,END'
+  - delay: 50ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 100ms
+  - set-control:
+      part-id: imu
+      control: accelX
+      value: -0.0
+  - set-control:
+      part-id: imu
+      control: accelY
+      value: -0.5
+  - set-control:
+      part-id: imu
+      control: accelZ
+      value: 0.866
+  - write-serial: "dump\n"
+  - delay: 82ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - write-serial: "status\n"
+  - write-serial: "status\n"
+  - write-serial: "status\n"
+  - wait-serial: 'DUMP,END'
+  - delay: 50ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 100ms
+  - set-control:
+      part-id: imu
+      control: accelX
+      value: -0.0
+  - set-control:
+      part-id: imu
+      control: accelY
+      value: 0.5
+  - set-control:
+      part-id: imu
+      control: accelZ
+      value: 0.866
+  - write-serial: "dump\n"
+  - delay: 131ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 1
+  - delay: 60ms
+  - set-control:
+      part-id: btn_b1
+      control: pressed
+      value: 0
+  - write-serial: "status\n"
+  - write-serial: "status\n"
+  - write-serial: "status\n"
+  - wait-serial: 'DUMP,END'
+  - delay: 50ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 100ms
+  - write-serial: "stats\n"
+  - wait-serial: 'STATS,END'
+  - delay: 20ms
+  - write-serial: "mem\n"
+  - delay: 30ms

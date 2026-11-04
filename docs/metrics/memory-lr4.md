@@ -6,8 +6,8 @@
 
 | Регіон | ЛР4 | Ліміт |
 |---|---:|---:|
-| FLASH | 32620 Б | 32 768 Б |
-| RAM | 12224 Б | 12 288 Б |
+| FLASH | 32724 Б | 32 768 Б |
+| RAM | 12136 Б | 12 288 Б |
 
 ## Ядро FreeRTOS у флеші і RAM (map-файл, §6.5)
 
@@ -28,12 +28,13 @@
 | Шар | Байт |
 |---|---:|
 | Middlewares | 7320 |
-| Rtos | 6540 |
+| Rtos | 6702 |
 | App | 4640 |
 | libc/libgcc | 3618 |
-| Core | 2652 |
-| Platform | 2128 |
+| Core | 2676 |
+| Platform | 1998 |
 | Devices | 1364 |
+| Drivers | 40 |
 
 ## Склад heap ОС (§6.4)
 
@@ -54,13 +55,15 @@
 | **оцінка зайнятого** | **6880** |
 | зарезервовано (configTOTAL_HEAP_SIZE) | 7680 |
 
+Виміряно після S3 (команда `heap`): free = 792 Б, min_ever_free = 496 Б, total = 7680 Б. Використано на піку 7184 Б (оцінка вище — 6880 Б; різниця — тимчасовий масив `vTaskGetRunTimeStatistics` у команді `tasks`).
+
 ## Порівняння з ЛР3 (той самий тулчейн, той самий день)
 
 | Збірка | Флеш, Б | RAM, Б |
 |---|---:|---:|
 | ЛР3, тег lab3, як у тегу (без LTO) | 31476 | 3848 |
 | ЛР3, тег lab3, з LTO | 28472 | 3840 |
-| ЛР4 | 32620 | 12224 |
+| ЛР4 | 32724 | 12136 |
 
 ## Секції
 
@@ -68,24 +71,24 @@
 /workspace/firmware/build-mem/firmware.elf  :
 section                size        addr
 .isr_vector             192   134217728
-.text                 27536   134217920
-.rodata                4708   134245456
-.ARM                      8   134250164
-.init_array               4   134250172
-.fini_array               4   134250176
+.text                 27632   134217920
+.rodata                4716   134245552
+.ARM                      8   134250268
+.init_array               4   134250276
+.fini_array               4   134250280
 .data                   168   536870912
-.bss                  11032   536871080
-._user_heap_stack      1024   536882112
+.bss                  10944   536871080
+._user_heap_stack      1024   536882024
 .ARM.attributes          40           0
 .comment                 51           0
-.debug_info          144793           0
-.debug_abbrev         16376           0
-.debug_loc            62776           0
+.debug_info          144483           0
+.debug_abbrev         16392           0
+.debug_loc            62685           0
 .debug_aranges         1736           0
-.debug_ranges          9112           0
-.debug_line           68199           0
-.debug_str           606873           0
-.debug_frame           7004           0
-.debug_macro         102135           0
-Total               1063771
+.debug_ranges          9072           0
+.debug_line           68396           0
+.debug_str           606910           0
+.debug_frame           7152           0
+.debug_macro         102141           0
+Total               1063750
 ```

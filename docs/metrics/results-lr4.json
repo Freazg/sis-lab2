@@ -1,0 +1,4480 @@
+{
+ "fw": "lr4",
+ "runs": {
+  "fr02": {
+   "git": "dd8c0d9f",
+   "blocks": [],
+   "stack_used": null
+  },
+  "fr03": {
+   "git": "dd8c0d9f",
+   "blocks": [
+    {
+     "stat": {
+      "cli": {
+       "n": 1,
+       "min": 1650,
+       "avg": 1650,
+       "max": 1650
+      },
+      "btn": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "imu": {
+       "n": 2724,
+       "min": 2526,
+       "avg": 2807,
+       "max": 2864
+      },
+      "servo": {
+       "n": 682,
+       "min": 157,
+       "avg": 162,
+       "max": 187
+      },
+      "rec": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "play": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "loop": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "i2c_read": {
+       "n": 2739,
+       "min": 1629,
+       "avg": 1630,
+       "max": 1679
+      },
+      "flash_prog": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "flash_erase": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "flash_read": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "btn_latency": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "cmd_latency": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "e2e_latency": {
+       "n": 30,
+       "min": 8210,
+       "avg": 20197,
+       "max": 33197
+      }
+     },
+     "jit": {
+      "imu": {
+       "period": 5000,
+       "n": 2761,
+       "min": -140,
+       "max": 139,
+       "p99": 100,
+       "missed": 0,
+       "viol": 0
+      },
+      "servo": {
+       "period": 20000,
+       "n": 691,
+       "min": -120,
+       "max": 286,
+       "p99": 200,
+       "missed": 0,
+       "viol": 0
+      }
+     },
+     "load": {
+      "last": 70,
+      "min": 63,
+      "max": 70
+     },
+     "cnt": {
+      "rx_dropped": 0,
+      "imu_err": 0,
+      "btn": 0
+     }
+    }
+   ],
+   "stack_used": 864
+  },
+  "fr04": {
+   "git": "dd8c0d9f",
+   "blocks": [],
+   "stack_used": null
+  },
+  "fr05": {
+   "git": "dd8c0d9f",
+   "blocks": [],
+   "stack_used": null
+  },
+  "fr06": {
+   "git": "dd8c0d9f",
+   "blocks": [
+    {
+     "stat": {
+      "cli": {
+       "n": 1,
+       "min": 1650,
+       "avg": 1650,
+       "max": 1650
+      },
+      "btn": {
+       "n": 20,
+       "min": 144,
+       "avg": 268,
+       "max": 384
+      },
+      "imu": {
+       "n": 429,
+       "min": 2493,
+       "avg": 2547,
+       "max": 6974
+      },
+      "servo": {
+       "n": 108,
+       "min": 48,
+       "avg": 102,
+       "max": 215
+      },
+      "rec": {
+       "n": 5,
+       "min": 46,
+       "avg": 47,
+       "max": 48
+      },
+      "play": {
+       "n": 6,
+       "min": 148,
+       "avg": 1787,
+       "max": 9963
+      },
+      "loop": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "i2c_read": {
+       "n": 442,
+       "min": 1629,
+       "avg": 1649,
+       "max": 6814
+      },
+      "flash_prog": {
+       "n": 5,
+       "min": 10478,
+       "avg": 11068,
+       "max": 13373
+      },
+      "flash_erase": {
+       "n": 5,
+       "min": 45230,
+       "avg": 45252,
+       "max": 45282
+      },
+      "flash_read": {
+       "n": 17,
+       "min": 9746,
+       "avg": 10008,
+       "max": 10315
+      },
+      "btn_latency": {
+       "n": 20,
+       "min": 177,
+       "avg": 202,
+       "max": 247
+      },
+      "cmd_latency": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "e2e_latency": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      }
+     },
+     "jit": {
+      "imu": {
+       "period": 5000,
+       "n": 462,
+       "min": -1993,
+       "max": 2117,
+       "p99": 300,
+       "missed": 0,
+       "viol": 2
+      },
+      "servo": {
+       "period": 20000,
+       "n": 116,
+       "min": -226,
+       "max": 361,
+       "p99": 300,
+       "missed": 0,
+       "viol": 0
+      }
+     },
+     "load": {
+      "last": 77,
+      "min": 76,
+      "max": 77
+     },
+     "cnt": {
+      "rx_dropped": 0,
+      "imu_err": 1,
+      "btn": 24
+     }
+    }
+   ],
+   "stack_used": 864
+  },
+  "fr07-08-a": {
+   "git": "dd8c0d9f",
+   "blocks": [
+    {
+     "stat": {
+      "cli": {
+       "n": 2,
+       "min": 4580,
+       "avg": 30359,
+       "max": 56138
+      },
+      "btn": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "imu": {
+       "n": 12028,
+       "min": 2527,
+       "avg": 3093,
+       "max": 3135
+      },
+      "servo": {
+       "n": 3008,
+       "min": 48,
+       "avg": 159,
+       "max": 186
+      },
+      "rec": {
+       "n": 3001,
+       "min": 43,
+       "avg": 318,
+       "max": 80233
+      },
+      "play": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "loop": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "i2c_read": {
+       "n": 12046,
+       "min": 1629,
+       "avg": 1630,
+       "max": 1680
+      },
+      "flash_prog": {
+       "n": 25,
+       "min": 15191,
+       "avg": 15271,
+       "max": 15327
+      },
+      "flash_erase": {
+       "n": 1,
+       "min": 49108,
+       "avg": 49108,
+       "max": 49108
+      },
+      "flash_read": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "btn_latency": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "cmd_latency": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "e2e_latency": {
+       "n": 26,
+       "min": 13193,
+       "avg": 23435,
+       "max": 153452
+      }
+     },
+     "jit": {
+      "imu": {
+       "period": 5000,
+       "n": 12074,
+       "min": -138,
+       "max": 137,
+       "p99": 200,
+       "missed": 0,
+       "viol": 0
+      },
+      "servo": {
+       "period": 20000,
+       "n": 3019,
+       "min": -129,
+       "max": 312,
+       "p99": 200,
+       "missed": 0,
+       "viol": 0
+      }
+     },
+     "load": {
+      "last": 70,
+      "min": 65,
+      "max": 72
+     },
+     "cnt": {
+      "rx_dropped": 0,
+      "imu_err": 0,
+      "btn": 0
+     }
+    },
+    {
+     "stat": {
+      "cli": {
+       "n": 2,
+       "min": 5274,
+       "avg": 35168,
+       "max": 65063
+      },
+      "btn": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "imu": {
+       "n": 12067,
+       "min": 3092,
+       "avg": 3106,
+       "max": 3148
+      },
+      "servo": {
+       "n": 3018,
+       "min": 12,
+       "avg": 49,
+       "max": 65
+      },
+      "rec": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "play": {
+       "n": 3009,
+       "min": 9,
+       "avg": 369,
+       "max": 29975
+      },
+      "loop": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "i2c_read": {
+       "n": 12084,
+       "min": 1629,
+       "avg": 1630,
+       "max": 1681
+      },
+      "flash_prog": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "flash_erase": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "flash_read": {
+       "n": 27,
+       "min": 10842,
+       "avg": 10875,
+       "max": 11105
+      },
+      "btn_latency": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "cmd_latency": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "e2e_latency": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      }
+     },
+     "jit": {
+      "imu": {
+       "period": 5000,
+       "n": 12109,
+       "min": -137,
+       "max": 136,
+       "p99": 100,
+       "missed": 0,
+       "viol": 0
+      },
+      "servo": {
+       "period": 20000,
+       "n": 3028,
+       "min": -10189,
+       "max": 10186,
+       "p99": 1600,
+       "missed": 0,
+       "viol": 48
+      }
+     },
+     "load": {
+      "last": 68,
+      "min": 68,
+      "max": 69
+     },
+     "cnt": {
+      "rx_dropped": 0,
+      "imu_err": 0,
+      "btn": 0
+     }
+    }
+   ],
+   "stack_used": null
+  },
+  "fr07-08-b": {
+   "git": "dd8c0d9f",
+   "blocks": [
+    {
+     "stat": {
+      "cli": {
+       "n": 2,
+       "min": 4580,
+       "avg": 30359,
+       "max": 56138
+      },
+      "btn": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "imu": {
+       "n": 12028,
+       "min": 2527,
+       "avg": 3093,
+       "max": 3135
+      },
+      "servo": {
+       "n": 3008,
+       "min": 48,
+       "avg": 159,
+       "max": 186
+      },
+      "rec": {
+       "n": 3001,
+       "min": 43,
+       "avg": 318,
+       "max": 80233
+      },
+      "play": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "loop": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "i2c_read": {
+       "n": 12046,
+       "min": 1629,
+       "avg": 1630,
+       "max": 1680
+      },
+      "flash_prog": {
+       "n": 25,
+       "min": 15191,
+       "avg": 15271,
+       "max": 15327
+      },
+      "flash_erase": {
+       "n": 1,
+       "min": 49108,
+       "avg": 49108,
+       "max": 49108
+      },
+      "flash_read": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "btn_latency": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "cmd_latency": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "e2e_latency": {
+       "n": 26,
+       "min": 13193,
+       "avg": 23435,
+       "max": 153452
+      }
+     },
+     "jit": {
+      "imu": {
+       "period": 5000,
+       "n": 12074,
+       "min": -138,
+       "max": 137,
+       "p99": 200,
+       "missed": 0,
+       "viol": 0
+      },
+      "servo": {
+       "period": 20000,
+       "n": 3019,
+       "min": -129,
+       "max": 312,
+       "p99": 200,
+       "missed": 0,
+       "viol": 0
+      }
+     },
+     "load": {
+      "last": 70,
+      "min": 65,
+      "max": 72
+     },
+     "cnt": {
+      "rx_dropped": 0,
+      "imu_err": 0,
+      "btn": 0
+     }
+    }
+   ],
+   "stack_used": null
+  },
+  "fr09": {
+   "git": "dd8c0d9f",
+   "blocks": [],
+   "stack_used": null
+  },
+  "long": {
+   "git": "dd8c0d9f",
+   "blocks": [],
+   "stack_used": null
+  },
+  "os-ctxsw": {
+   "git": "dd8c0d9f",
+   "blocks": [],
+   "stack_used": null
+  },
+  "os-heap": {
+   "git": "dd8c0d9f-heap-small",
+   "blocks": [],
+   "stack_used": null
+  },
+  "os-inv": {
+   "git": "dd8c0d9f-faults",
+   "blocks": [],
+   "stack_used": null
+  },
+  "os-qflood": {
+   "git": "dd8c0d9f-faults",
+   "blocks": [],
+   "stack_used": null
+  },
+  "os-stack": {
+   "git": "dd8c0d9f-stack-small",
+   "blocks": [],
+   "stack_used": null
+  },
+  "os-stack-nocheck": {
+   "git": "dd8c0d9f-stack-nocheck",
+   "blocks": [
+    {
+     "stat": {
+      "cli": {
+       "n": 2,
+       "min": 24203,
+       "avg": 71441,
+       "max": 118679
+      },
+      "btn": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "imu": {
+       "n": 852,
+       "min": 2537,
+       "avg": 2540,
+       "max": 2790
+      },
+      "servo": {
+       "n": 213,
+       "min": 125,
+       "avg": 208,
+       "max": 220
+      },
+      "rec": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "play": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "loop": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "i2c_read": {
+       "n": 865,
+       "min": 1629,
+       "avg": 1630,
+       "max": 1680
+      },
+      "flash_prog": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "flash_erase": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "flash_read": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "btn_latency": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "cmd_latency": {
+       "n": 1,
+       "min": 24408,
+       "avg": 24408,
+       "max": 24408
+      },
+      "e2e_latency": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      }
+     },
+     "jit": {
+      "imu": {
+       "period": 5000,
+       "n": 883,
+       "min": -2311,
+       "max": 4466,
+       "p99": 200,
+       "missed": 0,
+       "viol": 3
+      },
+      "servo": {
+       "period": 20000,
+       "n": 221,
+       "min": -5003,
+       "max": 4998,
+       "p99": 200,
+       "missed": 0,
+       "viol": 2
+      }
+     },
+     "load": {
+      "last": 62,
+      "min": 57,
+      "max": 62
+     },
+     "cnt": {
+      "rx_dropped": 0,
+      "imu_err": 0,
+      "btn": 0
+     }
+    }
+   ],
+   "stack_used": null
+  },
+  "os-starve": {
+   "git": "dd8c0d9f-faults",
+   "blocks": [
+    {
+     "stat": {
+      "cli": {
+       "n": 2,
+       "min": 1654,
+       "avg": 1505892,
+       "max": 3010130
+      },
+      "btn": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "imu": {
+       "n": 614,
+       "min": 2524,
+       "avg": 2536,
+       "max": 2587
+      },
+      "servo": {
+       "n": 155,
+       "min": 168,
+       "avg": 205,
+       "max": 208
+      },
+      "rec": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "play": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "loop": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "i2c_read": {
+       "n": 626,
+       "min": 1629,
+       "avg": 1630,
+       "max": 1674
+      },
+      "flash_prog": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "flash_erase": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "flash_read": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "btn_latency": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "cmd_latency": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "e2e_latency": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      }
+     },
+     "jit": {
+      "imu": {
+       "period": 5000,
+       "n": 644,
+       "min": -106,
+       "max": 121,
+       "p99": 100,
+       "missed": 0,
+       "viol": 0
+      },
+      "servo": {
+       "period": 20000,
+       "n": 162,
+       "min": -69,
+       "max": 70,
+       "p99": 100,
+       "missed": 0,
+       "viol": 0
+      }
+     },
+     "load": {
+      "last": 100,
+      "min": 100,
+      "max": 100
+     },
+     "cnt": {
+      "rx_dropped": 0,
+      "imu_err": 0,
+      "btn": 0
+     }
+    }
+   ],
+   "stack_used": 856
+  },
+  "os-trace": {
+   "git": "dd8c0d9f-faults",
+   "blocks": [],
+   "stack_used": null
+  },
+  "s1": {
+   "git": "dd8c0d9f",
+   "blocks": [
+    {
+     "stat": {
+      "cli": {
+       "n": 1,
+       "min": 4460,
+       "avg": 4460,
+       "max": 4460
+      },
+      "btn": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "imu": {
+       "n": 2008,
+       "min": 2527,
+       "avg": 2540,
+       "max": 2610
+      },
+      "servo": {
+       "n": 502,
+       "min": 12,
+       "avg": 49,
+       "max": 98
+      },
+      "rec": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "play": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "loop": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "i2c_read": {
+       "n": 2021,
+       "min": 1629,
+       "avg": 1630,
+       "max": 1679
+      },
+      "flash_prog": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "flash_erase": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "flash_read": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "btn_latency": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "cmd_latency": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "e2e_latency": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      }
+     },
+     "jit": {
+      "imu": {
+       "period": 5000,
+       "n": 2038,
+       "min": -140,
+       "max": 139,
+       "p99": 100,
+       "missed": 0,
+       "viol": 0
+      },
+      "servo": {
+       "period": 20000,
+       "n": 509,
+       "min": -164,
+       "max": 163,
+       "p99": 200,
+       "missed": 0,
+       "viol": 0
+      }
+     },
+     "load": {
+      "last": 56,
+      "min": 56,
+      "max": 56
+     },
+     "cnt": {
+      "rx_dropped": 0,
+      "imu_err": 0,
+      "btn": 0
+     }
+    }
+   ],
+   "stack_used": 864
+  },
+  "s2": {
+   "git": "dd8c0d9f",
+   "blocks": [
+    {
+     "stat": {
+      "cli": {
+       "n": 25,
+       "min": 4580,
+       "avg": 34356,
+       "max": 55989
+      },
+      "btn": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "imu": {
+       "n": 9228,
+       "min": 2527,
+       "avg": 3083,
+       "max": 3188
+      },
+      "servo": {
+       "n": 2308,
+       "min": 48,
+       "avg": 159,
+       "max": 186
+      },
+      "rec": {
+       "n": 2301,
+       "min": 43,
+       "avg": 316,
+       "max": 76032
+      },
+      "play": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "loop": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "i2c_read": {
+       "n": 9246,
+       "min": 1628,
+       "avg": 1631,
+       "max": 1737
+      },
+      "flash_prog": {
+       "n": 19,
+       "min": 15118,
+       "avg": 15255,
+       "max": 15341
+      },
+      "flash_erase": {
+       "n": 1,
+       "min": 45239,
+       "avg": 45239,
+       "max": 45239
+      },
+      "flash_read": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "btn_latency": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "cmd_latency": {
+       "n": 23,
+       "min": 29446,
+       "avg": 38020,
+       "max": 38864
+      },
+      "e2e_latency": {
+       "n": 13,
+       "min": 13195,
+       "avg": 28794,
+       "max": 73446
+      }
+     },
+     "jit": {
+      "imu": {
+       "period": 5000,
+       "n": 9274,
+       "min": -211,
+       "max": 209,
+       "p99": 200,
+       "missed": 0,
+       "viol": 0
+      },
+      "servo": {
+       "period": 20000,
+       "n": 2320,
+       "min": -124,
+       "max": 313,
+       "p99": 200,
+       "missed": 0,
+       "viol": 0
+      }
+     },
+     "load": {
+      "last": 71,
+      "min": 66,
+      "max": 73
+     },
+     "cnt": {
+      "rx_dropped": 0,
+      "imu_err": 0,
+      "btn": 0
+     }
+    }
+   ],
+   "stack_used": 864
+  },
+  "s3-p1": {
+   "git": "dd8c0d9f",
+   "blocks": [
+    {
+     "stat": {
+      "cli": {
+       "n": 71,
+       "min": 155,
+       "avg": 19266,
+       "max": 51380
+      },
+      "btn": {
+       "n": 14,
+       "min": 143,
+       "avg": 210,
+       "max": 268
+      },
+      "imu": {
+       "n": 8788,
+       "min": 2527,
+       "avg": 2820,
+       "max": 7093
+      },
+      "servo": {
+       "n": 2198,
+       "min": 48,
+       "avg": 63,
+       "max": 184
+      },
+      "rec": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "play": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "loop": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "i2c_read": {
+       "n": 8802,
+       "min": 1628,
+       "avg": 1637,
+       "max": 6931
+      },
+      "flash_prog": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "flash_erase": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "flash_read": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "btn_latency": {
+       "n": 14,
+       "min": 172,
+       "avg": 203,
+       "max": 280
+      },
+      "cmd_latency": {
+       "n": 42,
+       "min": 31430,
+       "avg": 68354,
+       "max": 121419
+      },
+      "e2e_latency": {
+       "n": 14,
+       "min": 8086,
+       "avg": 15261,
+       "max": 23079
+      }
+     },
+     "jit": {
+      "imu": {
+       "period": 5000,
+       "n": 8825,
+       "min": -2021,
+       "max": 2235,
+       "p99": 200,
+       "missed": 0,
+       "viol": 24
+      },
+      "servo": {
+       "period": 20000,
+       "n": 2207,
+       "min": -1010,
+       "max": 1008,
+       "p99": 200,
+       "missed": 0,
+       "viol": 4
+      }
+     },
+     "load": {
+      "last": 100,
+      "min": 89,
+      "max": 100
+     },
+     "cnt": {
+      "rx_dropped": 0,
+      "imu_err": 11,
+      "btn": 14
+     }
+    }
+   ],
+   "stack_used": 864
+  },
+  "s3-p2": {
+   "git": "dd8c0d9f",
+   "blocks": [
+    {
+     "stat": {
+      "cli": {
+       "n": 66,
+       "min": 155,
+       "avg": 20194,
+       "max": 55730
+      },
+      "btn": {
+       "n": 13,
+       "min": 137,
+       "avg": 197,
+       "max": 275
+      },
+      "imu": {
+       "n": 8199,
+       "min": 2527,
+       "avg": 2829,
+       "max": 8073
+      },
+      "servo": {
+       "n": 2050,
+       "min": 48,
+       "avg": 64,
+       "max": 218
+      },
+      "rec": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "play": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "loop": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "i2c_read": {
+       "n": 8213,
+       "min": 1628,
+       "avg": 1647,
+       "max": 7912
+      },
+      "flash_prog": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "flash_erase": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "flash_read": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "btn_latency": {
+       "n": 13,
+       "min": 163,
+       "avg": 203,
+       "max": 273
+      },
+      "cmd_latency": {
+       "n": 39,
+       "min": 31518,
+       "avg": 73481,
+       "max": 126554
+      },
+      "e2e_latency": {
+       "n": 13,
+       "min": 8088,
+       "avg": 17356,
+       "max": 33168
+      }
+     },
+     "jit": {
+      "imu": {
+       "period": 5000,
+       "n": 8236,
+       "min": -2036,
+       "max": 3214,
+       "p99": 200,
+       "missed": 0,
+       "viol": 62
+      },
+      "servo": {
+       "period": 20000,
+       "n": 2060,
+       "min": -10891,
+       "max": 11133,
+       "p99": 200,
+       "missed": 0,
+       "viol": 10
+      }
+     },
+     "load": {
+      "last": 100,
+      "min": 89,
+      "max": 100
+     },
+     "cnt": {
+      "rx_dropped": 0,
+      "imu_err": 24,
+      "btn": 13
+     }
+    }
+   ],
+   "stack_used": 864
+  },
+  "s3-p3": {
+   "git": "dd8c0d9f",
+   "blocks": [
+    {
+     "stat": {
+      "cli": {
+       "n": 66,
+       "min": 155,
+       "avg": 19800,
+       "max": 55126
+      },
+      "btn": {
+       "n": 13,
+       "min": 138,
+       "avg": 187,
+       "max": 258
+      },
+      "imu": {
+       "n": 8185,
+       "min": 2527,
+       "avg": 2825,
+       "max": 8141
+      },
+      "servo": {
+       "n": 2047,
+       "min": 48,
+       "avg": 62,
+       "max": 220
+      },
+      "rec": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "play": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "loop": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "i2c_read": {
+       "n": 8199,
+       "min": 1628,
+       "avg": 1643,
+       "max": 7978
+      },
+      "flash_prog": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "flash_erase": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "flash_read": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "btn_latency": {
+       "n": 13,
+       "min": 171,
+       "avg": 208,
+       "max": 292
+      },
+      "cmd_latency": {
+       "n": 39,
+       "min": 32372,
+       "avg": 71157,
+       "max": 125941
+      },
+      "e2e_latency": {
+       "n": 13,
+       "min": 3198,
+       "avg": 19298,
+       "max": 28210
+      }
+     },
+     "jit": {
+      "imu": {
+       "period": 5000,
+       "n": 8222,
+       "min": -2058,
+       "max": 3283,
+       "p99": 200,
+       "missed": 0,
+       "viol": 48
+      },
+      "servo": {
+       "period": 20000,
+       "n": 2056,
+       "min": -10932,
+       "max": 11176,
+       "p99": 200,
+       "missed": 0,
+       "viol": 10
+      }
+     },
+     "load": {
+      "last": 100,
+      "min": 89,
+      "max": 100
+     },
+     "cnt": {
+      "rx_dropped": 0,
+      "imu_err": 19,
+      "btn": 13
+     }
+    }
+   ],
+   "stack_used": 864
+  },
+  "s3-tick100-p1": {
+   "git": "dd8c0d9f-tick100",
+   "blocks": [
+    {
+     "stat": {
+      "cli": {
+       "n": 71,
+       "min": 155,
+       "avg": 9812,
+       "max": 19297
+      },
+      "btn": {
+       "n": 14,
+       "min": 141,
+       "avg": 173,
+       "max": 199
+      },
+      "imu": {
+       "n": 2364,
+       "min": 2474,
+       "avg": 2773,
+       "max": 7913
+      },
+      "servo": {
+       "n": 1182,
+       "min": 48,
+       "avg": 74,
+       "max": 183
+      },
+      "rec": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "play": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "loop": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "i2c_read": {
+       "n": 2368,
+       "min": 1629,
+       "avg": 1635,
+       "max": 7745
+      },
+      "flash_prog": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "flash_erase": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "flash_read": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "btn_latency": {
+       "n": 14,
+       "min": 165,
+       "avg": 188,
+       "max": 232
+      },
+      "cmd_latency": {
+       "n": 42,
+       "min": 15840,
+       "avg": 32976,
+       "max": 48678
+      },
+      "e2e_latency": {
+       "n": 14,
+       "min": 3097,
+       "avg": 14519,
+       "max": 23096
+      }
+     },
+     "jit": {
+      "imu": {
+       "period": 5000,
+       "n": 2373,
+       "min": 3377,
+       "max": 6621,
+       "p99": 1600,
+       "missed": 1189,
+       "viol": 2373
+      },
+      "servo": {
+       "period": 20000,
+       "n": 1186,
+       "min": -5003,
+       "max": 5155,
+       "p99": 300,
+       "missed": 0,
+       "viol": 6
+      }
+     },
+     "load": {
+      "last": 90,
+      "min": 82,
+      "max": 100
+     },
+     "cnt": {
+      "rx_dropped": 0,
+      "imu_err": 2,
+      "btn": 14
+     }
+    }
+   ],
+   "stack_used": 864
+  },
+  "s3-tick100-p2": {
+   "git": "dd8c0d9f-tick100",
+   "blocks": [
+    {
+     "stat": {
+      "cli": {
+       "n": 66,
+       "min": 155,
+       "avg": 9390,
+       "max": 19121
+      },
+      "btn": {
+       "n": 13,
+       "min": 138,
+       "avg": 184,
+       "max": 207
+      },
+      "imu": {
+       "n": 2195,
+       "min": 2474,
+       "avg": 2775,
+       "max": 6912
+      },
+      "servo": {
+       "n": 1098,
+       "min": 48,
+       "avg": 77,
+       "max": 206
+      },
+      "rec": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "play": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "loop": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "i2c_read": {
+       "n": 2199,
+       "min": 1629,
+       "avg": 1635,
+       "max": 6744
+      },
+      "flash_prog": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "flash_erase": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "flash_read": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "btn_latency": {
+       "n": 13,
+       "min": 166,
+       "avg": 197,
+       "max": 258
+      },
+      "cmd_latency": {
+       "n": 39,
+       "min": 14897,
+       "avg": 32103,
+       "max": 49722
+      },
+      "e2e_latency": {
+       "n": 13,
+       "min": 3096,
+       "avg": 17712,
+       "max": 33098
+      }
+     },
+     "jit": {
+      "imu": {
+       "period": 5000,
+       "n": 2204,
+       "min": 4465,
+       "max": 5536,
+       "p99": 1600,
+       "missed": 1101,
+       "viol": 2204
+      },
+      "servo": {
+       "period": 20000,
+       "n": 1102,
+       "min": -4003,
+       "max": 4162,
+       "p99": 700,
+       "missed": 0,
+       "viol": 14
+      }
+     },
+     "load": {
+      "last": 100,
+      "min": 82,
+      "max": 100
+     },
+     "cnt": {
+      "rx_dropped": 0,
+      "imu_err": 2,
+      "btn": 13
+     }
+    }
+   ],
+   "stack_used": 864
+  },
+  "s3-tick100-p3": {
+   "git": "dd8c0d9f-tick100",
+   "blocks": [
+    {
+     "stat": {
+      "cli": {
+       "n": 66,
+       "min": 155,
+       "avg": 9668,
+       "max": 19198
+      },
+      "btn": {
+       "n": 13,
+       "min": 145,
+       "avg": 189,
+       "max": 206
+      },
+      "imu": {
+       "n": 2195,
+       "min": 2474,
+       "avg": 2773,
+       "max": 7900
+      },
+      "servo": {
+       "n": 1098,
+       "min": 48,
+       "avg": 73,
+       "max": 181
+      },
+      "rec": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "play": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "loop": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "i2c_read": {
+       "n": 2199,
+       "min": 1627,
+       "avg": 1635,
+       "max": 7732
+      },
+      "flash_prog": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "flash_erase": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "flash_read": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "btn_latency": {
+       "n": 13,
+       "min": 165,
+       "avg": 194,
+       "max": 237
+      },
+      "cmd_latency": {
+       "n": 39,
+       "min": 14681,
+       "avg": 32124,
+       "max": 48436
+      },
+      "e2e_latency": {
+       "n": 13,
+       "min": 3094,
+       "avg": 17698,
+       "max": 43021
+      }
+     },
+     "jit": {
+      "imu": {
+       "period": 5000,
+       "n": 2204,
+       "min": 4659,
+       "max": 5340,
+       "p99": 1600,
+       "missed": 1102,
+       "viol": 2204
+      },
+      "servo": {
+       "period": 20000,
+       "n": 1102,
+       "min": -4981,
+       "max": 5127,
+       "p99": 500,
+       "missed": 0,
+       "viol": 8
+      }
+     },
+     "load": {
+      "last": 100,
+      "min": 82,
+      "max": 100
+     },
+     "cnt": {
+      "rx_dropped": 0,
+      "imu_err": 2,
+      "btn": 13
+     }
+    }
+   ],
+   "stack_used": 864
+  },
+  "sc1-dump": {
+   "git": "dd8c0d9f",
+   "blocks": [
+    {
+     "stat": {
+      "cli": {
+       "n": 5,
+       "min": 155,
+       "avg": 460,
+       "max": 1625
+      },
+      "btn": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "imu": {
+       "n": 2251,
+       "min": 2496,
+       "avg": 2541,
+       "max": 2555
+      },
+      "servo": {
+       "n": 563,
+       "min": 125,
+       "avg": 205,
+       "max": 210
+      },
+      "rec": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "play": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "loop": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "i2c_read": {
+       "n": 2263,
+       "min": 1628,
+       "avg": 1630,
+       "max": 1677
+      },
+      "flash_prog": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "flash_erase": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "flash_read": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "btn_latency": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "cmd_latency": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "e2e_latency": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      }
+     },
+     "jit": {
+      "imu": {
+       "period": 5000,
+       "n": 2281,
+       "min": -1052,
+       "max": 1038,
+       "p99": 200,
+       "missed": 0,
+       "viol": 12
+      },
+      "servo": {
+       "period": 20000,
+       "n": 570,
+       "min": -172,
+       "max": 155,
+       "p99": 200,
+       "missed": 0,
+       "viol": 0
+      }
+     },
+     "load": {
+      "last": 100,
+      "min": 88,
+      "max": 100
+     },
+     "cnt": {
+      "rx_dropped": 0,
+      "imu_err": 0,
+      "btn": 0
+     }
+    }
+   ],
+   "stack_used": 864
+  },
+  "sc1-erase": {
+   "git": "dd8c0d9f",
+   "blocks": [
+    {
+     "stat": {
+      "cli": {
+       "n": 5,
+       "min": 174,
+       "avg": 478,
+       "max": 1650
+      },
+      "btn": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "imu": {
+       "n": 844,
+       "min": 2526,
+       "avg": 2540,
+       "max": 2575
+      },
+      "servo": {
+       "n": 212,
+       "min": 171,
+       "avg": 208,
+       "max": 212
+      },
+      "rec": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "play": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "loop": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "i2c_read": {
+       "n": 857,
+       "min": 1629,
+       "avg": 1630,
+       "max": 1686
+      },
+      "flash_prog": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "flash_erase": {
+       "n": 64,
+       "min": 45235,
+       "avg": 45615,
+       "max": 48506
+      },
+      "flash_read": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "btn_latency": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "cmd_latency": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "e2e_latency": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      }
+     },
+     "jit": {
+      "imu": {
+       "period": 5000,
+       "n": 875,
+       "min": -122,
+       "max": 122,
+       "p99": 200,
+       "missed": 0,
+       "viol": 0
+      },
+      "servo": {
+       "period": 20000,
+       "n": 219,
+       "min": -113,
+       "max": 107,
+       "p99": 200,
+       "missed": 0,
+       "viol": 0
+      }
+     },
+     "load": {
+      "last": 87,
+      "min": 87,
+      "max": 88
+     },
+     "cnt": {
+      "rx_dropped": 0,
+      "imu_err": 0,
+      "btn": 0
+     }
+    }
+   ],
+   "stack_used": 864
+  },
+  "sc2-btn-idle": {
+   "git": "dd8c0d9f",
+   "blocks": [
+    {
+     "stat": {
+      "cli": {
+       "n": 51,
+       "min": 1393,
+       "avg": 2570,
+       "max": 4639
+      },
+      "btn": {
+       "n": 50,
+       "min": 138,
+       "avg": 208,
+       "max": 303
+      },
+      "imu": {
+       "n": 2103,
+       "min": 2490,
+       "avg": 2636,
+       "max": 8064
+      },
+      "servo": {
+       "n": 527,
+       "min": 48,
+       "avg": 197,
+       "max": 3144
+      },
+      "rec": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "play": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "loop": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "i2c_read": {
+       "n": 2116,
+       "min": 1628,
+       "avg": 1733,
+       "max": 7904
+      },
+      "flash_prog": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "flash_erase": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "flash_read": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "btn_latency": {
+       "n": 50,
+       "min": 167,
+       "avg": 236,
+       "max": 1057
+      },
+      "cmd_latency": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "e2e_latency": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      }
+     },
+     "jit": {
+      "imu": {
+       "period": 5000,
+       "n": 2134,
+       "min": -2300,
+       "max": 3206,
+       "p99": 1600,
+       "missed": 0,
+       "viol": 86
+      },
+      "servo": {
+       "period": 20000,
+       "n": 534,
+       "min": -10062,
+       "max": 10027,
+       "p99": 1600,
+       "missed": 0,
+       "viol": 17
+      }
+     },
+     "load": {
+      "last": 62,
+      "min": 59,
+      "max": 64
+     },
+     "cnt": {
+      "rx_dropped": 0,
+      "imu_err": 40,
+      "btn": 50
+     }
+    }
+   ],
+   "stack_used": 864
+  },
+  "sc2-btn-long": {
+   "git": "dd8c0d9f",
+   "blocks": [
+    {
+     "stat": {
+      "cli": {
+       "n": 101,
+       "min": 155,
+       "avg": 1868,
+       "max": 4737
+      },
+      "btn": {
+       "n": 50,
+       "min": 143,
+       "avg": 194,
+       "max": 271
+      },
+      "imu": {
+       "n": 10776,
+       "min": 2489,
+       "avg": 2576,
+       "max": 7807
+      },
+      "servo": {
+       "n": 2694,
+       "min": 47,
+       "avg": 77,
+       "max": 338
+      },
+      "rec": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "play": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "loop": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "i2c_read": {
+       "n": 10788,
+       "min": 1628,
+       "avg": 1669,
+       "max": 7646
+      },
+      "flash_prog": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "flash_erase": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "flash_read": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "btn_latency": {
+       "n": 50,
+       "min": 164,
+       "avg": 200,
+       "max": 291
+      },
+      "cmd_latency": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "e2e_latency": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      }
+     },
+     "jit": {
+      "imu": {
+       "period": 5000,
+       "n": 10806,
+       "min": -2298,
+       "max": 2999,
+       "p99": 1600,
+       "missed": 0,
+       "viol": 169
+      },
+      "servo": {
+       "period": 20000,
+       "n": 2702,
+       "min": -10178,
+       "max": 10175,
+       "p99": 400,
+       "missed": 0,
+       "viol": 19
+      }
+     },
+     "load": {
+      "last": 98,
+      "min": 89,
+      "max": 100
+     },
+     "cnt": {
+      "rx_dropped": 0,
+      "imu_err": 76,
+      "btn": 50
+     }
+    }
+   ],
+   "stack_used": 864
+  },
+  "sc3-flood": {
+   "git": "dd8c0d9f",
+   "blocks": [
+    {
+     "stat": {
+      "cli": {
+       "n": 112,
+       "min": 155,
+       "avg": 21871,
+       "max": 30038
+      },
+      "btn": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "imu": {
+       "n": 3078,
+       "min": 2527,
+       "avg": 2546,
+       "max": 3199
+      },
+      "servo": {
+       "n": 770,
+       "min": 12,
+       "avg": 49,
+       "max": 98
+      },
+      "rec": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "play": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "loop": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "i2c_read": {
+       "n": 3090,
+       "min": 1628,
+       "avg": 1631,
+       "max": 1781
+      },
+      "flash_prog": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "flash_erase": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "flash_read": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "btn_latency": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "cmd_latency": {
+       "n": 81,
+       "min": 24594,
+       "avg": 113329,
+       "max": 198997
+      },
+      "e2e_latency": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      }
+     },
+     "jit": {
+      "imu": {
+       "period": 5000,
+       "n": 3109,
+       "min": -365,
+       "max": 364,
+       "p99": 200,
+       "missed": 0,
+       "viol": 0
+      },
+      "servo": {
+       "period": 20000,
+       "n": 777,
+       "min": -818,
+       "max": 816,
+       "p99": 800,
+       "missed": 0,
+       "viol": 14
+      }
+     },
+     "load": {
+      "last": 93,
+      "min": 87,
+      "max": 100
+     },
+     "cnt": {
+      "rx_dropped": 980,
+      "imu_err": 0,
+      "btn": 0
+     }
+    }
+   ],
+   "stack_used": 864
+  },
+  "sc4-fault": {
+   "git": "dd8c0d9f",
+   "blocks": [
+    {
+     "stat": {
+      "cli": {
+       "n": 1,
+       "min": 1650,
+       "avg": 1650,
+       "max": 1650
+      },
+      "btn": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "imu": {
+       "n": 208,
+       "min": 2526,
+       "avg": 2540,
+       "max": 2541
+      },
+      "servo": {
+       "n": 53,
+       "min": 171,
+       "avg": 208,
+       "max": 209
+      },
+      "rec": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "play": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "loop": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "i2c_read": {
+       "n": 221,
+       "min": 1630,
+       "avg": 1630,
+       "max": 1633
+      },
+      "flash_prog": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "flash_erase": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "flash_read": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "btn_latency": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "cmd_latency": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "e2e_latency": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      }
+     },
+     "jit": {
+      "imu": {
+       "period": 5000,
+       "n": 238,
+       "min": -110,
+       "max": 108,
+       "p99": 100,
+       "missed": 0,
+       "viol": 0
+      },
+      "servo": {
+       "period": 20000,
+       "n": 60,
+       "min": -31,
+       "max": 29,
+       "p99": 100,
+       "missed": 0,
+       "viol": 0
+      }
+     },
+     "load": {
+      "last": 0,
+      "min": 100,
+      "max": 0
+     },
+     "cnt": {
+      "rx_dropped": 0,
+      "imu_err": 0,
+      "btn": 0
+     }
+    },
+    {
+     "stat": {
+      "cli": {
+       "n": 2,
+       "min": 1660,
+       "avg": 6488,
+       "max": 11317
+      },
+      "btn": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "imu": {
+       "n": 311,
+       "min": 303,
+       "avg": 331,
+       "max": 2539
+      },
+      "servo": {
+       "n": 79,
+       "min": 49,
+       "avg": 59,
+       "max": 171
+      },
+      "rec": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "play": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "loop": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "i2c_read": {
+       "n": 317,
+       "min": 144,
+       "avg": 154,
+       "max": 1630
+      },
+      "flash_prog": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "flash_erase": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "flash_read": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "btn_latency": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "cmd_latency": {
+       "n": 1,
+       "min": 11871,
+       "avg": 11871,
+       "max": 11871
+      },
+      "e2e_latency": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      }
+     },
+     "jit": {
+      "imu": {
+       "period": 5000,
+       "n": 325,
+       "min": -989,
+       "max": 1003,
+       "p99": 300,
+       "missed": 0,
+       "viol": 2
+      },
+      "servo": {
+       "period": 20000,
+       "n": 81,
+       "min": -2308,
+       "max": 219,
+       "p99": 1600,
+       "missed": 0,
+       "viol": 1
+      }
+     },
+     "load": {
+      "last": 11,
+      "min": 11,
+      "max": 54
+     },
+     "cnt": {
+      "rx_dropped": 0,
+      "imu_err": 329,
+      "btn": 0
+     }
+    },
+    {
+     "stat": {
+      "cli": {
+       "n": 1,
+       "min": 1627,
+       "avg": 1627,
+       "max": 1627
+      },
+      "btn": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "imu": {
+       "n": 242,
+       "min": 2521,
+       "avg": 5312,
+       "max": 104651
+      },
+      "servo": {
+       "n": 26,
+       "min": 159,
+       "avg": 196,
+       "max": 222
+      },
+      "rec": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "play": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "loop": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "i2c_read": {
+       "n": 255,
+       "min": 1630,
+       "avg": 4348,
+       "max": 5881
+      },
+      "flash_prog": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "flash_erase": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "flash_read": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "btn_latency": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "cmd_latency": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "e2e_latency": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      }
+     },
+     "jit": {
+      "imu": {
+       "period": 5000,
+       "n": 272,
+       "min": -2137,
+       "max": 99826,
+       "p99": 1600,
+       "missed": 1,
+       "viol": 173
+      },
+      "servo": {
+       "period": 20000,
+       "n": 33,
+       "min": -19527,
+       "max": 1011766,
+       "p99": 1600,
+       "missed": 1,
+       "viol": 4
+      }
+     },
+     "load": {
+      "last": 78,
+      "min": 78,
+      "max": 83
+     },
+     "cnt": {
+      "rx_dropped": 0,
+      "imu_err": 507,
+      "btn": 0
+     }
+    }
+   ],
+   "stack_used": null
+  },
+  "sc5-break": {
+   "git": "dd8c0d9f",
+   "blocks": [
+    {
+     "stat": {
+      "cli": {
+       "n": 1,
+       "min": 6297,
+       "avg": 6297,
+       "max": 6297
+      },
+      "btn": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "imu": {
+       "n": 606,
+       "min": 2527,
+       "avg": 2540,
+       "max": 2543
+      },
+      "servo": {
+       "n": 152,
+       "min": 171,
+       "avg": 208,
+       "max": 212
+      },
+      "rec": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "play": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "loop": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "i2c_read": {
+       "n": 619,
+       "min": 1629,
+       "avg": 1630,
+       "max": 1679
+      },
+      "flash_prog": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "flash_erase": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "flash_read": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "btn_latency": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "cmd_latency": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "e2e_latency": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      }
+     },
+     "jit": {
+      "imu": {
+       "period": 5000,
+       "n": 636,
+       "min": -129,
+       "max": 128,
+       "p99": 100,
+       "missed": 0,
+       "viol": 0
+      },
+      "servo": {
+       "period": 20000,
+       "n": 160,
+       "min": -119,
+       "max": 116,
+       "p99": 200,
+       "missed": 0,
+       "viol": 0
+      }
+     },
+     "load": {
+      "last": 57,
+      "min": 57,
+      "max": 57
+     },
+     "cnt": {
+      "rx_dropped": 0,
+      "imu_err": 0,
+      "btn": 0
+     }
+    },
+    {
+     "stat": {
+      "cli": {
+       "n": 1,
+       "min": 12284,
+       "avg": 12284,
+       "max": 12284
+      },
+      "btn": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "imu": {
+       "n": 763,
+       "min": 2528,
+       "avg": 2539,
+       "max": 2671
+      },
+      "servo": {
+       "n": 154,
+       "min": 171,
+       "avg": 208,
+       "max": 212
+      },
+      "rec": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "play": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "loop": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "i2c_read": {
+       "n": 786,
+       "min": 1629,
+       "avg": 1630,
+       "max": 1631
+      },
+      "flash_prog": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "flash_erase": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "flash_read": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "btn_latency": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "cmd_latency": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "e2e_latency": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      }
+     },
+     "jit": {
+      "imu": {
+       "period": 4000,
+       "n": 820,
+       "min": -51,
+       "max": 47,
+       "p99": 100,
+       "missed": 0,
+       "viol": 0
+      },
+      "servo": {
+       "period": 20000,
+       "n": 165,
+       "min": -119,
+       "max": 116,
+       "p99": 200,
+       "missed": 0,
+       "viol": 0
+      }
+     },
+     "load": {
+      "last": 70,
+      "min": 70,
+      "max": 76
+     },
+     "cnt": {
+      "rx_dropped": 0,
+      "imu_err": 0,
+      "btn": 0
+     }
+    },
+    {
+     "stat": {
+      "cli": {
+       "n": 1,
+       "min": 52240,
+       "avg": 52240,
+       "max": 52240
+      },
+      "btn": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "imu": {
+       "n": 1117,
+       "min": 2489,
+       "avg": 2541,
+       "max": 7052
+      },
+      "servo": {
+       "n": 176,
+       "min": 2985,
+       "avg": 3046,
+       "max": 5876
+      },
+      "rec": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "play": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "loop": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "i2c_read": {
+       "n": 1367,
+       "min": 1629,
+       "avg": 1634,
+       "max": 6896
+      },
+      "flash_prog": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "flash_erase": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "flash_read": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "btn_latency": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "cmd_latency": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "e2e_latency": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      }
+     },
+     "jit": {
+      "imu": {
+       "period": 3000,
+       "n": 1719,
+       "min": -314,
+       "max": 4195,
+       "p99": 100,
+       "missed": 1,
+       "viol": 1
+      },
+      "servo": {
+       "period": 20000,
+       "n": 270,
+       "min": -13965,
+       "max": 18986,
+       "p99": 1600,
+       "missed": 0,
+       "viol": 270
+      }
+     },
+     "load": {
+      "last": 100,
+      "min": 86,
+      "max": 100
+     },
+     "cnt": {
+      "rx_dropped": 0,
+      "imu_err": 1,
+      "btn": 0
+     }
+    },
+    {
+     "stat": {
+      "cli": {
+       "n": 1,
+       "min": 110984,
+       "avg": 110984,
+       "max": 110984
+      },
+      "btn": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "imu": {
+       "n": 1131,
+       "min": 2494,
+       "avg": 2543,
+       "max": 7179
+      },
+      "servo": {
+       "n": 179,
+       "min": 2987,
+       "avg": 3048,
+       "max": 5901
+      },
+      "rec": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "play": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "loop": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "i2c_read": {
+       "n": 1376,
+       "min": 1629,
+       "avg": 1635,
+       "max": 7023
+      },
+      "flash_prog": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "flash_erase": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "flash_read": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "btn_latency": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "cmd_latency": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "e2e_latency": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      }
+     },
+     "jit": {
+      "imu": {
+       "period": 3000,
+       "n": 1735,
+       "min": -318,
+       "max": 4387,
+       "p99": 200,
+       "missed": 2,
+       "viol": 3
+      },
+      "servo": {
+       "period": 20000,
+       "n": 273,
+       "min": -13947,
+       "max": 22041,
+       "p99": 1600,
+       "missed": 2,
+       "viol": 273
+      }
+     },
+     "load": {
+      "last": 100,
+      "min": 94,
+      "max": 100
+     },
+     "cnt": {
+      "rx_dropped": 0,
+      "imu_err": 3,
+      "btn": 0
+     }
+    },
+    {
+     "stat": {
+      "cli": {
+       "n": 1,
+       "min": 99011,
+       "avg": 99011,
+       "max": 99011
+      },
+      "btn": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "imu": {
+       "n": 1126,
+       "min": 2491,
+       "avg": 2541,
+       "max": 7304
+      },
+      "servo": {
+       "n": 178,
+       "min": 2987,
+       "avg": 3047,
+       "max": 5896
+      },
+      "rec": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "play": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "loop": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "i2c_read": {
+       "n": 1371,
+       "min": 1629,
+       "avg": 1635,
+       "max": 7148
+      },
+      "flash_prog": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "flash_erase": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "flash_read": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "btn_latency": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "cmd_latency": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "e2e_latency": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      }
+     },
+     "jit": {
+      "imu": {
+       "period": 3000,
+       "n": 1720,
+       "min": -321,
+       "max": 4448,
+       "p99": 100,
+       "missed": 1,
+       "viol": 2
+      },
+      "servo": {
+       "period": 20000,
+       "n": 270,
+       "min": -11088,
+       "max": 22062,
+       "p99": 1600,
+       "missed": 1,
+       "viol": 270
+      }
+     },
+     "load": {
+      "last": 100,
+      "min": 94,
+      "max": 100
+     },
+     "cnt": {
+      "rx_dropped": 0,
+      "imu_err": 4,
+      "btn": 0
+     }
+    }
+   ],
+   "stack_used": null
+  },
+  "sc7-boot": {
+   "git": "dd8c0d9f",
+   "blocks": [],
+   "stack_used": null
+  },
+  "sc8-powerloss": {
+   "git": "dd8c0d9f",
+   "blocks": [],
+   "stack_used": null
+  },
+  "s3": {
+   "git": "dd8c0d9f",
+   "parts": [
+    "s3-p1",
+    "s3-p2",
+    "s3-p3"
+   ],
+   "blocks": [
+    {
+     "stat": {
+      "cli": {
+       "n": 203,
+       "min": 155,
+       "avg": 19741,
+       "max": 55730
+      },
+      "btn": {
+       "n": 40,
+       "min": 137,
+       "avg": 198,
+       "max": 275
+      },
+      "imu": {
+       "n": 25172,
+       "min": 2527,
+       "avg": 2825,
+       "max": 8141
+      },
+      "servo": {
+       "n": 6295,
+       "min": 48,
+       "avg": 63,
+       "max": 220
+      },
+      "rec": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "play": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "loop": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "i2c_read": {
+       "n": 25214,
+       "min": 1628,
+       "avg": 1642,
+       "max": 7978
+      },
+      "flash_prog": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "flash_erase": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "flash_read": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "btn_latency": {
+       "n": 40,
+       "min": 163,
+       "avg": 205,
+       "max": 292
+      },
+      "cmd_latency": {
+       "n": 120,
+       "min": 31430,
+       "avg": 70931,
+       "max": 126554
+      },
+      "e2e_latency": {
+       "n": 40,
+       "min": 3198,
+       "avg": 17254,
+       "max": 33168
+      }
+     },
+     "jit": {
+      "imu": {
+       "period": 5000,
+       "n": 25283,
+       "min": -2058,
+       "max": 3283,
+       "p99": 200,
+       "missed": 0,
+       "viol": 134
+      },
+      "servo": {
+       "period": 20000,
+       "n": 6323,
+       "min": -10932,
+       "max": 11176,
+       "p99": 200,
+       "missed": 0,
+       "viol": 24
+      }
+     },
+     "load": {
+      "last": 100,
+      "min": 89,
+      "max": 100
+     },
+     "cnt": {
+      "rx_dropped": 0,
+      "imu_err": 54,
+      "btn": 40
+     }
+    }
+   ],
+   "stack_used": 864
+  },
+  "s3-tick100": {
+   "git": "dd8c0d9f-tick100",
+   "parts": [
+    "s3-tick100-p1",
+    "s3-tick100-p2",
+    "s3-tick100-p3"
+   ],
+   "blocks": [
+    {
+     "stat": {
+      "cli": {
+       "n": 203,
+       "min": 155,
+       "avg": 9628,
+       "max": 19297
+      },
+      "btn": {
+       "n": 40,
+       "min": 138,
+       "avg": 182,
+       "max": 207
+      },
+      "imu": {
+       "n": 6754,
+       "min": 2474,
+       "avg": 2774,
+       "max": 7913
+      },
+      "servo": {
+       "n": 3378,
+       "min": 48,
+       "avg": 75,
+       "max": 206
+      },
+      "rec": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "play": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "loop": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "i2c_read": {
+       "n": 6766,
+       "min": 1627,
+       "avg": 1635,
+       "max": 7745
+      },
+      "flash_prog": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "flash_erase": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "flash_read": {
+       "n": 0,
+       "min": 0,
+       "avg": 0,
+       "max": 0
+      },
+      "btn_latency": {
+       "n": 40,
+       "min": 165,
+       "avg": 193,
+       "max": 258
+      },
+      "cmd_latency": {
+       "n": 120,
+       "min": 14681,
+       "avg": 32415,
+       "max": 49722
+      },
+      "e2e_latency": {
+       "n": 40,
+       "min": 3094,
+       "avg": 16590,
+       "max": 43021
+      }
+     },
+     "jit": {
+      "imu": {
+       "period": 5000,
+       "n": 6781,
+       "min": 3377,
+       "max": 6621,
+       "p99": 1600,
+       "missed": 3392,
+       "viol": 6781
+      },
+      "servo": {
+       "period": 20000,
+       "n": 3390,
+       "min": -5003,
+       "max": 5155,
+       "p99": 700,
+       "missed": 0,
+       "viol": 28
+      }
+     },
+     "load": {
+      "last": 100,
+      "min": 82,
+      "max": 100
+     },
+     "cnt": {
+      "rx_dropped": 0,
+      "imu_err": 6,
+      "btn": 40
+     }
+    }
+   ],
+   "stack_used": 864
+  }
+ },
+ "wire": {
+  "button_idle": {
+   "n": 50,
+   "min": 182.975,
+   "avg": 263.8,
+   "p99": 1071.95,
+   "max": 1071.95
+  },
+  "button_long": {
+   "n": 50,
+   "min": 179.2,
+   "avg": 223.5,
+   "p99": 306.2,
+   "max": 306.2
+  },
+  "button_s3": {
+   "n": 40,
+   "min": 178.3,
+   "avg": 230.8,
+   "p99": 311.025,
+   "max": 311.025
+  },
+  "imu_s1": {
+   "width": {
+    "n": 2129,
+    "min": 2481.8,
+    "avg": 2527.9,
+    "p99": 2530.75,
+    "max": 2598.7
+   },
+   "period": {
+    "n": 2128,
+    "min": 2705.625,
+    "avg": 4999.9,
+    "p99": 5021.5,
+    "max": 7988.175
+   }
+  },
+  "imu_s2": {
+   "width": {
+    "n": 9379,
+    "min": 2515.4,
+    "avg": 3070.4,
+    "p99": 3107.2,
+    "max": 3175.85
+   },
+   "period": {
+    "n": 9378,
+    "min": 3250.425,
+    "avg": 4999.9,
+    "p99": 5021.0,
+    "max": 7714.6
+   }
+  },
+  "imu_s3": {
+   "width": {
+    "n": 31636,
+    "min": 2515.25,
+    "avg": 2757.3,
+    "p99": 2849.25,
+    "max": 8129.325
+   },
+   "period": {
+    "n": 31633,
+    "min": 2741.25,
+    "avg": 4999.9,
+    "p99": 5063.65,
+    "max": 8611.25
+   }
+  },
+  "e2e": {
+   "to_ccr": {
+    "n": 30,
+    "min": 6323.5,
+    "avg": 18311.9,
+    "p99": 31314.0,
+    "max": 31314.0
+   },
+   "to_pwm_output": {
+    "n": 30,
+    "min": 3289.25,
+    "avg": 29156.4,
+    "p99": 48226.25,
+    "max": 48226.25
+   }
+  },
+  "pwm": {
+   "period": {
+    "n": 57,
+    "min": 19999.975,
+    "avg": 20000.7,
+    "p99": 20041.5,
+    "max": 20041.5
+   },
+   "widths": [
+    544,
+    647,
+    853,
+    1472,
+    1514,
+    2091,
+    2297,
+    2400
+   ]
+  },
+  "rate_dps": 300.6,
+  "servo_motion": {
+   "step_deg": 82.5,
+   "step_s": 0.74,
+   "avg_dps": 111.5
+  },
+  "fault": {
+   "first_fail_ms": 1875.7
+  }
+ },
+ "methods": {
+  "erase": {
+   "mcu_counter": {
+    "n": 64,
+    "min": 45235,
+    "avg": 45615,
+    "max": 48506
+   },
+   "wire_python": {
+    "n": 64,
+    "min": 45361.075,
+    "avg": 46028.4,
+    "p99": 48640.5,
+    "max": 48640.5
+   },
+   "wire_sigrok_timing": {
+    "n": 64,
+    "min": 45361.0,
+    "avg": 46028.4,
+    "p99": 48641.0,
+    "max": 48641.0
+   },
+   "evt_log": {
+    "erase_start->erase_done": {
+     "n": 5,
+     "min": 45322,
+     "avg": 45335.2,
+     "p99": 45377,
+     "max": 45377
+    }
+   }
+  },
+  "button": {
+   "mcu_counter": {
+    "n": 50,
+    "min": 167,
+    "avg": 236,
+    "max": 1057
+   },
+   "wire": {
+    "n": 50,
+    "min": 182.975,
+    "avg": 263.8,
+    "p99": 1071.95,
+    "max": 1071.95
+   },
+   "evt_log": {
+    "btn_press->mode": {
+     "n": 3,
+     "min": 3193,
+     "avg": 33894,
+     "p99": 84918,
+     "max": 84918
+    }
+   }
+  }
+ },
+ "fr02": [
+  [
+   0,
+   0
+  ],
+  [
+   0,
+   0
+  ],
+  [
+   1464,
+   0
+  ],
+  [
+   0,
+   1464
+  ],
+  [
+   2931,
+   0
+  ],
+  [
+   0,
+   2931
+  ],
+  [
+   4451,
+   0
+  ],
+  [
+   0,
+   4451
+  ]
+ ],
+ "fr05": [
+  9000,
+  9000,
+  4794,
+  5994,
+  7194,
+  8602,
+  9333,
+  9951,
+  10476,
+  11121,
+  11472,
+  13044
+ ],
+ "fr08": {
+  "rec_samples": 3007,
+  "rec_pages": 25,
+  "rec_dur_us": 60128275,
+  "play_samples": 3007,
+  "play_dur_us": 60133811,
+  "diff_ms": 5.54,
+  "dump_samples": 3007,
+  "dump_pages": 25,
+  "dump_crc": "OK"
+ },
+ "boot": {
+  "first_imu_us": [
+   268943,
+   554180,
+   1254184
+  ],
+  "mpu_selftest": [
+   "PASS",
+   "FAIL",
+   "FAIL"
+  ],
+  "restored_ms": [
+   553,
+   1253
+  ]
+ },
+ "powerloss": {
+  "traj": [
+   [
+    "0",
+    "0",
+    "0",
+    "0"
+   ],
+   [
+    "1",
+    "2",
+    "244",
+    "1"
+   ]
+  ],
+  "dump": [
+   [
+    "244",
+    "2",
+    "OK"
+   ]
+  ],
+  "play": [
+   "244"
+  ]
+ },
+ "fault": {
+  "lost_ms": [
+   1977,
+   4875
+  ],
+  "restored_ms": [
+   3656,
+   5898
+  ],
+  "fault_ms": [],
+  "blocks": [
+   {
+    "stat": {
+     "cli": {
+      "n": 1,
+      "min": 1650,
+      "avg": 1650,
+      "max": 1650
+     },
+     "btn": {
+      "n": 0,
+      "min": 0,
+      "avg": 0,
+      "max": 0
+     },
+     "imu": {
+      "n": 208,
+      "min": 2526,
+      "avg": 2540,
+      "max": 2541
+     },
+     "servo": {
+      "n": 53,
+      "min": 171,
+      "avg": 208,
+      "max": 209
+     },
+     "rec": {
+      "n": 0,
+      "min": 0,
+      "avg": 0,
+      "max": 0
+     },
+     "play": {
+      "n": 0,
+      "min": 0,
+      "avg": 0,
+      "max": 0
+     },
+     "loop": {
+      "n": 0,
+      "min": 0,
+      "avg": 0,
+      "max": 0
+     },
+     "i2c_read": {
+      "n": 221,
+      "min": 1630,
+      "avg": 1630,
+      "max": 1633
+     },
+     "flash_prog": {
+      "n": 0,
+      "min": 0,
+      "avg": 0,
+      "max": 0
+     },
+     "flash_erase": {
+      "n": 0,
+      "min": 0,
+      "avg": 0,
+      "max": 0
+     },
+     "flash_read": {
+      "n": 0,
+      "min": 0,
+      "avg": 0,
+      "max": 0
+     },
+     "btn_latency": {
+      "n": 0,
+      "min": 0,
+      "avg": 0,
+      "max": 0
+     },
+     "cmd_latency": {
+      "n": 0,
+      "min": 0,
+      "avg": 0,
+      "max": 0
+     },
+     "e2e_latency": {
+      "n": 0,
+      "min": 0,
+      "avg": 0,
+      "max": 0
+     }
+    },
+    "jit": {
+     "imu": {
+      "period": 5000,
+      "n": 238,
+      "min": -110,
+      "max": 108,
+      "p99": 100,
+      "missed": 0,
+      "viol": 0
+     },
+     "servo": {
+      "period": 20000,
+      "n": 60,
+      "min": -31,
+      "max": 29,
+      "p99": 100,
+      "missed": 0,
+      "viol": 0
+     }
+    },
+    "load": {
+     "last": 0,
+     "min": 100,
+     "max": 0
+    },
+    "cnt": {
+     "rx_dropped": 0,
+     "imu_err": 0,
+     "btn": 0
+    }
+   },
+   {
+    "stat": {
+     "cli": {
+      "n": 2,
+      "min": 1660,
+      "avg": 6488,
+      "max": 11317
+     },
+     "btn": {
+      "n": 0,
+      "min": 0,
+      "avg": 0,
+      "max": 0
+     },
+     "imu": {
+      "n": 311,
+      "min": 303,
+      "avg": 331,
+      "max": 2539
+     },
+     "servo": {
+      "n": 79,
+      "min": 49,
+      "avg": 59,
+      "max": 171
+     },
+     "rec": {
+      "n": 0,
+      "min": 0,
+      "avg": 0,
+      "max": 0
+     },
+     "play": {
+      "n": 0,
+      "min": 0,
+      "avg": 0,
+      "max": 0
+     },
+     "loop": {
+      "n": 0,
+      "min": 0,
+      "avg": 0,
+      "max": 0
+     },
+     "i2c_read": {
+      "n": 317,
+      "min": 144,
+      "avg": 154,
+      "max": 1630
+     },
+     "flash_prog": {
+      "n": 0,
+      "min": 0,
+      "avg": 0,
+      "max": 0
+     },
+     "flash_erase": {
+      "n": 0,
+      "min": 0,
+      "avg": 0,
+      "max": 0
+     },
+     "flash_read": {
+      "n": 0,
+      "min": 0,
+      "avg": 0,
+      "max": 0
+     },
+     "btn_latency": {
+      "n": 0,
+      "min": 0,
+      "avg": 0,
+      "max": 0
+     },
+     "cmd_latency": {
+      "n": 1,
+      "min": 11871,
+      "avg": 11871,
+      "max": 11871
+     },
+     "e2e_latency": {
+      "n": 0,
+      "min": 0,
+      "avg": 0,
+      "max": 0
+     }
+    },
+    "jit": {
+     "imu": {
+      "period": 5000,
+      "n": 325,
+      "min": -989,
+      "max": 1003,
+      "p99": 300,
+      "missed": 0,
+      "viol": 2
+     },
+     "servo": {
+      "period": 20000,
+      "n": 81,
+      "min": -2308,
+      "max": 219,
+      "p99": 1600,
+      "missed": 0,
+      "viol": 1
+     }
+    },
+    "load": {
+     "last": 11,
+     "min": 11,
+     "max": 54
+    },
+    "cnt": {
+     "rx_dropped": 0,
+     "imu_err": 329,
+     "btn": 0
+    }
+   },
+   {
+    "stat": {
+     "cli": {
+      "n": 1,
+      "min": 1627,
+      "avg": 1627,
+      "max": 1627
+     },
+     "btn": {
+      "n": 0,
+      "min": 0,
+      "avg": 0,
+      "max": 0
+     },
+     "imu": {
+      "n": 242,
+      "min": 2521,
+      "avg": 5312,
+      "max": 104651
+     },
+     "servo": {
+      "n": 26,
+      "min": 159,
+      "avg": 196,
+      "max": 222
+     },
+     "rec": {
+      "n": 0,
+      "min": 0,
+      "avg": 0,
+      "max": 0
+     },
+     "play": {
+      "n": 0,
+      "min": 0,
+      "avg": 0,
+      "max": 0
+     },
+     "loop": {
+      "n": 0,
+      "min": 0,
+      "avg": 0,
+      "max": 0
+     },
+     "i2c_read": {
+      "n": 255,
+      "min": 1630,
+      "avg": 4348,
+      "max": 5881
+     },
+     "flash_prog": {
+      "n": 0,
+      "min": 0,
+      "avg": 0,
+      "max": 0
+     },
+     "flash_erase": {
+      "n": 0,
+      "min": 0,
+      "avg": 0,
+      "max": 0
+     },
+     "flash_read": {
+      "n": 0,
+      "min": 0,
+      "avg": 0,
+      "max": 0
+     },
+     "btn_latency": {
+      "n": 0,
+      "min": 0,
+      "avg": 0,
+      "max": 0
+     },
+     "cmd_latency": {
+      "n": 0,
+      "min": 0,
+      "avg": 0,
+      "max": 0
+     },
+     "e2e_latency": {
+      "n": 0,
+      "min": 0,
+      "avg": 0,
+      "max": 0
+     }
+    },
+    "jit": {
+     "imu": {
+      "period": 5000,
+      "n": 272,
+      "min": -2137,
+      "max": 99826,
+      "p99": 1600,
+      "missed": 1,
+      "viol": 173
+     },
+     "servo": {
+      "period": 20000,
+      "n": 33,
+      "min": -19527,
+      "max": 1011766,
+      "p99": 1600,
+      "missed": 1,
+      "viol": 4
+     }
+    },
+    "load": {
+     "last": 78,
+     "min": 78,
+     "max": 83
+    },
+    "cnt": {
+     "rx_dropped": 0,
+     "imu_err": 507,
+     "btn": 0
+    }
+   }
+  ],
+  "evt": [
+   [
+    7152,
+    "boot"
+   ],
+   [
+    257822,
+    "mode"
+   ],
+   [
+    360702,
+    "mode"
+   ],
+   [
+    1977432,
+    "imu_lost"
+   ],
+   [
+    3656144,
+    "imu_restored"
+   ],
+   [
+    4875038,
+    "imu_lost"
+   ],
+   [
+    5898094,
+    "imu_restored"
+   ]
+  ]
+ },
+ "sweep": [
+  {
+   "hz": 200,
+   "imu_runs": 636,
+   "viol": 0,
+   "missed": 0,
+   "jit_max": 128,
+   "servo_jit_max": 116,
+   "load": 57,
+   "imu_avg": 2540
+  },
+  {
+   "hz": 250,
+   "imu_runs": 820,
+   "viol": 0,
+   "missed": 0,
+   "jit_max": 47,
+   "servo_jit_max": 116,
+   "load": 76,
+   "imu_avg": 2539
+  },
+  {
+   "hz": 300,
+   "imu_runs": 1719,
+   "viol": 1,
+   "missed": 1,
+   "jit_max": 4195,
+   "servo_jit_max": 18986,
+   "load": 100,
+   "imu_avg": 2541
+  },
+  {
+   "hz": 350,
+   "imu_runs": 1735,
+   "viol": 3,
+   "missed": 2,
+   "jit_max": 4387,
+   "servo_jit_max": 22041,
+   "load": 100,
+   "imu_avg": 2543
+  },
+  {
+   "hz": 400,
+   "imu_runs": 1720,
+   "viol": 2,
+   "missed": 1,
+   "jit_max": 4448,
+   "servo_jit_max": 22062,
+   "load": 100,
+   "imu_avg": 2541
+  }
+ ]
+}

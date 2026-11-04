@@ -1,0 +1,29 @@
+name: 'os-ctxsw'
+version: 1
+author: 'tools/run_scenarios.py'
+steps:
+  - wait-serial: 'READY'
+  - delay: 100ms
+  - write-serial: "mode hold\n"
+  - wait-serial: 'MODE,HOLD'
+  - delay: 30ms
+  - delay: 500ms
+  - write-serial: "ctxsw\n"
+  - wait-serial: 'OSTICK'
+  - delay: 20ms
+  - write-serial: "mode rec\n"
+  - wait-serial: 'MODE,REC'
+  - delay: 30ms
+  - delay: 4000ms
+  - write-serial: "mode hold\n"
+  - wait-serial: 'MODE,HOLD'
+  - delay: 30ms
+  - write-serial: "mode hold\n"
+  - wait-serial: 'MODE,HOLD'
+  - delay: 30ms
+  - write-serial: "dump\n"
+  - delay: 100ms
+  - write-serial: "ctxsw\n"
+  - wait-serial: 'OSTICK'
+  - wait-serial: 'DUMP,END'
+  - delay: 50ms

@@ -1,0 +1,6 @@
+name: 'os-stack'
+version: 1
+author: 'tools/run_scenarios.py'
+steps:
+  - wait-serial: 'FATAL'
+  - delay: 200ms

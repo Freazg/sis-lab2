@@ -1,0 +1,122 @@
+
+BOOT,fw=lr4-1.0,git=dd8c0d9f,board=NUCLEO-C031C6
+ST,dev=BEGIN,fw=lr4-1.0,board=NUCLEO-C031C6
+ST,dev=MCU,res=PASS,board=NUCLEO-C031C6,sysclk_hz=48000000
+ST,dev=MPU6050,res=PASS,bus=I2C1,addr=0x68,who=0x68,acc_mg=0/0/1000,norm_mg=1000,dev_mg=0,gyro_mdps=0/0/0,temp_cdeg=2400,chk=AGT
+ST,dev=W25Q64,res=PASS,bus=SPI1,jedec=EF4017,test_addr=0x7FF000,len=32,erase_ms=45,mismatch=0,stage=readback,err=OK
+ST,dev=SERVO_PAN,res=PASS,pwm=TIM3_CH1,period_us=20000,pulse_us_0deg=544,pulse_us_180deg=2400,pulse_us_90deg=1472
+ST,dev=SERVO_TILT,res=PASS,pwm=TIM3_CH2,period_us=20000,pulse_us_0deg=544,pulse_us_180deg=2400,pulse_us_90deg=1472
+ST,dev=LED_LIVE,res=PASS,readback_on=1,readback_off=1
+ST,dev=LED_REC,res=PASS,readback_on=1,readback_off=1
+ST,dev=BTN_B1,res=PASS,pin=PC13,idle=released
+ST,dev=FT232RL,res=PASS,uart=USART1,baud=115200,tx=OK
+ST,dev=SUMMARY,res=PASS,pass=9,fail=0
+TRAJ,session=0,pages=0,samples=0,torn=0
+MODE,LIVE
+READYBOOT,first_imu_us=268943
+MODE,LIVERATE,hz=200,period_us=5000
+STATS,BEGIN
+STAT name=cli n=1 min_us=6297 avg_us=6297 max_us=6297
+STAT name=btn n=0 min_us=0 avg_us=0 max_us=0
+STAT name=imu n=606 min_us=2527 avg_us=2540 max_us=2543
+STAT name=servo n=152 min_us=171 avg_us=208 max_us=212
+STAT name=rec n=0 min_us=0 avg_us=0 max_us=0
+STAT name=play n=0 min_us=0 avg_us=0 max_us=0
+STAT name=loop n=0 min_us=0 avg_us=0 max_us=0
+STAT name=i2c_read n=619 min_us=1629 avg_us=1630 max_us=1679
+STAT name=flash_prog n=0 min_us=0 avg_us=0 max_us=0
+STAT name=flash_erase n=0 min_us=0 avg_us=0 max_us=0
+STAT name=flash_read n=0 min_us=0 avg_us=0 max_us=0
+STAT name=btn_latency n=0 min_us=0 avg_us=0 max_us=0
+STAT name=cmd_latency n=0 min_us=0 avg_us=0 max_us=0
+STAT name=e2e_latency n=0 min_us=0 avg_us=0 max_us=0
+JITTER name=imu period_us=5000 n=636 min_us=-129 max_us=128 p99_us=100 missed=0 viol=0
+JITTER name=servo period_us=20000 n=160 min_us=-119 max_us=116 p99_us=200 missed=0 viol=0
+LOAD pct=57 min=57 max=57
+CNT rx_dropped=0 imu_err=0 btn=0
+HIST name=imu bin_us=100 644 5 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+STATS,ENDRATE,hz=250,period_us=4000
+STATS,BEGIN
+STAT name=cli n=1 min_us=12284 avg_us=12284 max_us=12284
+STAT name=btn n=0 min_us=0 avg_us=0 max_us=0
+STAT name=imu n=763 min_us=2528 avg_us=2539 max_us=2671
+STAT name=servo n=154 min_us=171 avg_us=208 max_us=212
+STAT name=rec n=0 min_us=0 avg_us=0 max_us=0
+STAT name=play n=0 min_us=0 avg_us=0 max_us=0
+STAT name=loop n=0 min_us=0 avg_us=0 max_us=0
+STAT name=i2c_read n=786 min_us=1629 avg_us=1630 max_us=1631
+STAT name=flash_prog n=0 min_us=0 avg_us=0 max_us=0
+STAT name=flash_erase n=0 min_us=0 avg_us=0 max_us=0
+STAT name=flash_read n=0 min_us=0 avg_us=0 max_us=0
+STAT name=btn_latency n=0 min_us=0 avg_us=0 max_us=0
+STAT name=cmd_latency n=0 min_us=0 avg_us=0 max_us=0
+STAT name=e2e_latency n=0 min_us=0 avg_us=0 max_us=0
+JITTER name=imu period_us=4000 n=820 min_us=-51 max_us=47 p99_us=100 missed=0 viol=0
+JITTER name=servo period_us=20000 n=165 min_us=-119 max_us=116 p99_us=200 missed=0 viol=0
+LOAD pct=70 min=70 max=76
+CNT rx_dropped=0 imu_err=0 btn=0
+HIST name=imu bin_us=100 845 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+STATS,ENDRATE,hz=300,period_us=3000
+STATS,BEGIN
+STAT name=cli n=1 min_us=52240 avg_us=52240 max_us=52240
+STAT name=btn n=0 min_us=0 avg_us=0 max_us=0
+STAT name=imu n=1117 min_us=2489 avg_us=2541 max_us=7052
+STAT name=servo n=176 min_us=2985 avg_us=3046 max_us=5876
+STAT name=rec n=0 min_us=0 avg_us=0 max_us=0
+STAT name=play n=0 min_us=0 avg_us=0 max_us=0
+STAT name=loop n=0 min_us=0 avg_us=0 max_us=0
+STAT name=i2c_read n=1367 min_us=1629 avg_us=1634 max_us=6896
+STAT name=flash_prog n=0 min_us=0 avg_us=0 max_us=0
+STAT name=flash_erase n=0 min_us=0 avg_us=0 max_us=0
+STAT name=flash_read n=0 min_us=0 avg_us=0 max_us=0
+STAT name=btn_latency n=0 min_us=0 avg_us=0 max_us=0
+STAT name=cmd_latency n=0 min_us=0 avg_us=0 max_us=0
+STAT name=e2e_latency n=0 min_us=0 avg_us=0 max_us=0
+JITTER name=imu period_us=3000 n=1719 min_us=-314 max_us=4195 p99_us=100 missed=1 viol=1
+JITTER name=servo period_us=20000 n=270 min_us=-13965 max_us=18986 p99_us=1600 missed=0 viol=270
+LOAD pct=100 min=86 max=100
+CNT rx_dropped=0 imu_err=1 btn=0
+HIST name=imu bin_us=100 1971 4 2 2 0 0 0 0 0 0 0 0 0 0 0 1
+STATS,ENDRATE,hz=350,period_us=3000
+STATS,BEGIN
+STAT name=cli n=1 min_us=110984 avg_us=110984 max_us=110984
+STAT name=btn n=0 min_us=0 avg_us=0 max_us=0
+STAT name=imu n=1131 min_us=2494 avg_us=2543 max_us=7179
+STAT name=servo n=179 min_us=2987 avg_us=3048 max_us=5901
+STAT name=rec n=0 min_us=0 avg_us=0 max_us=0
+STAT name=play n=0 min_us=0 avg_us=0 max_us=0
+STAT name=loop n=0 min_us=0 avg_us=0 max_us=0
+STAT name=i2c_read n=1376 min_us=1629 avg_us=1635 max_us=7023
+STAT name=flash_prog n=0 min_us=0 avg_us=0 max_us=0
+STAT name=flash_erase n=0 min_us=0 avg_us=0 max_us=0
+STAT name=flash_read n=0 min_us=0 avg_us=0 max_us=0
+STAT name=btn_latency n=0 min_us=0 avg_us=0 max_us=0
+STAT name=cmd_latency n=0 min_us=0 avg_us=0 max_us=0
+STAT name=e2e_latency n=0 min_us=0 avg_us=0 max_us=0
+JITTER name=imu period_us=3000 n=1735 min_us=-318 max_us=4387 p99_us=200 missed=2 viol=3
+JITTER name=servo period_us=20000 n=273 min_us=-13947 max_us=22041 p99_us=1600 missed=2 viol=273
+LOAD pct=100 min=94 max=100
+CNT rx_dropped=0 imu_err=3 btn=0
+HIST name=imu bin_us=100 1908 73 5 6 0 0 0 0 0 1 0 0 0 0 0 2
+STATS,ENDRATE,hz=400,period_us=3000
+STATS,BEGIN
+STAT name=cli n=1 min_us=99011 avg_us=99011 max_us=99011
+STAT name=btn n=0 min_us=0 avg_us=0 max_us=0
+STAT name=imu n=1126 min_us=2491 avg_us=2541 max_us=7304
+STAT name=servo n=178 min_us=2987 avg_us=3047 max_us=5896
+STAT name=rec n=0 min_us=0 avg_us=0 max_us=0
+STAT name=play n=0 min_us=0 avg_us=0 max_us=0
+STAT name=loop n=0 min_us=0 avg_us=0 max_us=0
+STAT name=i2c_read n=1371 min_us=1629 avg_us=1635 max_us=7148
+STAT name=flash_prog n=0 min_us=0 avg_us=0 max_us=0
+STAT name=flash_erase n=0 min_us=0 avg_us=0 max_us=0
+STAT name=flash_read n=0 min_us=0 avg_us=0 max_us=0
+STAT name=btn_latency n=0 min_us=0 avg_us=0 max_us=0
+STAT name=cmd_latency n=0 min_us=0 avg_us=0 max_us=0
+STAT name=e2e_latency n=0 min_us=0 avg_us=0 max_us=0
+JITTER name=imu period_us=3000 n=1720 min_us=-321 max_us=4448 p99_us=100 missed=1 viol=2
+JITTER name=servo period_us=20000 n=270 min_us=-11088 max_us=22062 p99_us=1600 missed=1 viol=270
+LOAD pct=100 min=94 max=100
+CNT rx_dropped=0 imu_err=4 btn=0
+HIST name=imu bin_us=100 1964 10 3 4 0 0 0 0 0 1 0 0 0 0 0 1
+STATS,END

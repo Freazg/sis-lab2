@@ -1,0 +1,11 @@
+name: 'os-qflood'
+version: 1
+author: 'tools/run_scenarios.py'
+steps:
+  - wait-serial: 'READY'
+  - delay: 100ms
+  - write-serial: "fault qflood\n"
+  - wait-serial: 'QFLOOD,timeout_ms=20'
+  - delay: 50ms
+  - write-serial: "tasks\n"
+  - wait-serial: 'TASKS,END'

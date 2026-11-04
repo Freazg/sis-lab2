@@ -1,0 +1,43 @@
+name: 'sc1-erase'
+version: 1
+author: 'tools/run_scenarios.py'
+steps:
+  - wait-serial: 'READY'
+  - delay: 100ms
+  - write-serial: "mode live\n"
+  - wait-serial: 'MODE,LIVE'
+  - delay: 30ms
+  - write-serial: "tasks\n"
+  - wait-serial: 'TASKS,END'
+  - delay: 10ms
+  - write-serial: "stats reset\n"
+  - wait-serial: 'STATS,RESET'
+  - delay: 10ms
+  - write-serial: "erase\n"
+  - wait-serial: 'ERASE,DONE'
+  - delay: 300ms
+  - write-serial: "erase\n"
+  - wait-serial: 'ERASE,DONE'
+  - delay: 300ms
+  - write-serial: "erase\n"
+  - wait-serial: 'ERASE,DONE'
+  - delay: 300ms
+  - write-serial: "erase\n"
+  - wait-serial: 'ERASE,DONE'
+  - delay: 300ms
+  - write-serial: "stats\n"
+  - wait-serial: 'STATS,END'
+  - delay: 20ms
+  - write-serial: "mem\n"
+  - delay: 30ms
+  - write-serial: "tasks\n"
+  - wait-serial: 'TASKS,END'
+  - delay: 10ms
+  - write-serial: "stack\n"
+  - wait-serial: 'task=MSP'
+  - delay: 10ms
+  - write-serial: "heap\n"
+  - wait-serial: 'HEAP'
+  - delay: 10ms
+  - write-serial: "evt\n"
+  - delay: 100ms
